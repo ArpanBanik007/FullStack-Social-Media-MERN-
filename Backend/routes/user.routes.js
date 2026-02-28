@@ -12,6 +12,7 @@ import { registerUser,
          updateUserCoverImage,
          getCurrentUser,
          refreshAccessToken,
+         getClickedUserDetails,
          
 
 
@@ -45,6 +46,8 @@ router.route("/logout").post(verifyJWT,logoutUser);
 
 
 router.route("/current-user").get(verifyJWT,getCurrentUser)
+router.route("/user/:userId")
+      .get(verifyJWT, getClickedUserDetails);
 
 router.route("/refresh-token").post(refreshAccessToken)
 

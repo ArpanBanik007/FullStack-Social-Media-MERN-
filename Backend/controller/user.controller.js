@@ -1,12 +1,12 @@
 import asyncHandler from "../utils/asyncHandler.js"
-import {User} from "../models/user.models.js"
+import { User } from "../models/user.models.js"
 import UserOTP from "../models/otp.models.js"
 import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import { generateOTP, sendOTPEmail } from "../services/email.services.js"
 import getLocationFromIP from "../utils/getLocationFromIP.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
-
+import mongoose from "mongoose"
 
 
 
@@ -432,6 +432,34 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
 })
 
 
+const getClickedUserDetails = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        throw new ApiError(400, "User ID is required");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(400, "Invalid User ID");
+    }
+
+    const clickedUser = await User
+        .findById(userId)
+        .select("-password")
+        .lean();
+
+    if (!clickedUser) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            clickedUser,
+            "User fetched successfully"
+        )
+    );
+});
 
 export {
     registerUser,
@@ -441,10 +469,12 @@ export {
     logoutUser,
     changeCurrentPassword,
     getCurrentUser,
+    getClickedUserDetails,
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
     refreshAccessToken,
+    
 
 
 }

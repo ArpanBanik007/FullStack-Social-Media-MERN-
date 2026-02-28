@@ -151,154 +151,6 @@ const deletePost = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, null, "Post deleted successfully"));
 });
 
-/**
- * Get Posts Feed
- */
-
-
-// const getPostsFeed = asyncHandler(async (req, res) => {
-//   const userId = new mongoose.Types.ObjectId(req.user._id);
-
-
-
-//   const posts = await Post.aggregate([
-//     { $sort: { createdAt: -1 } },
-
-//     {
-//       $lookup: {
-//         from: "users",
-//         localField: "createdBy",
-//         foreignField: "_id",
-//         as: "createdBy"
-//       }
-//     },
-//     { $unwind: "$createdBy" },
-
-//     {
-//       $lookup: {
-//         from: "likes",
-//         let: { postId: "$_id", userId },
-//         pipeline: [
-//           {
-//             $match: {
-//               $expr: {
-//                 $and: [
-//                   { $eq: ["$post", "$$postId"] },
-//                   { $eq: ["$user", "$$userId"] }
-//                 ]
-//               }
-//             }
-//           }
-//         ],
-//         as: "userLike"
-//       }
-//     },
-
-//     {
-//       $addFields: {
-//         userLiked: { $gt: [{ $size: "$userLike" }, 0] }
-//       }
-//     },
-
-//       {
-//       $addFields: {
-//         "createdBy.isFollowedByMe": { $in: ["$createdBy._id", followingIds] }
-//       }
-//     },
-
-//     {
-//       $project: {
-//         title: 1,
-//         posturl: 1,
-//         likes: 1,
-//         dislikes: 1,
-//         createdAt: 1,
-//       createdBy: { _id: 1, 
-//         username: 1,
-//          avatar: 1, 
-//         isFollowedByMe: 1 },
-//         userLiked: 1
-//       }
-//     }
-//   ]);
-
-//   res.json({ posts });
-// });
-
-
-
-
-// const getPostsFeed = asyncHandler(async (req, res) => {
-//   const userId = req.user._id;
-
-//   // ✅ 1. Fetch all followings of current user
-//   const myFollowings = await Follow.find({ follower: userId }).select("following");
-//   const followingIds = myFollowings.map(f => f.following);
-
-//   // ✅ 2. Aggregate posts
-//   const posts = await Post.aggregate([
-//     { $sort: { createdAt: -1 } },
-
-//     // join createdBy user
-//     {
-//       $lookup: {
-//         from: "users",
-//         localField: "createdBy",
-//         foreignField: "_id",
-//         as: "createdBy"
-//       }
-//     },
-//     { $unwind: "$createdBy" },
-
-//     // check if current user liked the post
-//     {
-//       $lookup: {
-//         from: "likes",
-//         let: { postId: "$_id", userId: userId },
-//         pipeline: [
-//           {
-//             $match: {
-//               $expr: {
-//                 $and: [
-//                   { $eq: ["$post", "$$postId"] },
-//                   { $eq: ["$user", "$$userId"] }
-//                 ]
-//               }
-//             }
-//           }
-//         ],
-//         as: "userLike"
-//       }
-//     },
-//     {
-//       $addFields: {
-//         userLiked: { $gt: [{ $size: "$userLike" }, 0] }
-//       }
-//     },
-
-//     // ✅ check if current user follows the post creator
-//     {
-//       $addFields: {
-//         "createdBy.isFollowedByMe": { $in: ["$createdBy._id", followingIds] }
-//       }
-//     },
-
-//     {
-//       $project: {
-//         title: 1,
-//         posturl: 1,
-//         likes: 1,
-//         dislikes: 1,
-//           comments:1,
-//         createdAt: 1,
-//         createdBy: { _id: 1, username: 1, avatar: 1, isFollowedByMe: 1 },
-//         userLiked: 1
-//       }
-//     }
-//   ]);
-
-//   res.json({ posts });
-// });
 
 
 const getPostsFeed = asyncHandler(async (req, res) => {
@@ -376,123 +228,6 @@ const getPostsFeed = asyncHandler(async (req, res) => {
 
 
 
-// const getPostsFeed = asyncHandler(async (req, res) => {
-//   const { lastPostId, limit = 10, search = "" } = req.query;
-//   const parsedLimit = Math.min(Math.max(parseInt(limit), 1), 50);
-// const userId= req.user?._id;
-//   const query = {  }; // or {} for testing
-
-//   if (search.trim() !== "") {
-//     const escapedSearch = escapeStringRegexp(search.trim());
-//     const searchRegex = new RegExp(escapedSearch, "i");
-
-//     query.$or = [
-//       { title: { $regex: searchRegex } },
-//       { tags: { $elemMatch: { $regex: searchRegex } } },
-//       { "createdBy.username": { $regex: searchRegex } },
-//     ];
-//   }
-
-//   if (lastPostId) {
-//     const lastPost = await Post.findById(lastPostId).select("createdAt");
-//     if (lastPost) query.createdAt = { $lt: lastPost.createdAt };
-//   }
-
-//   const posts = await Post.find(query)
-//     .sort({ createdAt: -1 })
-//     .limit(parsedLimit)
-//     .select("title posturl views createdAt tags createdBy")
-//     .populate("createdBy", "username fullName avatar")
-//     .lean();
-
-
-
-
-//    const postIds=posts.map(p=>p._id) ;
-
-
-//   const [userLikes, userDislikes] = await Promise.all([
-//   Like.find({ user: userId, post: { $in: postIds } }).lean(),
-//   Dislike.find({ user: userId, post: { $in: postIds } }).lean(),
-// ]);
-
-// console.log("Likes",userLikes)
-// console.log("Dislikes",userDislikes)
-
-// // 3. Attach userLiked / userDisliked to each post
-//   const response = posts.map(post => ({
-//     ...post,
-//     userLiked: userLikes.some(l => l.post.toString() === post._id.toString()),
-//     userDisliked: userDislikes.some(d => d.post.toString() === post._id.toString()),
-//   }));
-
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, { posts: response}, "Filtered posts feed loaded successfully"));
-// });
-
-
-
-
-
-
-// const getFeedposts = asyncHandler(async (req, res) => {
-//   const userId = req.user._id; // logged-in user
-
-//   const posts = await Post.aggregate([
-//     {
-//       $lookup: {
-//         from: "likes",
-//         let: { postId: "$_id" },
-//         pipeline: [
-//           {
-//             $match: {
-//               $expr: {
-//                 $and: [
-//                   { $eq: ["$post", "$$postId"] },
-//                   { $eq: ["$user", userId] }
-//                 ]
-//               }
-//             }
-//           }
-//         ],
-//         as: "userLike"
-//       }
-//     },
-//     {
-//       $lookup: {
-//         from: "dislikes",
-//         let: { postId: "$_id" },
-//         pipeline: [
-//           {
-//             $match: {
-//               $expr: {
-//                 $and: [
-//                   { $eq: ["$post", "$$postId"] },
-//                   { $eq: ["$user", userId] }
-//                 ]
-//               }
-//             }
-//           }
-//         ],
-//         as: "userDislike"
-//       }
-//     },
-//     {
-//       $addFields: {
-//         userLiked: { $gt: [{ $size: "$userLike" }, 0] },
-//         userDisliked: { $gt: [{ $size: "$userDislike" }, 0] }
-//       }
-//     }
-//   ]);
-
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, { posts }, "Feed fetched successfully"));
-// });
-
-
-
 /**
  * Get Single Post
  */
@@ -514,82 +249,6 @@ const getSinglePost = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, post, "Fetched single post successfully"));
 });
 
-
- // Toggle Like   ------------
- 
-
-// const togglePostLike = async (req, res) => {
-//   try {
-//     const userId = req.user?._id;
-//     const { postId } = req.params;
-
-//     if (!userId || !postId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "UserId or PostId missing",
-//       });
-//     }
-
-//     // 1️⃣ Check already liked
-//     const existingLike = await Like.findOne({
-//       user: userId,
-//       post: postId,
-//     });
-
-//     if (existingLike) {
-//       // ❌ UNLIKE
-//       await Like.deleteOne({ _id: existingLike._id });
-
-//       await Post.updateOne(
-//         { _id: postId, likes: { $gt: 0 } },
-//         { $inc: { likes: -1 } }
-//       );
-
-//       return res.json({
-//         success: true,
-//         liked: false,
-//       });
-//     }
-
-//     // 2️⃣ If DISLIKE exists → remove it first
-//     const existingDislike = await Dislike.findOne({
-//       user: userId,
-//       post: postId,
-//     });
-
-//     if (existingDislike) {
-//       await Dislike.deleteOne({ _id: existingDislike._id });
-
-//       await Post.updateOne(
-//         { _id: postId, dislikes: { $gt: 0 } },
-//         { $inc: { dislikes: -1 } }
-//       );
-//     }
-
-//     // 3️⃣ ADD LIKE
-//     await Like.create({
-//       user: userId,
-//       post: postId,
-//     });
-
-//     await Post.updateOne(
-//       { _id: postId },
-//       { $inc: { likes: 1 } }
-//     );
-
-//     return res.json({
-//       success: true,
-//       liked: true,
-//     });
-
-//   } catch (err) {
-//     console.error("LIKE ERROR:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Like failed",
-//     });
-//   }
-// };
 
 
 
@@ -778,6 +437,38 @@ const getOwnAllPosts = asyncHandler(async (req, res) => {
 });
 
 
+const getClickedUserPosts = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId) {
+        throw new ApiError(400, "User ID is required");
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(400, "Invalid User ID");
+    }
+
+    const userExists = await User.exists({ _id: userId });
+
+    if (!userExists) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const clickedUserPosts = await Post.find({ createdBy: userId })
+        .sort({ createdAt: -1 })
+        .populate("createdBy", "username avatar")
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            clickedUserPosts,
+            clickedUserPosts.length === 0
+                ? "No posts found"
+                : "Clicked user posts fetched successfully"
+        )
+    );
+});
 
 
 
@@ -819,5 +510,6 @@ export {
   addPostViews,
   getOwnAllPosts,
   getOwnSinglePost,
+  getClickedUserPosts
   
 };
