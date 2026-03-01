@@ -3,6 +3,7 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
+import { User } from "../models/user.models.js";
 import { View } from "../models/views.model.js";
 import { deleteFromCloudinary } from "../utils/deleteFromCloudynary.js";
 import escapeStringRegexp from "escape-string-regexp";
@@ -16,6 +17,8 @@ import { io } from "../socket.js";
 /**
  * Create Post (text + optional image)
  */
+
+
 const createpost = asyncHandler(async (req, res) => {
   const { title, description,  isPublished } = req.body;
   const userId = req.user?._id;

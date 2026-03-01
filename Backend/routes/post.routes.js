@@ -12,6 +12,7 @@ import {
   togglePostDislike,
   addPostViews,
   getOwnAllPosts,
+  getClickedUserPosts,
 } from "../controller/createpost.controller.js";
 
 const router = Router();
@@ -42,6 +43,8 @@ router.route("/my-posts").get(verifyJWT,getOwnAllPosts)
 
 
 router.route("/my-posts/:postId").get(verifyJWT,getSinglePost)
+
+router.get("/user/:userId", verifyJWT, getClickedUserPosts);
 
 // ✅ Get single post by ID
 router.get("/:postId", getSinglePost);
