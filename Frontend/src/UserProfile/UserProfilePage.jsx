@@ -1,118 +1,152 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaCamera } from "react-icons/fa";
 import { MdOndemandVideo } from "react-icons/md";
-import { FaBookmark } from "react-icons/fa";
 import UserAllPost from "./UserAllPost";
 import UserAllVideos from "./UserAllVideos";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 
 function UserProfilePage() {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
-  const [isfollowing, setFollowing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   const toggleFollow = () => {
-    setFollowing(!isfollowing); // true হলে false করবে, false হলে true
+    setIsFollowing((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchClickedUser = async () => {
+      try {
+        setLoading(true);
+
+        const res = await axios.get(
+          `http://localhost:8000/api/v1/users/user/${userId}`,
+          { withCredentials: true },
+        );
+
+        setUser(res.data?.data);
+      } catch (error) {
+        if (error.response?.status === 401) {
+          navigate("/login");
+        } else {
+          navigate("/home");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClickedUser();
+  }, [userId, navigate]);
 
   const renderContent = () => {
     switch (activeTab) {
       case "posts":
-        return <UserAllPost />;
+        return <UserAllPost userId={userId} />;
       case "videos":
-        return <UserAllVideos />;
-
+        return <UserAllVideos userId={userId} />;
       default:
-        return <UserAllPost />;
+        return <UserAllPost userId={userId} />;
     }
   };
 
+  if (loading) {
+    return <p className="text-center text-white mt-20">Loading...</p>;
+  }
+
+  if (!user) {
+    return <p className="text-center text-red-400 mt-20">User not found</p>;
+  }
+
   return (
-    <div className="flex flex-col mt-1">
-      <div className="flex justify-center pt-2 pl-50">
-        <div className="bg-black w-[60%] h-90 rounded-xl overflow-hidden">
+    <div className="flex flex-col mt-2 items-center w-full px-2 sm:px-4 md:pl-64">
+      {/* ✅ Cover Image */}
+      <div className="flex justify-center w-full">
+        <div className="bg-black w-full sm:w-[80%] md:w-[60%] h-40 sm:h-64 md:h-80 rounded-xl overflow-hidden">
           <img
-            src="https://plus.unsplash.com/premium_photo-1673177667569-e3321a8d8256?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y292ZXIlMjBwaG90b3xlbnwwfHwwfHx8MA%3D%3D"
-            alt="center"
-            className="w-full h-full object-center"
+            src={user?.coverImage || "https://via.placeholder.com/800x300"}
+            alt="cover"
+            className="w-full h-full object-cover"
           />
         </div>
       </div>
 
-      <div className="bg-slate-700 w-[51%] mt-2 mb-2 rounded-2xl ml-[32%]">
-        <div className="absolute ml-5 mt-3">
-          <img
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUvukVHOeioDmSUl1VSeKCb2pZBdvfxiPgjQ&s"
-            alt="dp"
-            className="w-32 h-32 rounded-full object-center border-4 border-white shadow-md"
-          />
-          <div className="flex justify-center items-center">
+      {/* ✅ Profile Info Section */}
+      <div className="bg-slate-700 w-full sm:w-[80%] md:w-[60%] mt-4 rounded-2xl p-4 text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6">
+          {/* Avatar + Follow */}
+          <div className="flex flex-col items-center sm:items-start">
+            <img
+              src={user?.avatar || "https://via.placeholder.com/150"}
+              alt="dp"
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-md -mt-12 sm:mt-0"
+            />
             <button
               onClick={toggleFollow}
               type="button"
-              className={`px-4 py-2 mt-2.5 cursor-pointer rounded-lg font-semibold transition 
-        ${
-          isfollowing
-            ? "bg-red-500 hover:bg-red-600"
-            : "bg-blue-500 hover:bg-blue-600"
-        } 
-        text-white`}
+              className={`text-white text-sm mt-2 px-4 py-2 rounded-xl transition
+                ${
+                  isFollowing
+                    ? "bg-red-500 hover:bg-red-600"
+                    : "bg-blue-500 hover:bg-blue-600"
+                }`}
             >
-              {isfollowing ? "Unfollow" : "Follow"}
+              {isFollowing ? "Unfollow" : "Follow"}
             </button>
           </div>
-        </div>
-        <div className="flex flex-col justify-center mt-8 mb-3">
-          <div className="flex flex-col ml-17">
-            <h2 className=" text-gray-200 text-2xl font-medium ml-25">
-              arpanbanik007
+
+          {/* User Info */}
+          <div className="flex flex-col mt-4 sm:mt-0 text-gray-200">
+            <h2 className="text-xl sm:text-2xl font-medium">
+              {user?.username}
             </h2>
-            <p className=" text-gray-200 font-semibold mt-1.5 ml-27">
-              Arpan Banik
-            </p>
-          </div>
+            <p className="text-gray-300 font-semibold mt-1">{user?.fullName}</p>
 
-          <div className="flex justify-between mt-3.5 ml-43 w-[45%]">
-            <p className="text-gray-300 text-base font-semibold">23 Posts </p>
-            <p className="text-gray-300 text-base font-semibold">
-              1000 Followers
-            </p>
-            <p className="text-gray-300 text-base font-semibold">
-              28 Following
-            </p>
-          </div>
-          <div className="flex flex-col text-gray-300 text-base font-bold ml-43 h-25">
-            <h2 className="mt-4 mb-1.5">Bio</h2>
-            <p className=" text-gray-300 font-semibold">
-              #rcb ❤️🖤 #fcbarcelona 💙❤️ Selenophile 🌛❤️
-            </p>
+            <div className="flex justify-center sm:justify-start gap-4 mt-3 text-gray-300 text-sm sm:text-base font-semibold">
+              <p>{user?.followersCount || 0} Followers</p>
+              <p>{user?.followingCount || 0} Following</p>
+            </div>
+
+            <div className="mt-3">
+              <h2 className="font-bold">Bio</h2>
+              <p className="text-gray-300 font-semibold text-sm sm:text-base">
+                {user?.bio || "No bio available"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ✅ Icons with hover label */}
-      <div className="bg-slate-700 h-17  w-[51%] mt-1 mb-2 rounded-2xl ml-[32%] relative overflow-visible">
-        <div className="flex justify-between p-3 text-3xl text-white ">
-          <button
-            onClick={() => setActiveTab("posts")}
-            className={`p-2 rounded-full ${
-              activeTab === "posts"
-                ? "bg-slate-700 text-white"
-                : "text-gray-400"
-            }`}
-          >
-            <FaCamera className="cursor-pointer" />
-          </button>
-          <button
-            onClick={() => setActiveTab("videos")}
-            className={`p-2 rounded-full ${
-              activeTab === "videos"
-                ? "bg-slate-700 text-white"
-                : "text-gray-400"
-            }`}
-          >
-            <MdOndemandVideo className="cursor-pointer" />
-          </button>
-        </div>
+      {/* ✅ Tabs */}
+      <div className="bg-slate-700 w-full sm:w-[80%] md:w-[60%] mt-3 rounded-2xl flex justify-around p-3 text-3xl text-white">
+        <button
+          onClick={() => setActiveTab("posts")}
+          className={`p-2 rounded-full ${
+            activeTab === "posts" ? "bg-slate-800 text-white" : "text-gray-400"
+          }`}
+        >
+          <FaCamera />
+        </button>
+
+        <button
+          onClick={() => setActiveTab("videos")}
+          className={`p-2 rounded-full ${
+            activeTab === "videos" ? "bg-slate-800 text-white" : "text-gray-400"
+          }`}
+        >
+          <MdOndemandVideo />
+        </button>
       </div>
-      <div className="bg-slate-600 w-[51%] rounded-xl ml-[32%] p-4 text-gray-200">
+
+      {/* ✅ Content */}
+      <div className="bg-slate-600 w-full sm:w-[80%] md:w-[60%] rounded-xl mt-3 p-4 text-gray-200">
         {renderContent()}
       </div>
     </div>

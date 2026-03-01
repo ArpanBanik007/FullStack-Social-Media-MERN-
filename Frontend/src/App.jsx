@@ -36,7 +36,7 @@ function App() {
       <Route path="/settings" element={<SettingPage />} />
       <Route path="/settings/profile" element={<ProfileSettting />} />
       <Route path="/settings/security" element={<SecuritySetting />} />
-      <Route path="/profile/user" element={<UserProfileTotalPage />} />
+      <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
       <Route path="/post/:postId" element={<CommentPage />} />
     </Routes>
   );

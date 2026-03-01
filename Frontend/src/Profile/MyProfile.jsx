@@ -63,8 +63,8 @@ export default function MyProfile() {
         <div className="bg-black w-full sm:w-[80%] md:w-[60%] h-40 sm:h-64 md:h-80 rounded-xl overflow-hidden cursor-pointer">
           <img
             src={user.coverImage}
-            alt="cover"
-            className="w-full h-full object-cover"
+            alt="center"
+            className="w-full h-full object-center"
           />
         </div>
       </div>

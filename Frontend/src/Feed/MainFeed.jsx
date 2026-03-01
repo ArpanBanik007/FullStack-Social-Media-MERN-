@@ -162,7 +162,10 @@ function MainFeed() {
         >
           {/* HEADER */}
           <div className="flex items-center justify-between p-3 cursor-pointer">
-            <div className="flex items-center cursor-pointer">
+            <div
+              className="flex items-center cursor-pointer"
+              onClick={() => navigate(`/profile/${post?.createdBy?._id}`)}
+            >
               <img
                 src={
                   post?.createdBy?.avatar || "https://via.placeholder.com/40"
