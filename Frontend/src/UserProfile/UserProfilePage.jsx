@@ -3,12 +3,23 @@ import { FaCamera } from "react-icons/fa";
 import { MdOndemandVideo } from "react-icons/md";
 import UserAllPost from "./UserAllPost";
 import UserAllVideos from "./UserAllVideos";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchMyFollowings,
+  addFollowing,
+  removeFollowing,
+} from "../slices/follow.slice";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
 function UserProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { followings } = useSelector((state) => state.follow);
+
+  const isfollowing = followings.includes(userId);
 
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
@@ -45,6 +56,29 @@ function UserProfilePage() {
 
     fetchClickedUser();
   }, [userId, navigate]);
+
+  const handleFollowToggle = async () => {
+    try {
+      if (isfollowing) {
+        await axios.delete(
+          `http://localhost:8000/api/v1/users/interactions/${userId}/unfollow`,
+          {
+            withCredentials: true,
+          },
+        );
+        dispatch(removeFollowing(userId));
+      } else {
+        await axios.post(
+          `http://localhost:8000/api/v1/users/interactions/${userId}/follow`,
+          {},
+          { withCredentials: true },
+        );
+        dispatch(addFollowing(userId));
+      }
+    } catch (err) {
+      console.error("Follow toggle error:", err);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -89,16 +123,15 @@ function UserProfilePage() {
               className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-md -mt-12 sm:mt-0"
             />
             <button
-              onClick={toggleFollow}
-              type="button"
-              className={`text-white text-sm mt-2 px-4 py-2 rounded-xl transition
-                ${
-                  isFollowing
-                    ? "bg-red-500 hover:bg-red-600"
-                    : "bg-blue-500 hover:bg-blue-600"
-                }`}
+              onClick={handleFollowToggle}
+              className={`px-4 py-2 rounded-xl text-white transition
+    ${
+      isfollowing
+        ? "bg-red-500 hover:bg-red-600"
+        : "bg-blue-500 hover:bg-blue-600"
+    }`}
             >
-              {isFollowing ? "Unfollow" : "Follow"}
+              {isfollowing ? "Unfollow" : "Follow"}
             </button>
           </div>
 
