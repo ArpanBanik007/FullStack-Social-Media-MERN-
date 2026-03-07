@@ -10,7 +10,7 @@ import {
   getMyAllFollowers,
   getMyAllFollowing,
 } from "../controller/follow.controller.js"; // তোমার controller
-import { isBlocked } from "../middlewire/block.middleware.js"; // block check middleware
+
 
 
 const router = Router();
