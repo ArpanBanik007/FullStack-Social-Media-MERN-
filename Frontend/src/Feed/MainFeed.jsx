@@ -164,7 +164,13 @@ function MainFeed() {
           <div className="flex items-center justify-between p-3 cursor-pointer">
             <div
               className="flex items-center cursor-pointer"
-              onClick={() => navigate(`/profile/${post?.createdBy?._id}`)}
+              onClick={() => {
+                if (post?.createdBy?._id === mydetails?._id) {
+                  navigate("/profile"); // নিজের profile
+                } else {
+                  navigate(`/profile/${post?.createdBy?._id}`); // অন্য user
+                }
+              }}
             >
               <img
                 src={
