@@ -22,7 +22,7 @@ const FollowButton = ({ userId, isFollowedByBackend }) => {
         setIsFollowed(false); // optimistic UI
         dispatch(removeFollowing(userId));
 
-        await axios.delete(
+        await axios.post(
           `http://localhost:8000/api/v1/users/interactions/${userId}/unfollow`,
           {
             withCredentials: true,
