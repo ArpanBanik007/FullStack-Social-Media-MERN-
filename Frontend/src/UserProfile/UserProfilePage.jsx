@@ -4,13 +4,14 @@ import { MdOndemandVideo } from "react-icons/md";
 import UserAllPost from "./UserAllPost";
 import UserAllVideos from "./UserAllVideos";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import FollowButton from "../componants/FollowButton";
 
 function UserProfilePage() {
   const { userId } = useParams();
-
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,7 @@ function UserProfilePage() {
             {/* follow button */}
 
             {!isMyProfile && (
-              <div className="mt-2">
+              <div className="mt-2 ml-5">
                 <FollowButton
                   userId={userId}
                   isFollowedByBackend={isFollowing}
