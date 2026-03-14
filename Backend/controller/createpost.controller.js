@@ -483,22 +483,91 @@ const getOwnSinglePost = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Post ID or User not found");
   }
 
-  const userSinglePost = await Post.findOne({
-    _id: postId,        
-    createdBy: userId,  
-  })
-    .populate("createdBy", "username fullName avatar")
-    .lean();
-
-  if (!userSinglePost) {
-    throw new ApiError(404, "No post found for this user");
+  if (!mongoose.Types.ObjectId.isValid(postId)) {
+    throw new ApiError(400, "Invalid Post ID format");
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, userSinglePost, "Fetched user's single post successfully")
-    );
+  // ✅ Promise.all দিয়ে সবগুলো একসাথে
+  const [userSinglePost, likeCount, commentCount, isLiked] = await Promise.all([
+    Post.findOne({ _id: postId, createdBy: userId })
+      .populate("createdBy", "username fullName avatar")
+      .lean(),
+    Like.countDocuments({ post: postId }),
+    Comment.countDocuments({ post: postId }),
+    Like.exists({ post: postId, user: userId }),
+  ]);
+
+  if (!userSinglePost) {
+    throw new ApiError(404, "Post not found or you don't have permission");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        ...userSinglePost,
+        likeCount,
+        commentCount,
+        isLiked: Boolean(isLiked),
+      },
+      "Fetched user's single post successfully"
+    )
+  );
+});
+
+
+const getMyAllLikedPosts = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  // Pagination params
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized - User not found");
+  }
+
+  // Total count for pagination meta
+  const totalLikes = await Like.countDocuments({ user: userId });
+
+  if (totalLikes === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { posts: [], totalLikes: 0, totalPages: 0, currentPage: page }, "No liked posts found"));
+  }
+
+  const likedPosts = await Like.find({ user: userId })
+    .sort({ createdAt: -1 })                          // latest liked first
+    .skip(skip)
+    .limit(limit)
+    .populate({
+      path: "post",
+      select: "title posturl createdAt createdBy",
+      populate: {
+        path: "createdBy",
+        select: "username fullName avatar",
+      },
+    })
+    .lean();
+
+  // Null populate filter
+  const validPosts = likedPosts
+    .filter((like) => like.post !== null)
+    .map((like) => like.post);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        posts: validPosts,
+        totalLikes,
+        totalPages: Math.ceil(totalLikes / limit),
+        currentPage: page,
+      },
+      "Liked posts fetched successfully"
+    )
+  );
 });
 
 
@@ -513,6 +582,7 @@ export {
   addPostViews,
   getOwnAllPosts,
   getOwnSinglePost,
-  getClickedUserPosts
+  getClickedUserPosts,
+  getMyAllLikedPosts
   
 };

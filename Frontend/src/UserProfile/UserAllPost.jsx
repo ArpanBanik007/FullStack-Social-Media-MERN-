@@ -143,11 +143,17 @@ function UserAllPost({ userId }) {
             <button className="flex items-center gap-1 hover:text-red-500">
               <FaHeart />
               <span>Like</span>
+              <span className="text-xs font-semibold ml-1">
+                {post.likes || 0}
+              </span>
             </button>
 
             <button className="flex items-center gap-1 hover:text-green-500">
               <FaComment />
               <span>Comment</span>
+              <span className="text-xs font-semibold ml-1">
+                {post.comments || 0}
+              </span>
             </button>
 
             <button className="flex items-center gap-1 hover:text-purple-600">
