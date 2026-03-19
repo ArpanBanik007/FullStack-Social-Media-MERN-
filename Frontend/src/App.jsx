@@ -10,17 +10,26 @@ import SettingPage from "./Pages/SettingPage";
 import ProfileSettting from "./settings/ProfileSettting";
 import SecuritySetting from "./settings/SecuritySetting";
 import UserProfileTotalPage from "./Pages/UserProfileTotalPage";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
-import { fetchMydetils } from "./slices/mydetails.slice";
+import { fetchMyLikes } from "./slices/like.slice";
+import { fetchMydetils, selectCurrentUser } from "./slices/mydetails.slice";
 import CommentPage from "./Pages/CommentPage";
 
 function App() {
   const dispatch = useDispatch();
+  const currentUser = useSelector(selectCurrentUser);
 
   useEffect(() => {
     dispatch(fetchMydetils());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (currentUser?._id) {
+      // console.log("Current User id", currentUser?._id);
+      dispatch(fetchMyLikes());
+    }
+  }, [currentUser]);
 
   return (
     <Routes>

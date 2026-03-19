@@ -50,4 +50,6 @@ const myDetailsSlice = createSlice({
 });
 
 export const { resetMyDetails } = myDetailsSlice.actions;
+export const selectCurrentUser = (state) => state.mydetails.mydetails;
+export const selectMyDetailsLoading = (state) => state.mydetails.loading;
 export default myDetailsSlice.reducer;

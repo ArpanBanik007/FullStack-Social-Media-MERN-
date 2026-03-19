@@ -7,6 +7,7 @@ import { persistReducer, persistStore } from "redux-persist";
 import postReducer from "../slices/postSlice";
 import myDetailsReducer from "../slices/mydetails.slice";
 import followReducer from "../slices/follow.slice"; // ✅ import follow slice
+import likedPostSlice from "../slices/like.slice"
 
 // persist config (only for user details)
 const persistDetailsConfig = {
@@ -24,9 +25,14 @@ export const store = configureStore({
     posts: postReducer,
     mydetails: persistedMyDetailsReducer,
     follow: followReducer, // ✅ register follow slice here
+    likedPosts: likedPostSlice
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({ serializableCheck: false }),
 });
+
+
+
+
 
 export const persistor = persistStore(store);

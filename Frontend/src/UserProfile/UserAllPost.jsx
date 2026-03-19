@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa6";
 import { IoMdHeartDislike } from "react-icons/io";
 import { PiDotsThreeBold } from "react-icons/pi";
+import LikeButton from "../componants/LikeButton";
 
 function UserAllPost({ userId }) {
   const [posts, setPosts] = useState([]);
@@ -140,13 +141,7 @@ function UserAllPost({ userId }) {
 
           {/* Actions */}
           <div className="border-t flex justify-around py-2 text-gray-400 text-sm">
-            <button className="flex items-center gap-1 hover:text-red-500">
-              <FaHeart />
-              <span>Like</span>
-              <span className="text-xs font-semibold ml-1">
-                {post.likes || 0}
-              </span>
-            </button>
+            <LikeButton postId={post._id} likeCount={post.likes || 0} />
 
             <button className="flex items-center gap-1 hover:text-green-500">
               <FaComment />

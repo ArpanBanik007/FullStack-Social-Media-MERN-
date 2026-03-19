@@ -24,6 +24,7 @@ const FollowButton = ({ userId, isFollowedByBackend }) => {
 
         await axios.post(
           `http://localhost:8000/api/v1/users/interactions/${userId}/unfollow`,
+          {},
           {
             withCredentials: true,
           },

@@ -3,15 +3,17 @@ import { FaCamera } from "react-icons/fa";
 import { MdOndemandVideo } from "react-icons/md";
 import UserAllPost from "./UserAllPost";
 import UserAllVideos from "./UserAllVideos";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import FollowButton from "../componants/FollowButton";
+import { fetchMyFollowings } from "../slices/follow.slice";
 
 function UserProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,10 @@ function UserProfilePage() {
   const isFollowing = followings?.includes(userId);
 
   console.log("Here is Is Following", isFollowing);
+
+  useEffect(() => {
+    dispatch(fetchMyFollowings());
+  }, [dispatch]);
 
   // fetch user profile
   useEffect(() => {
