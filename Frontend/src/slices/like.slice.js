@@ -12,8 +12,25 @@ export const fetchMyLikes = createAsyncThunk(
       return res.data.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || error.message // ✅ Fix 2
+        error.response?.data?.message || error.message
       );
+    }
+  }
+);
+
+export const toggleLike = createAsyncThunk(
+  "likes/toggleLike",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(
+        `http://localhost:8000/api/v1/posts/${postId}/like`,
+        {},
+        { withCredentials: true }
+      );
+      console.log("Toggle Like Response →", res.data); 
+      return { postId, liked: res.data?.liked };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -42,18 +59,37 @@ const likedPostSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMyLikes.pending, (state) => { // ✅ Fix 1
+      // ── fetchMyLikes ──
+      .addCase(fetchMyLikes.pending, (state) => {
         state.status = "loading";
         state.error = null;
       })
-      .addCase(fetchMyLikes.fulfilled, (state, action) => { // ✅ Fix 1
+      .addCase(fetchMyLikes.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.posts = action.payload.posts;
         state.totalLikes = action.payload.totalLikes;
       })
-      .addCase(fetchMyLikes.rejected, (state, action) => { // ✅ Fix 1
+      .addCase(fetchMyLikes.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
+      })
+
+    
+      .addCase(toggleLike.fulfilled, (state, action) => {
+        const { postId, liked } = action.payload;
+
+        if (liked) {
+        
+          const exists = state.posts.some((p) => p._id === postId);
+          if (!exists) {
+            state.posts.push({ _id: postId });
+            state.totalLikes += 1;
+          }
+        } else {
+         
+          state.posts = state.posts.filter((p) => p._id !== postId);
+          state.totalLikes -= 1;
+        }
       });
   },
 });

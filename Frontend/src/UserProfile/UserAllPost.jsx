@@ -10,6 +10,7 @@ import {
 import { IoMdHeartDislike } from "react-icons/io";
 import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
+import { socket } from "../socket";
 
 function UserAllPost({ userId }) {
   const [posts, setPosts] = useState([]);
@@ -39,18 +40,29 @@ function UserAllPost({ userId }) {
   }, [userId]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenMenuId(null);
-      }
+    if (!posts.length) return;
+    posts.forEach((post) => {
+      socket.emit("join-post", post._id);
+    });
+  }, [posts.length]);
+
+  useEffect(() => {
+    const handleReactionUpdate = (data) => {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === data.postId
+            ? { ...post, likes: data.likes, dislikes: data.dislikes }
+            : post,
+        ),
+      );
     };
-    document.addEventListener("mousedown", handleClickOutside);
+
+    socket.on("post-reaction-updated", handleReactionUpdate);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      socket.off("post-reaction-updated", handleReactionUpdate); // ✅ cleanup
     };
-  }, []);
-
+  }, []); // ← একবারই register করো
   const toggleMenu = (postId) => {
     setOpenMenuId((prevId) => (prevId === postId ? null : postId));
   };

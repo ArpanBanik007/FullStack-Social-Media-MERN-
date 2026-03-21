@@ -1,20 +1,27 @@
-import React from "react";
-import { FaHeart } from "react-icons/fa6";
+import { FaHeart } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { selectIsPostLiked } from "../slices/like.slice";
+import { selectIsPostLiked, toggleLike } from "../slices/like.slice";
 
 function LikeButton({ postId, likeCount }) {
   const dispatch = useDispatch();
   const isLiked = useSelector(selectIsPostLiked(postId));
 
+  const handleLike = () => {
+    dispatch(toggleLike(postId));
+  };
+
   return (
     <button
-      className={`flex items-center gap-1 ${
-        isLiked ? "text-red-500" : "text-gray-400"
-      } hover:text-red-500`}
+      onClick={handleLike}
+      className={`flex items-center gap-1 transition-colors duration-200
+        ${
+          isLiked
+            ? "text-red-500" // liked → সবসময় red
+            : "text-gray-400 hover:text-red-500" // not liked → grey, hover এ red
+        }
+      `}
     >
       <FaHeart />
-      <span>Like</span>
       <span className="text-xs font-semibold">{likeCount}</span>
     </button>
   );

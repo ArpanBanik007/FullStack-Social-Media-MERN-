@@ -440,40 +440,114 @@ const getOwnAllPosts = asyncHandler(async (req, res) => {
 });
 
 
+// const getClickedUserPosts = asyncHandler(async (req, res) => {
+//     const { userId } = req.params;
+
+//     if (!userId) {
+//         throw new ApiError(400, "User ID is required");
+//     }
+
+//     if (!mongoose.Types.ObjectId.isValid(userId)) {
+//         throw new ApiError(400, "Invalid User ID");
+//     }
+
+//     const userExists = await User.exists({ _id: userId });
+
+//     if (!userExists) {
+//         throw new ApiError(404, "User not found");
+//     }
+
+//     const clickedUserPosts = await Post.find({ createdBy: userId })
+//         .sort({ createdAt: -1 })
+//         .populate("createdBy", "username avatar")
+//         .lean();
+
+//     return res.status(200).json(
+//         new ApiResponse(
+//             200,
+//             clickedUserPosts,
+//             clickedUserPosts.length === 0
+//                 ? "No posts found"
+//                 : "Clicked user posts fetched successfully"
+//         )
+//     );
+// });
+
 const getClickedUserPosts = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
+  const { userId } = req.params;
+  const loggedInUserId = req.user?._id; // ✅ logged in user
 
-    if (!userId) {
-        throw new ApiError(400, "User ID is required");
-    }
+  if (!userId) throw new ApiError(400, "User ID is required");
+  if (!mongoose.Types.ObjectId.isValid(userId)) throw new ApiError(400, "Invalid User ID");
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new ApiError(400, "Invalid User ID");
-    }
+  const userExists = await User.exists({ _id: userId });
+  if (!userExists) throw new ApiError(404, "User not found");
 
-    const userExists = await User.exists({ _id: userId });
+  const clickedUserPosts = await Post.aggregate([
+    { $match: { createdBy: new mongoose.Types.ObjectId(userId) } },
+    { $sort: { createdAt: -1 } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
+    },
+    { $unwind: "$createdBy" },
+    // ✅ userLiked check — Feed এর মতো
+    {
+      $lookup: {
+        from: "likes",
+        let: { postId: "$_id", userId: loggedInUserId },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$post", "$$postId"] },
+                  { $eq: ["$user", "$$userId"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "userLike",
+      },
+    },
+    {
+      $addFields: {
+        userLiked: { $gt: [{ $size: "$userLike" }, 0] },
+      },
+    },
+    {
+      $project: {
+        title: 1,
+        posturl: 1,
+        likes: 1,
+        dislikes: 1,
+        comments: 1,
+        createdAt: 1,
+        createdBy: {
+          _id: 1,
+          username: 1,
+          avatar: 1,
+        },
+        userLiked: 1, // ✅
+      },
+    },
+  ]);
 
-    if (!userExists) {
-        throw new ApiError(404, "User not found");
-    }
-
-    const clickedUserPosts = await Post.find({ createdBy: userId })
-        .sort({ createdAt: -1 })
-        .populate("createdBy", "username avatar")
-        .lean();
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            clickedUserPosts,
-            clickedUserPosts.length === 0
-                ? "No posts found"
-                : "Clicked user posts fetched successfully"
-        )
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      clickedUserPosts,
+      clickedUserPosts.length === 0
+        ? "No posts found"
+        : "Clicked user posts fetched successfully"
+    )
+  );
 });
-
-
 
 const getOwnSinglePost = asyncHandler(async (req, res) => {
   const { postId } = req.params;

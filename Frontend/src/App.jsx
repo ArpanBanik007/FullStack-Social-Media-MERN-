@@ -26,7 +26,6 @@ function App() {
 
   useEffect(() => {
     if (currentUser?._id) {
-      // console.log("Current User id", currentUser?._id);
       dispatch(fetchMyLikes());
     }
   }, [currentUser]);
