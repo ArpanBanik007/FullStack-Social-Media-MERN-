@@ -11,6 +11,7 @@ import FollowButton from "../componants/FollowButton";
 import { fetchMyFollowings } from "../slices/follow.slice";
 import PostActionMenu from "../componants/PostActionMenu";
 import { useNavigate } from "react-router-dom";
+import LikeButton from "../componants/LikeButton";
 
 function MainFeed() {
   const dispatch = useDispatch();
@@ -222,12 +223,7 @@ function MainFeed() {
 
           {/* ACTIONS */}
           <div className="border-t flex justify-around py-2 text-sm">
-            <button
-              onClick={() => handleLike(post._id)}
-              className={post.userLiked ? "text-red-500" : ""}
-            >
-              <FaHeart className=" cursor-pointer" /> {post.likes}
-            </button>
+            <LikeButton postId={post._id} likeCount={post.likes || 0} />
 
             <button onClick={() => navigate(`/post/${post._id}`)}>
               <FaComment className=" cursor-pointer" /> {post.comments || 0}
