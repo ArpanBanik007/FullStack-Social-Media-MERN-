@@ -1,14 +1,45 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { FaHeart, FaBookmark } from "react-icons/fa";
-import { IoMdHeartDislike } from "react-icons/io";
-import { FaComment, FaShareNodes } from "react-icons/fa6";
+import { FaHeart, FaRegHeart, FaBookmark, FaPlay } from "react-icons/fa";
+import {
+  FaComment,
+  FaShareNodes,
+  FaVolumeXmark,
+  FaVolumeHigh,
+} from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { selectIsPostLiked, toggleLike } from "../slices/like.slice";
+
+function VideoLikeButton({ videoId, likeCount }) {
+  const dispatch = useDispatch();
+  const isLiked = useSelector(selectIsPostLiked(videoId));
+
+  return (
+    <button
+      onClick={() => dispatch(toggleLike(videoId))}
+      className="flex flex-col items-center gap-1"
+    >
+      {isLiked ? (
+        <FaHeart className="text-red-500 text-2xl" />
+      ) : (
+        <FaRegHeart className="text-white text-2xl hover:text-red-400" />
+      )}
+      <span className="text-xs">{likeCount || 0}</span>
+    </button>
+  );
+}
 
 function VideoPlayer() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [playingIndex, setPlayingIndex] = useState(null);
+  const [isMuted, setIsMuted] = useState(true); // ✅ global mute state — শুরুতে muted
   const videoRefs = useRef([]);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { mydetails } = useSelector((state) => state.mydetails);
 
   // ===================== FETCH VIDEOS =====================
   useEffect(() => {
@@ -16,9 +47,14 @@ function VideoPlayer() {
       try {
         const res = await axios.get(
           "http://localhost:8000/api/v1/videos/feed",
-          { withCredentials: true }
+          { withCredentials: true },
         );
-        setVideos(res.data?.data?.videos || []);
+        const fetchedVideos = res.data?.data?.videos || [];
+        setVideos(fetchedVideos);
+
+        if (fetchedVideos.length > 0) {
+          navigate(`/videos/${fetchedVideos[0]._id}`, { replace: true });
+        }
       } catch (err) {
         console.error("Video fetch failed:", err);
       } finally {
@@ -34,19 +70,28 @@ function VideoPlayer() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const video = entry.target;
+          const videoEl = entry.target;
+          const index = videoRefs.current.indexOf(videoEl);
 
           if (entry.isIntersecting) {
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              playPromise.catch(() => {});
+            // ✅ সব video মুছে নতুনটা play করো
+            videoRefs.current.forEach((v) => {
+              if (v && v !== videoEl) v.pause();
+            });
+
+            videoEl.muted = isMuted; // ✅ current mute state apply করো
+            videoEl.play().catch(() => {});
+            setPlayingIndex(index);
+
+            if (videos[index]) {
+              navigate(`/videos/${videos[index]._id}`, { replace: true });
             }
           } else {
-            video.pause();
+            videoEl.pause();
           }
         });
       },
-      { threshold: 0.65 }
+      { threshold: 0.65 },
     );
 
     videoRefs.current.forEach((video) => {
@@ -54,57 +99,100 @@ function VideoPlayer() {
     });
 
     return () => observer.disconnect();
-  }, [videos]);
+  }, [videos, isMuted]); // ✅ isMuted dependency যোগ করো
+
+  // ✅ Play/Pause toggle
+  const handlePlayPause = (index) => {
+    const videoEl = videoRefs.current[index];
+    if (!videoEl) return;
+
+    if (videoEl.paused) {
+      videoEl.play().catch(() => {});
+      setPlayingIndex(index);
+    } else {
+      videoEl.pause();
+      setPlayingIndex(null);
+    }
+  };
+
+  // ✅ Global Mute/Unmute — সব video একসাথে
+  const handleMuteToggle = () => {
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+
+    // সব video এর mute state বদলাও
+    videoRefs.current.forEach((videoEl) => {
+      if (videoEl) videoEl.muted = newMuted;
+    });
+  };
 
   if (loading) {
-    return <p className="text-center mt-10">Loading reels...</p>;
+    return <p className="text-center mt-10 text-white">Loading reels...</p>;
   }
 
   return (
-    // ===================== STATIC CARD =====================
     <div className="flex justify-center items-center h-screen bg-gray-900">
-      <div className="w-full max-w-[430px] h-[95vh] bg-black rounded-xl overflow-hidden">
-        {/* ===================== SCROLL AREA ===================== */}
+      <div className="w-full max-w-[430px] h-[95vh] bg-black rounded-xl overflow-hidden relative">
+        {/* ✅ Mute button — উপরে ডানে, সবার বাইরে */}
+        <div className="absolute top-4 right-4 z-50">
+          <button
+            onClick={handleMuteToggle}
+            className="bg-black bg-opacity-50 rounded-full p-2"
+          >
+            {isMuted ? (
+              <FaVolumeXmark className="text-white text-xl" />
+            ) : (
+              <FaVolumeHigh className="text-white text-xl" />
+            )}
+          </button>
+        </div>
+
         <div className="h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide">
           {videos.map((video, index) => {
             const videoSrc = video.videourl
               ?.replace("/upload/", "/upload/f_mp4,vc_h264/")
               ?.replace("http://", "https://");
 
+            const isPlaying = playingIndex === index;
+
             return (
               <div
                 key={video._id}
                 className="h-full snap-start relative flex items-center justify-center"
               >
-                {/* ===================== VIDEO ===================== */}
+                {/* VIDEO */}
                 <video
                   ref={(el) => (videoRefs.current[index] = el)}
                   src={videoSrc}
                   className="h-full w-full object-cover"
-                  muted
+                  muted // ✅ শুরুতে muted — browser policy
                   loop
                   playsInline
                   preload="metadata"
-                  onClick={(e) => {
-                    const video = e.currentTarget;
-
-                    // 🔁 play / pause toggle
-                    if (video.paused) {
-                      video.play().catch(() => {});
-                    } else {
-                      video.pause();
-                    }
-
-                    // 🔊 unmute on first interaction
-                    if (video.muted) {
-                      video.muted = false;
-                    }
-                  }}
+                  onClick={() => handlePlayPause(index)}
                 />
 
-                {/* ===================== LEFT INFO ===================== */}
+                {/* PLAY OVERLAY — pause হলে দেখাবে */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  {!isPlaying && (
+                    <div className="bg-black bg-opacity-40 rounded-full p-4">
+                      <FaPlay className="text-white text-3xl" />
+                    </div>
+                  )}
+                </div>
+
+                {/* LEFT INFO */}
                 <div className="absolute bottom-20 left-4 text-white max-w-[70%]">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="flex items-center gap-2 mb-2 cursor-pointer"
+                    onClick={() => {
+                      if (video?.createdBy?._id === mydetails?._id) {
+                        navigate("/profile");
+                      } else {
+                        navigate(`/profile/${video?.createdBy?._id}`);
+                      }
+                    }}
+                  >
                     {video.createdBy?.avatar ? (
                       <img
                         src={video.createdBy.avatar}
@@ -124,22 +212,23 @@ function VideoPlayer() {
                   )}
                 </div>
 
-                {/* ===================== RIGHT ACTIONS ===================== */}
+                {/* RIGHT ACTIONS — Like, Comment, Share, Save */}
                 <div className="absolute right-4 bottom-24 flex flex-col gap-6 text-white text-xl">
-                  <button>
-                    <FaHeart />
+                  <VideoLikeButton
+                    videoId={video._id}
+                    likeCount={video.likes}
+                  />
+
+                  <button className="flex flex-col items-center gap-1">
+                    <FaComment className="text-2xl" />
                   </button>
-                  <button>
-                    <IoMdHeartDislike />
+
+                  <button className="flex flex-col items-center gap-1">
+                    <FaShareNodes className="text-2xl" />
                   </button>
-                  <button>
-                    <FaComment />
-                  </button>
-                  <button>
-                    <FaShareNodes />
-                  </button>
-                  <button>
-                    <FaBookmark />
+
+                  <button className="flex flex-col items-center gap-1">
+                    <FaBookmark className="text-2xl" />
                   </button>
                 </div>
               </div>

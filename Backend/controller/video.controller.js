@@ -197,53 +197,128 @@ const deleteVideo = asyncHandler(async (req, res) => {
 });
 
 
-const getShortsFeed = asyncHandler(async (req, res) => {
-  const { lastVideoId, limit = 10, search = "", category = "" } = req.query;
+// const getShortsFeed = asyncHandler(async (req, res) => {
+//   const { lastVideoId, limit = 10, search = "", category = "" } = req.query;
 
+//   const parsedLimit = Math.min(Math.max(parseInt(limit), 1), 50);
+
+//   const query = {
+//     isPublished: true,
+   
+//   };
+
+//   if (search.trim() !== "") {
+//     const escapedSearch = escapeStringRegexp(search.trim());
+//     const searchRegex = new RegExp(escapedSearch, "i");
+
+//     query.$or = [
+//       { title: { $regex: searchRegex } },
+      
+//     ];
+//   }
+
+//   if (category.trim() !== "") {
+//     query.category = category.trim();
+//   }
+
+//   if (lastVideoId) {
+//     const lastVideo = await Video.findById(lastVideoId).select("createdAt");
+//     if (lastVideo) {
+//       query.createdAt = { $lt: lastVideo.createdAt };
+//     }
+//   }
+
+//   const videos = await Video.find(query)
+//     .sort({ createdAt: -1 })
+//     .limit(parsedLimit)
+//     .select(
+//       "title videourl thumbnail views createdAt category tags createdBy"
+//     )
+//     .populate("createdBy", "username avatar")
+//     .lean();
+
+//   return res.status(200).json(
+//     new ApiResponse(200, { videos }, "Shorts feed loaded successfully")
+//   );
+// });
+
+
+const getShortsFeed = asyncHandler(async (req, res) => {
+  const userId = req.user?._id; // ✅ logged in user
+  const { lastVideoId, limit = 10, search = "", category = "" } = req.query;
   const parsedLimit = Math.min(Math.max(parseInt(limit), 1), 50);
 
-  const query = {
-    isPublished: true,
-   
-  };
+  const query = { isPublished: true };
 
   if (search.trim() !== "") {
     const escapedSearch = escapeStringRegexp(search.trim());
-    const searchRegex = new RegExp(escapedSearch, "i");
-
-    query.$or = [
-      { title: { $regex: searchRegex } },
-      
-    ];
+    query.$or = [{ title: { $regex: new RegExp(escapedSearch, "i") } }];
   }
 
-  if (category.trim() !== "") {
-    query.category = category.trim();
-  }
+  if (category.trim() !== "") query.category = category.trim();
 
   if (lastVideoId) {
     const lastVideo = await Video.findById(lastVideoId).select("createdAt");
-    if (lastVideo) {
-      query.createdAt = { $lt: lastVideo.createdAt };
-    }
+    if (lastVideo) query.createdAt = { $lt: lastVideo.createdAt };
   }
 
-  const videos = await Video.find(query)
-    .sort({ createdAt: -1 })
-    .limit(parsedLimit)
-    .select(
-      "title videourl thumbnail views createdAt category tags createdBy"
-    )
-    .populate("createdBy", "username avatar")
-    .lean();
+  const videos = await Video.aggregate([
+    { $match: query },
+    { $sort: { createdAt: -1 } },
+    { $limit: parsedLimit },
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
+    },
+    { $unwind: "$createdBy" },
+    // ✅ userLiked check
+    {
+      $lookup: {
+        from: "likes",
+        let: { videoId: "$_id", userId: userId },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$post", "$$videoId"] },
+                  { $eq: ["$user", "$$userId"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "userLike",
+      },
+    },
+    {
+      $addFields: {
+        userLiked: { $gt: [{ $size: "$userLike" }, 0] },
+      },
+    },
+    {
+      $project: {
+        title: 1,
+        videourl: 1,
+        thumbnail: 1,
+        views: 1,
+        likes: 1,
+        createdAt: 1,
+        category: 1,
+        createdBy: { _id: 1, username: 1, avatar: 1 },
+        userLiked: 1, // ✅
+      },
+    },
+  ]);
 
   return res.status(200).json(
     new ApiResponse(200, { videos }, "Shorts feed loaded successfully")
   );
 });
-
-
-
 
 
 const getSingleVideo = asyncHandler(async (req, res) => {

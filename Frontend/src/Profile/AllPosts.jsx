@@ -9,12 +9,16 @@ import {
 import { IoMdHeartDislike } from "react-icons/io";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { MdEdit, MdDelete } from "react-icons/md";
+import LikeButton from "../componants/LikeButton";
+import { socket } from "../socket";
+import { useNavigate } from "react-router-dom";
 
 const AllPosts = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMyPosts = async () => {
@@ -34,6 +38,26 @@ const AllPosts = () => {
     };
 
     fetchMyPosts();
+  }, []);
+
+  useEffect(() => {
+    if (!posts.length) return;
+    posts.forEach((post) => {
+      socket.emit("join-post", post._id);
+    });
+  }, [posts.length]);
+
+  useEffect(() => {
+    const handleReactionUpdate = (data) => {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === data.postId ? { ...post, likes: data.likes } : post,
+        ),
+      );
+    };
+
+    socket.on("post-reaction-updated", handleReactionUpdate);
+    return () => socket.off("post-reaction-updated", handleReactionUpdate);
   }, []);
 
   useEffect(() => {
@@ -156,28 +180,10 @@ const AllPosts = () => {
 
           {/* Actions */}
           <div className="border-t flex justify-around py-2 text-gray-400 text-sm">
-            <button className="flex items-center gap-1 hover:text-red-500">
-              <FaHeart className="text-base" />
-              <span>Like</span>
-              <span className="text-xs font-semibold ml-1">
-                {post.likes || 0}
-              </span>
-            </button>
+            <LikeButton postId={post._id} likeCount={post.likes || 0} />
 
-            <button className="flex items-center gap-1 hover:text-violet-900">
-              <IoMdHeartDislike className="text-base" />
-              <span>Dislike</span>
-              <span className="text-xs font-semibold ml-1">
-                {post.dislikes || 0}
-              </span>
-            </button>
-
-            <button className="flex items-center gap-1 hover:text-green-500">
-              <FaComment className="text-base" />
-              <span>Comment</span>
-              <span className="text-xs font-semibold ml-1">
-                {post.comments || 0}
-              </span>
+            <button onClick={() => navigate(`/post/${post._id}`)}>
+              <FaComment className=" cursor-pointer" /> {post.comments || 0}
             </button>
 
             <button className="flex items-center gap-1 hover:text-purple-600">

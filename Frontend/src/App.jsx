@@ -10,6 +10,7 @@ import SettingPage from "./Pages/SettingPage";
 import ProfileSettting from "./settings/ProfileSettting";
 import SecuritySetting from "./settings/SecuritySetting";
 import UserProfileTotalPage from "./Pages/UserProfileTotalPage";
+import VideoPlayer from "./VideoFeed/VideoPlayer";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchMyLikes } from "./slices/like.slice";
@@ -37,7 +38,7 @@ function App() {
       <Route path="/signup" element={<SignUp />} />
       {/* other pages */}
       <Route path="/home" element={<HomePage />} />
-      <Route path="/videos" element={<Videopage />} />
+
       <Route path="/profile" element={<OwnProfilepage />} />
       <Route path="/saved" element={<SavePage />} />
       <Route path="/history" element={<HistoryPage />} />
@@ -46,6 +47,7 @@ function App() {
       <Route path="/settings/security" element={<SecuritySetting />} />
       <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
       <Route path="/post/:postId" element={<CommentPage />} />
+      <Route path="/videos/:videoId" element={<VideoPlayer />} />
     </Routes>
   );
 }

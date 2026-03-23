@@ -10,6 +10,7 @@ import {
 import { IoMdHeartDislike } from "react-icons/io";
 import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
+import { useNavigate } from "react-router-dom";
 import { socket } from "../socket";
 
 function UserAllPost({ userId }) {
@@ -17,6 +18,7 @@ function UserAllPost({ userId }) {
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -155,12 +157,8 @@ function UserAllPost({ userId }) {
           <div className="border-t flex justify-around py-2 text-gray-400 text-sm">
             <LikeButton postId={post._id} likeCount={post.likes || 0} />
 
-            <button className="flex items-center gap-1 hover:text-green-500">
-              <FaComment />
-              <span>Comment</span>
-              <span className="text-xs font-semibold ml-1">
-                {post.comments || 0}
-              </span>
+            <button onClick={() => navigate(`/post/${post._id}`)}>
+              <FaComment className=" cursor-pointer" /> {post.comments || 0}
             </button>
 
             <button className="flex items-center gap-1 hover:text-purple-600">
