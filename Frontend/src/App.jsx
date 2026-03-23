@@ -38,8 +38,8 @@ function App() {
       <Route path="/signup" element={<SignUp />} />
       {/* other pages */}
       <Route path="/home" element={<HomePage />} />
-
       <Route path="/profile" element={<OwnProfilepage />} />
+      <Route path="/videos" element={<VideoPlayer />} />
       <Route path="/saved" element={<SavePage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/settings" element={<SettingPage />} />

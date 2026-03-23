@@ -11,7 +11,7 @@ import escapeStringRegexp from 'escape-string-regexp';
 import fs from "fs"
 import { View } from "../models/views.model.js"
 import Like from "../models/likes.models.js"
-import { log } from "console"
+import { io } from "../socket.js"
 
 const createVideo = asyncHandler(async (req, res) => {
   const { title, description, tags = [], category, isPublished } = req.body;
@@ -378,35 +378,83 @@ const addViews = asyncHandler(async (req, res) => {
 
 
 
+// const toggleLikes = asyncHandler(async (req, res) => {
+//   const userId = req.user?._id;
+//   const {videoId} = req.params; 
+
+
+//   if (!userId || !videoId) {
+//     throw new ApiError(400, "VideoId or UserId not found");
+//   }
+
+
+//   const alreadyLiked = await Like.isLiked(userId, videoId);
+
+//   if (alreadyLiked) {
+
+//     await Like.deleteOne({ user: userId, video: videoId });
+ 
+//     await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
+
+
+//   }
+//    else {
+//     await Like.create({ user: userId, video: videoId });
+//     await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } });
+//   }
+
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, null, "Like toggled successfully"));
+// });
+
+
 const toggleLikes = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-  const {videoId} = req.params; 
-
+  const { videoId } = req.params;
 
   if (!userId || !videoId) {
     throw new ApiError(400, "VideoId or UserId not found");
   }
 
+  let liked;
 
-  const alreadyLiked = await Like.isLiked(userId, videoId);
+  // 1️⃣ Already liked check
+  const existingLike = await Like.findOne({ user: userId, video: videoId });
 
-  if (alreadyLiked) {
-
-    await Like.deleteOne({ user: userId, video: videoId });
- 
-    await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
-
-
-  }
-   else {
+  if (existingLike) {
+    // ❌ UNLIKE
+    await Like.deleteOne({ _id: existingLike._id });
+    await Video.updateOne(
+      { _id: videoId, likes: { $gt: 0 } },
+      { $inc: { likes: -1 } }
+    );
+    liked = false;
+  } else {
+    // ✅ LIKE
     await Like.create({ user: userId, video: videoId });
-    await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } });
+    await Video.updateOne({ _id: videoId }, { $inc: { likes: 1 } });
+    liked = true;
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, null, "Like toggled successfully"));
+  // 🔥 Latest count 
+  const video = await Video.findById(videoId).select("likes");
+
+  // 🔥 Socket emit 
+  if (io) {
+    io.to(`post:${videoId}`).emit("post-reaction-updated", {
+      postId: videoId,
+      likes: video.likes,
+    });
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { liked }, "Like toggled successfully")
+  );
 });
+
+
+
 
 
  const toggleDislike = asyncHandler(async (req, res) => {

@@ -20,27 +20,18 @@ function Navbar() {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  // ✅ Logout Handler (Fully Fixed)
   const handleLogout = async () => {
     try {
-      // 🔐 Backend logout API call
       await axios.post(
         "http://localhost:8000/api/v1/users/logout",
         {},
         { withCredentials: true },
       );
-
-      // 🧹 Redux store clear
       dispatch(resetMyDetails());
       dispatch(resetMyPosts());
-
-      // 🧹 Clear persist cache
       await persistor.purge();
-
       localStorage.clear();
       sessionStorage.clear();
-
-      // 🔁 Redirect to login
       navigate("/");
     } catch (err) {
       console.error("Logout failed:", err.message);
@@ -60,13 +51,10 @@ function Navbar() {
     },
     {
       id: 2,
-      path: "/videos",
+      path: "/videos", // ✅ base path
       icon: <MdOndemandVideo />,
       label: "Videos",
-      onClick: () =>
-        location.pathname === "/videos"
-          ? window.location.reload()
-          : navigate("/videos"),
+      onClick: () => navigate("/videos"), // ✅ সরাসরি navigate
     },
     {
       id: 3,
@@ -92,7 +80,7 @@ function Navbar() {
 
   return (
     <nav className="sticky top-0 w-full bg-slate-700 flex items-center justify-between px-4 h-14 shadow-md z-50">
-      {/* ✅ Logo */}
+      {/* Logo */}
       <p
         className="text-2xl font-semibold italic text-slate-300 hover:bg-slate-900 px-2 py-1 rounded-md cursor-pointer"
         onClick={() =>
@@ -104,15 +92,17 @@ function Navbar() {
         Pluto
       </p>
 
-      {/* ✅ SearchBar */}
+      {/* SearchBar */}
       <div className="flex-1 max-w-md mx-3">
         <SearchBar placeholder="Search..." />
       </div>
 
-      {/* ✅ Desktop Icons */}
+      {/* Desktop Icons */}
       <div className="hidden md:flex items-center gap-30 text-3xl text-slate-300 relative">
         {icons.map((item) => {
-          const isActive = location.pathname === item.path;
+          // ✅ startsWith দিয়ে check — /videos/:id তেও active থাকবে
+          const isActive = location.pathname.startsWith(item.path);
+
           return (
             <div
               key={item.id}
@@ -131,7 +121,7 @@ function Navbar() {
           );
         })}
 
-        {/* ✅ Profile Icon */}
+        {/* Profile Icon */}
         <div className="relative">
           <div
             onClick={() => setShowProfileMenu((prev) => !prev)}
@@ -144,10 +134,8 @@ function Navbar() {
             <RiAccountCircleFill />
           </div>
 
-          {/* ✅ Profile Dropdown */}
           {showProfileMenu && (
             <>
-              {/* Click outside to close */}
               <div
                 className="fixed inset-0 z-40"
                 onClick={() => setShowProfileMenu(false)}
@@ -181,7 +169,7 @@ function Navbar() {
         </div>
       </div>
 
-      {/* ✅ Mobile Menu Button */}
+      {/* Mobile Menu Button */}
       <button
         onClick={() => setShowMenu(!showMenu)}
         className="md:hidden text-3xl mr-2.5 text-slate-300 hover:text-white"
@@ -189,16 +177,14 @@ function Navbar() {
         <TiThMenu />
       </button>
 
-      {/* ✅ Mobile Dropdown */}
+      {/* Mobile Dropdown */}
       {showMenu && (
         <>
-          {/* Background Blur */}
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             onClick={() => setShowMenu(false)}
           ></div>
 
-          {/* Dropdown Content */}
           <div className="absolute top-14 right-4 bg-slate-800 text-gray-100 rounded-xl shadow-lg p-4 w-52 z-50 flex flex-col gap-2 border border-slate-600 animate-fadeIn">
             {icons.map((item) => (
               <button
