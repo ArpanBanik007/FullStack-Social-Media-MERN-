@@ -1,14 +1,22 @@
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 import {
   selectIsVideoLiked,
   toggleVideoLike,
 } from "../slices/video.like.slice";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
 
 function VideoLikeButton({ videoId, likeCount }) {
   const dispatch = useDispatch();
-  const isLiked = useSelector(selectIsVideoLiked(videoId));
-
+  const isLiked = useSelector((state) => {
+    const videos = state.videoLikes.videos;
+    console.log("videos →", videos);
+    console.log("videoId →", videoId);
+    console.log(
+      "match →",
+      videos.some((v) => String(v._id) === String(videoId)),
+    );
+    return videos.some((v) => String(v._id) === String(videoId));
+  });
   return (
     <button
       onClick={() => dispatch(toggleVideoLike(videoId))}

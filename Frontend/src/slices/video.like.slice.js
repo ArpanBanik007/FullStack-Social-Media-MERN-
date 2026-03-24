@@ -12,9 +12,7 @@ export const fetchMyVideoLikes = createAsyncThunk(
       );
       return res.data.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message
-      );
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
@@ -29,12 +27,18 @@ export const toggleVideoLike = createAsyncThunk(
         {},
         { withCredentials: true }
       );
-      return { videoId, liked: res.data?.liked };
+      
+      console.log("res.data.data →", res.data.data); // ← এটা দেখাও একবার
+      
+      const liked = res.data?.data?.liked ?? res.data?.liked;
+      return { videoId: String(videoId), liked };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
+// ── Helper ──
+const normalizeId = (id) => String(id ?? ""); 
 
 const videoLikeSlice = createSlice({
   name: "videoLikes",
@@ -46,10 +50,9 @@ const videoLikeSlice = createSlice({
   },
   reducers: {
     removeFromLikedVideos: (state, action) => {
-      state.videos = state.videos.filter(
-        (video) => video._id !== action.payload
-      );
-      state.totalLikes -= 1;
+      const id = normalizeId(action.payload);
+      state.videos = state.videos.filter((v) => normalizeId(v._id) !== id);
+      if (state.totalLikes > 0) state.totalLikes -= 1; // ✅ negative হবে না
     },
     clearLikedVideos: (state) => {
       state.videos = [];
@@ -67,8 +70,8 @@ const videoLikeSlice = createSlice({
       })
       .addCase(fetchMyVideoLikes.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.videos = action.payload.videos;
-        state.totalLikes = action.payload.totalLikes;
+        state.videos = action.payload.videos ?? []; // ✅ undefined safety
+        state.totalLikes = action.payload.totalLikes ?? 0;
       })
       .addCase(fetchMyVideoLikes.rejected, (state, action) => {
         state.status = "failed";
@@ -77,25 +80,28 @@ const videoLikeSlice = createSlice({
 
       // ── toggleVideoLike ──
       .addCase(toggleVideoLike.fulfilled, (state, action) => {
-        const { videoId, liked } = action.payload;
+        const { videoId, liked } = action.payload; // videoId ইতিমধ্যে String
 
         if (liked) {
-          const exists = state.videos.some((v) => v._id === videoId);
+          const exists = state.videos.some(
+            (v) => normalizeId(v._id) === videoId // ✅
+          );
           if (!exists) {
-            state.videos.push({ _id: videoId });
+            state.videos.push({ _id: videoId }); // ✅ String হিসেবে push
             state.totalLikes += 1;
           }
         } else {
-          state.videos = state.videos.filter((v) => v._id !== videoId);
-          state.totalLikes -= 1;
+          state.videos = state.videos.filter(
+            (v) => normalizeId(v._id) !== videoId // ✅
+          );
+          if (state.totalLikes > 0) state.totalLikes -= 1; // ✅ negative guard
         }
       });
   },
 });
 
-
-
-export const { removeFromLikedVideos, clearLikedVideos } = videoLikeSlice.actions;
+export const { removeFromLikedVideos, clearLikedVideos } =
+  videoLikeSlice.actions;
 export default videoLikeSlice.reducer;
 
 // ── Selectors ──
@@ -104,4 +110,6 @@ export const selectVideoLikeStatus = (state) => state.videoLikes.status;
 export const selectTotalVideoLikes = (state) => state.videoLikes.totalLikes;
 
 export const selectIsVideoLiked = (videoId) => (state) =>
-  state.videoLikes.videos.some((video) => video._id === videoId);
+  state.videoLikes.videos.some(
+    (video) => normalizeId(video._id) === normalizeId(videoId) // ✅
+  );

@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import { fetchMyLikes } from "./slices/like.slice";
 import { fetchMydetils, selectCurrentUser } from "./slices/mydetails.slice";
 import CommentPage from "./Pages/CommentPage";
+import { fetchMyVideoLikes } from "./slices/video.like.slice";
 
 function App() {
   const dispatch = useDispatch();
@@ -28,6 +29,7 @@ function App() {
   useEffect(() => {
     if (currentUser?._id) {
       dispatch(fetchMyLikes());
+      dispatch(fetchMyVideoLikes());
     }
   }, [currentUser]);
 
