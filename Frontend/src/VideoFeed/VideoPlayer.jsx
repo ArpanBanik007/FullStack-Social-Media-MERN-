@@ -223,8 +223,11 @@ function VideoPlayer() {
                     likeCount={video.likes}
                   />
 
-                  <button className="flex flex-col items-center gap-1">
-                    <FaComment className="text-2xl" />
+                  <button
+                    onClick={() => navigate(`/video/comments/${video._id}`)}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <FaComment className="text-xl" /> {video.comments || 0}
                   </button>
 
                   <button className="flex flex-col items-center gap-1">

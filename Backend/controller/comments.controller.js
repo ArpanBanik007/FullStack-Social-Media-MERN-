@@ -3,37 +3,31 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Comment from "../models/comments.models.js"
 import Video from "../models/video.model.js";
+import {io} from "../socket.js";
 
 
- const createComment = asyncHandler(async (req, res) => {
+const createComment = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const { content, parentComment } = req.body;
   const { videoId } = req.params;
 
-
   if (!videoId || !userId || !content || content.trim() === "") {
     throw new ApiError(400, "Video ID, User ID, and valid content are required");
   }
-
 
   const video = await Video.findById(videoId);
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
 
-
   let parent = null;
   if (parentComment) {
     parent = await Comment.findById(parentComment);
-    if (!parent) {
-      throw new ApiError(404, "Parent comment not found");
-    }
-
+    if (!parent) throw new ApiError(404, "Parent comment not found");
     if (String(parent.video) !== videoId) {
       throw new ApiError(400, "Parent comment does not belong to this video");
     }
   }
-
 
   const newComment = await Comment.create({
     content: content.trim(),
@@ -42,16 +36,28 @@ import Video from "../models/video.model.js";
     parentComment: parentComment || null,
   });
 
-  
-  await Video.findByIdAndUpdate(videoId, { $inc: { commentsCount: 1 } });
+  // ✅ Updated count আনো
+  const updatedVideo = await Video.findByIdAndUpdate(
+    videoId,
+    { $inc: { comments: 1 } },
+    { new: true }
+  ).select("comments");
 
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(201, newComment, "Comment posted successfully")
-    );
+  // ✅ user populate করো — frontend এ avatar, username লাগবে
+  await newComment.populate("user", "username avatar");
+
+  // ✅ Socket emit — সবার screen এ count update
+  if (io) {
+    io.to(`post:${videoId}`).emit("comment-count-updated", {
+      postId: videoId,
+      comments: updatedVideo.comments,
+    });
+  }
+
+  return res.status(201).json(
+    new ApiResponse(201, newComment, "Comment posted successfully")
+  );
 });
-
 
 const getAllComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;

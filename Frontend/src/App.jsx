@@ -17,6 +17,7 @@ import { fetchMyLikes } from "./slices/like.slice";
 import { fetchMydetils, selectCurrentUser } from "./slices/mydetails.slice";
 import CommentPage from "./Pages/CommentPage";
 import { fetchMyVideoLikes } from "./slices/video.like.slice";
+import VideoCommentPage from "./Pages/VideoCommentPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -49,6 +50,7 @@ function App() {
       <Route path="/settings/security" element={<SecuritySetting />} />
       <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
       <Route path="/post/:postId" element={<CommentPage />} />
+      <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
       <Route path="/videos/:videoId" element={<VideoPlayer />} />
     </Routes>
   );
