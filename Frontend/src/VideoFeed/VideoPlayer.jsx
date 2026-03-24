@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { FaHeart, FaRegHeart, FaBookmark, FaPlay } from "react-icons/fa";
+import { FaBookmark, FaPlay } from "react-icons/fa";
 import {
   FaComment,
   FaShareNodes,
@@ -10,32 +10,14 @@ import {
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { selectIsPostLiked, toggleLike } from "../slices/like.slice";
-
-function VideoLikeButton({ videoId, likeCount }) {
-  const dispatch = useDispatch();
-  const isLiked = useSelector(selectIsPostLiked(videoId));
-
-  return (
-    <button
-      onClick={() => dispatch(toggleLike(videoId))}
-      className="flex flex-col items-center gap-1"
-    >
-      {isLiked ? (
-        <FaHeart className="text-red-500 text-2xl" />
-      ) : (
-        <FaRegHeart className="text-white text-2xl hover:text-red-400" />
-      )}
-      <span className="text-xs">{likeCount || 0}</span>
-    </button>
-  );
-}
+import { socket } from "../socket"; // ✅ socket
+import VideoLikeButton from "../componants/VideoLikeButton"; // ✅ আলাদা component
 
 function VideoPlayer() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [playingIndex, setPlayingIndex] = useState(null);
-  const [isMuted, setIsMuted] = useState(true); // ✅ global mute state — শুরুতে muted
+  const [isMuted, setIsMuted] = useState(true);
   const videoRefs = useRef([]);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -65,6 +47,30 @@ function VideoPlayer() {
     fetchFeedVideos();
   }, []);
 
+  // ===================== SOCKET JOIN =====================
+  useEffect(() => {
+    if (!videos.length) return;
+    videos.forEach((video) => {
+      socket.emit("join-post", `post:${video._id}`);
+    });
+  }, [videos.length]);
+
+  // ===================== SOCKET REACTION UPDATE =====================
+
+  useEffect(() => {
+    const handleReactionUpdate = (data) => {
+      console.log("Socket data →", data);
+      setVideos((prev) =>
+        prev.map((video) =>
+          video._id === data.postId ? { ...video, likes: data.likes } : video,
+        ),
+      );
+    };
+
+    socket.on("post-reaction-updated", handleReactionUpdate);
+    return () => socket.off("post-reaction-updated", handleReactionUpdate);
+  }, []);
+
   // ===================== AUTO PLAY ON SCROLL =====================
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -74,12 +80,11 @@ function VideoPlayer() {
           const index = videoRefs.current.indexOf(videoEl);
 
           if (entry.isIntersecting) {
-            // ✅ সব video মুছে নতুনটা play করো
             videoRefs.current.forEach((v) => {
               if (v && v !== videoEl) v.pause();
             });
 
-            videoEl.muted = isMuted; // ✅ current mute state apply করো
+            videoEl.muted = isMuted;
             videoEl.play().catch(() => {});
             setPlayingIndex(index);
 
@@ -99,9 +104,9 @@ function VideoPlayer() {
     });
 
     return () => observer.disconnect();
-  }, [videos, isMuted]); // ✅ isMuted dependency যোগ করো
+  }, [videos, isMuted]);
 
-  // ✅ Play/Pause toggle
+  // ===================== PLAY/PAUSE =====================
   const handlePlayPause = (index) => {
     const videoEl = videoRefs.current[index];
     if (!videoEl) return;
@@ -115,12 +120,10 @@ function VideoPlayer() {
     }
   };
 
-  // ✅ Global Mute/Unmute — সব video একসাথে
+  // ===================== MUTE/UNMUTE =====================
   const handleMuteToggle = () => {
     const newMuted = !isMuted;
     setIsMuted(newMuted);
-
-    // সব video এর mute state বদলাও
     videoRefs.current.forEach((videoEl) => {
       if (videoEl) videoEl.muted = newMuted;
     });
@@ -133,7 +136,7 @@ function VideoPlayer() {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-900">
       <div className="w-full max-w-[430px] h-[95vh] bg-black rounded-xl overflow-hidden relative">
-        {/* ✅ Mute button — উপরে ডানে, সবার বাইরে */}
+        {/* Mute Button */}
         <div className="absolute top-4 right-4 z-50">
           <button
             onClick={handleMuteToggle}
@@ -165,14 +168,14 @@ function VideoPlayer() {
                   ref={(el) => (videoRefs.current[index] = el)}
                   src={videoSrc}
                   className="h-full w-full object-cover"
-                  muted // ✅ শুরুতে muted — browser policy
+                  muted
                   loop
                   playsInline
                   preload="metadata"
                   onClick={() => handlePlayPause(index)}
                 />
 
-                {/* PLAY OVERLAY — pause হলে দেখাবে */}
+                {/* PLAY OVERLAY */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   {!isPlaying && (
                     <div className="bg-black bg-opacity-40 rounded-full p-4">
@@ -212,8 +215,9 @@ function VideoPlayer() {
                   )}
                 </div>
 
-                {/* RIGHT ACTIONS — Like, Comment, Share, Save */}
+                {/* RIGHT ACTIONS */}
                 <div className="absolute right-4 bottom-24 flex flex-col gap-6 text-white text-xl">
+                  {/* ✅ আলাদা component */}
                   <VideoLikeButton
                     videoId={video._id}
                     likeCount={video.likes}

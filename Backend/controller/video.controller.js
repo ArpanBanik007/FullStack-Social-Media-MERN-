@@ -5,6 +5,7 @@ import ApiResponse from "../utils/ApiResponse.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
  import { uploadVideoOnCloudinary } from "../utils/cloudinary.video.js"
 import Video from "../models/video.model.js"
+import VideoLike from "../models/videoLike.models.js"
 import { deleteFromCloudinary } from "../utils/deleteFromCloudynary.js"
 import { getVideoDurationInSeconds } from "get-video-duration"
 import escapeStringRegexp from 'escape-string-regexp';
@@ -244,7 +245,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 
 const getShortsFeed = asyncHandler(async (req, res) => {
-  const userId = req.user?._id; // ✅ logged in user
+  const userId = req.user?._id;
   const { lastVideoId, limit = 10, search = "", category = "" } = req.query;
   const parsedLimit = Math.min(Math.max(parseInt(limit), 1), 50);
 
@@ -275,17 +276,17 @@ const getShortsFeed = asyncHandler(async (req, res) => {
       },
     },
     { $unwind: "$createdBy" },
-    // ✅ userLiked check
+    // ✅ videolikes collection দিয়ে check
     {
       $lookup: {
-        from: "likes",
+        from: "videolikes",
         let: { videoId: "$_id", userId: userId },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["$post", "$$videoId"] },
+                  { $eq: ["$video", "$$videoId"] }, // ✅ video field
                   { $eq: ["$user", "$$userId"] },
                 ],
               },
@@ -310,7 +311,7 @@ const getShortsFeed = asyncHandler(async (req, res) => {
         createdAt: 1,
         category: 1,
         createdBy: { _id: 1, username: 1, avatar: 1 },
-        userLiked: 1, // ✅
+        userLiked: 1,
       },
     },
   ]);
@@ -319,7 +320,6 @@ const getShortsFeed = asyncHandler(async (req, res) => {
     new ApiResponse(200, { videos }, "Shorts feed loaded successfully")
   );
 });
-
 
 const getSingleVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -408,7 +408,6 @@ const addViews = asyncHandler(async (req, res) => {
 //     .json(new ApiResponse(200, null, "Like toggled successfully"));
 // });
 
-
 const toggleLikes = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const { videoId } = req.params;
@@ -419,28 +418,24 @@ const toggleLikes = asyncHandler(async (req, res) => {
 
   let liked;
 
-  // 1️⃣ Already liked check
-  const existingLike = await Like.findOne({ user: userId, video: videoId });
+  // ✅ VideoLike model দিয়ে check
+  const existingLike = await VideoLike.findOne({ user: userId, video: videoId });
 
   if (existingLike) {
-    // ❌ UNLIKE
-    await Like.deleteOne({ _id: existingLike._id });
+    await VideoLike.deleteOne({ _id: existingLike._id }); // ✅
     await Video.updateOne(
       { _id: videoId, likes: { $gt: 0 } },
       { $inc: { likes: -1 } }
     );
     liked = false;
   } else {
-    // ✅ LIKE
-    await Like.create({ user: userId, video: videoId });
+    await VideoLike.create({ user: userId, video: videoId }); // ✅
     await Video.updateOne({ _id: videoId }, { $inc: { likes: 1 } });
     liked = true;
   }
 
-  // 🔥 Latest count 
   const video = await Video.findById(videoId).select("likes");
 
-  // 🔥 Socket emit 
   if (io) {
     io.to(`post:${videoId}`).emit("post-reaction-updated", {
       postId: videoId,
@@ -489,6 +484,64 @@ const toggleLikes = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, null, "Disliked the video"));
   }
 });  
+
+
+const getMyAllLikedVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(401, "Unauthorized - User not found");
+
+  // ✅ VideoLike দিয়ে count
+  const totalLikes = await VideoLike.countDocuments({ user: userId });
+
+  if (totalLikes === 0) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { videos: [], totalLikes: 0, totalPages: 0, currentPage: page },
+        "No liked videos found"
+      )
+    );
+  }
+
+  // ✅ VideoLike দিয়ে find
+  const likedVideos = await VideoLike.find({ user: userId })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate({
+      path: "video",
+      select: "title videourl thumbnail likes createdAt createdBy",
+      populate: {
+        path: "createdBy",
+        select: "username fullName avatar",
+      },
+    })
+    .lean();
+
+  const validVideos = likedVideos
+    .filter((like) => like.video !== null)
+    .map((like) => like.video);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        videos: validVideos,
+        totalLikes,
+        totalPages: Math.ceil(totalLikes / limit),
+        currentPage: page,
+      },
+      "Liked videos fetched successfully"
+    )
+  );
+});
+
+
 export{
   createVideo,
   updateVideo,
@@ -499,6 +552,7 @@ export{
   toggleLikes,
   toggleDislike,
   getSingleVideo,
+  getMyAllLikedVideos
   
 
 
