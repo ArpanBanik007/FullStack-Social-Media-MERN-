@@ -3,8 +3,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Comment from "../models/comments.models.js"
 import Video from "../models/video.model.js";
-import {io} from "../socket.js";
-
+import {io} from "../socket.js"
 
 const createComment = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -16,9 +15,7 @@ const createComment = asyncHandler(async (req, res) => {
   }
 
   const video = await Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(404, "Video not found");
-  }
+  if (!video) throw new ApiError(404, "Video not found");
 
   let parent = null;
   if (parentComment) {
@@ -36,28 +33,33 @@ const createComment = asyncHandler(async (req, res) => {
     parentComment: parentComment || null,
   });
 
-  // ✅ Updated count আনো
+  const populatedComment = await newComment.populate("user", "username avatar");
+
   const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
     { $inc: { comments: 1 } },
     { new: true }
-  ).select("comments");
+  );
 
-  // ✅ user populate করো — frontend এ avatar, username লাগবে
-  await newComment.populate("user", "username avatar");
+  // ✅ video room এ emit করো
+  const room = `video:${videoId}`;
+console.log("Room →", room);
+console.log("Rooms in server →", [...io.sockets.adapter.rooms.keys()]);
 
-  // ✅ Socket emit — সবার screen এ count update
   if (io) {
-    io.to(`post:${videoId}`).emit("comment-count-updated", {
-      postId: videoId,
+    io.to(room).emit("comment-count-updated", {
+      videoId,                          // ✅ postId → videoId
       comments: updatedVideo.comments,
     });
+    io.to(room).emit("new-comment", populatedComment);
   }
 
   return res.status(201).json(
-    new ApiResponse(201, newComment, "Comment posted successfully")
+    new ApiResponse(201, populatedComment, "Comment posted successfully")
   );
 });
+
+
 
 const getAllComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;

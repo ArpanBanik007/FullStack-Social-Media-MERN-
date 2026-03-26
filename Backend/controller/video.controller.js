@@ -12,7 +12,8 @@ import escapeStringRegexp from 'escape-string-regexp';
 import fs from "fs"
 import { View } from "../models/views.model.js"
 import Like from "../models/likes.models.js"
-import { io } from "../socket.js"
+import { io } from "../socket.js";
+import mongoose from "mongoose";
 
 const createVideo = asyncHandler(async (req, res) => {
   const { title, description, tags = [], category, isPublished } = req.body;
@@ -308,6 +309,7 @@ const getShortsFeed = asyncHandler(async (req, res) => {
         thumbnail: 1,
         views: 1,
         likes: 1,
+        comments:1,
         createdAt: 1,
         category: 1,
         createdBy: { _id: 1, username: 1, avatar: 1 },
@@ -417,19 +419,17 @@ const toggleLikes = asyncHandler(async (req, res) => {
   }
 
   let liked;
-
-  // ✅ VideoLike model দিয়ে check
   const existingLike = await VideoLike.findOne({ user: userId, video: videoId });
 
   if (existingLike) {
-    await VideoLike.deleteOne({ _id: existingLike._id }); // ✅
+    await VideoLike.deleteOne({ _id: existingLike._id });
     await Video.updateOne(
       { _id: videoId, likes: { $gt: 0 } },
       { $inc: { likes: -1 } }
     );
     liked = false;
   } else {
-    await VideoLike.create({ user: userId, video: videoId }); // ✅
+    await VideoLike.create({ user: userId, video: videoId });
     await Video.updateOne({ _id: videoId }, { $inc: { likes: 1 } });
     liked = true;
   }
@@ -437,8 +437,8 @@ const toggleLikes = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId).select("likes");
 
   if (io) {
-    io.to(`post:${videoId}`).emit("post-reaction-updated", {
-      postId: videoId,
+    io.to(`video:${videoId}`).emit("video-reaction-updated", { // ✅ আলাদা event
+      videoId,
       likes: video.likes,
     });
   }
@@ -447,8 +447,6 @@ const toggleLikes = asyncHandler(async (req, res) => {
     new ApiResponse(200, { liked }, "Like toggled successfully")
   );
 });
-
-
 
 
 

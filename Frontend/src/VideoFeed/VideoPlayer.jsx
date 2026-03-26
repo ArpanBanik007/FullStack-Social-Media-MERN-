@@ -51,24 +51,41 @@ function VideoPlayer() {
   useEffect(() => {
     if (!videos.length) return;
     videos.forEach((video) => {
-      socket.emit("join-post", `post:${video._id}`);
+      socket.emit("join-video", `video:${video._id}`); // ✅ join-video event
     });
   }, [videos.length]);
 
   // ===================== SOCKET REACTION UPDATE =====================
-
   useEffect(() => {
     const handleReactionUpdate = (data) => {
-      console.log("Socket data →", data);
       setVideos((prev) =>
         prev.map((video) =>
-          video._id === data.postId ? { ...video, likes: data.likes } : video,
+          video._id === data.videoId // ✅ videoId দিয়ে match
+            ? { ...video, likes: data.likes }
+            : video,
         ),
       );
     };
 
-    socket.on("post-reaction-updated", handleReactionUpdate);
-    return () => socket.off("post-reaction-updated", handleReactionUpdate);
+    // ✅ আলাদা event
+    socket.on("video-reaction-updated", handleReactionUpdate);
+    return () => socket.off("video-reaction-updated", handleReactionUpdate);
+  }, []);
+
+  // ===================== COMMENT COUNT LISTENER =====================
+  useEffect(() => {
+    const handleCommentCountUpdate = ({ videoId, comments }) => {
+      setVideos((prev) =>
+        prev.map((video) =>
+          video._id === videoId // ✅ videoId দিয়ে match
+            ? { ...video, comments }
+            : video,
+        ),
+      );
+    };
+
+    socket.on("comment-count-updated", handleCommentCountUpdate);
+    return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
 
   // ===================== AUTO PLAY ON SCROLL =====================
