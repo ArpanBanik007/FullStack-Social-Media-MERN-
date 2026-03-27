@@ -10,8 +10,10 @@ import {
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { socket } from "../socket"; // ✅ socket
-import VideoLikeButton from "../componants/VideoLikeButton"; // ✅ আলাদা component
+import { socket } from "../socket";
+import VideoLikeButton from "../componants/VideoLikeButton";
+import FollowButton from "../componants/FollowButton"; // ✅
+import { fetchMyFollowings } from "../slices/follow.slice"; // ✅
 
 function VideoPlayer() {
   const [videos, setVideos] = useState([]);
@@ -22,6 +24,12 @@ function VideoPlayer() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { mydetails } = useSelector((state) => state.mydetails);
+  const followings = useSelector((state) => state.follow.followings); // ✅
+
+  // ===================== FETCH FOLLOWINGS =====================
+  useEffect(() => {
+    dispatch(fetchMyFollowings()); // ✅
+  }, [dispatch]);
 
   // ===================== FETCH VIDEOS =====================
   useEffect(() => {
@@ -51,7 +59,7 @@ function VideoPlayer() {
   useEffect(() => {
     if (!videos.length) return;
     videos.forEach((video) => {
-      socket.emit("join-video", `video:${video._id}`); // ✅ join-video event
+      socket.emit("join-video", `video:${video._id}`);
     });
   }, [videos.length]);
 
@@ -60,14 +68,11 @@ function VideoPlayer() {
     const handleReactionUpdate = (data) => {
       setVideos((prev) =>
         prev.map((video) =>
-          video._id === data.videoId // ✅ videoId দিয়ে match
-            ? { ...video, likes: data.likes }
-            : video,
+          video._id === data.videoId ? { ...video, likes: data.likes } : video,
         ),
       );
     };
 
-    // ✅ আলাদা event
     socket.on("video-reaction-updated", handleReactionUpdate);
     return () => socket.off("video-reaction-updated", handleReactionUpdate);
   }, []);
@@ -77,9 +82,7 @@ function VideoPlayer() {
     const handleCommentCountUpdate = ({ videoId, comments }) => {
       setVideos((prev) =>
         prev.map((video) =>
-          video._id === videoId // ✅ videoId দিয়ে match
-            ? { ...video, comments }
-            : video,
+          video._id === videoId ? { ...video, comments } : video,
         ),
       );
     };
@@ -154,7 +157,9 @@ function VideoPlayer() {
     <div className="flex justify-center items-center h-screen bg-gray-900">
       <div className="w-full max-w-[430px] h-[95vh] bg-black rounded-xl overflow-hidden relative">
         {/* Mute Button */}
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-4 right-16 z-50">
+          {" "}
+          {/* ✅ right বদলালো */}
           <button
             onClick={handleMuteToggle}
             className="bg-black bg-opacity-50 rounded-full p-2"
@@ -174,6 +179,13 @@ function VideoPlayer() {
               ?.replace("http://", "https://");
 
             const isPlaying = playingIndex === index;
+
+            // ✅ Follow check
+            const isOwnVideo =
+              String(video?.createdBy?._id) === String(mydetails?._id);
+            const isFollowing = followings?.includes(
+              String(video?.createdBy?._id),
+            );
 
             return (
               <div
@@ -202,29 +214,40 @@ function VideoPlayer() {
                 </div>
 
                 {/* LEFT INFO */}
-                <div className="absolute bottom-20 left-4 text-white max-w-[70%]">
-                  <div
-                    className="flex items-center gap-2 mb-2 cursor-pointer"
-                    onClick={() => {
-                      if (video?.createdBy?._id === mydetails?._id) {
-                        navigate("/profile");
-                      } else {
-                        navigate(`/profile/${video?.createdBy?._id}`);
-                      }
-                    }}
-                  >
-                    {video.createdBy?.avatar ? (
-                      <img
-                        src={video.createdBy.avatar}
-                        className="w-8 h-8 rounded-full object-cover"
-                        alt="avatar"
+                <div className="absolute bottom-20 left-4 text-white max-w-[65%]">
+                  {/* ✅ avatar + username + follow একই row এ */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => {
+                        if (isOwnVideo) {
+                          navigate("/profile");
+                        } else {
+                          navigate(`/profile/${video?.createdBy?._id}`);
+                        }
+                      }}
+                    >
+                      {video.createdBy?.avatar ? (
+                        <img
+                          src={video.createdBy.avatar}
+                          className="w-8 h-8 rounded-full object-cover"
+                          alt="avatar"
+                        />
+                      ) : (
+                        <RiAccountCircleFill className="text-3xl" />
+                      )}
+                      <p className="font-semibold">
+                        @{video.createdBy?.username}
+                      </p>
+                    </div>
+
+                    {/* ✅ username এর পাশে, gap-2 দিয়ে */}
+                    {!isOwnVideo && (
+                      <FollowButton
+                        userId={String(video?.createdBy?._id)}
+                        isFollowedByBackend={isFollowing}
                       />
-                    ) : (
-                      <RiAccountCircleFill className="text-3xl" />
                     )}
-                    <p className="font-semibold">
-                      @{video.createdBy?.username}
-                    </p>
                   </div>
 
                   {video.title && (
@@ -234,7 +257,6 @@ function VideoPlayer() {
 
                 {/* RIGHT ACTIONS */}
                 <div className="absolute right-4 bottom-24 flex flex-col gap-6 text-white text-xl">
-                  {/* ✅ আলাদা component */}
                   <VideoLikeButton
                     videoId={video._id}
                     likeCount={video.likes}
@@ -244,7 +266,8 @@ function VideoPlayer() {
                     onClick={() => navigate(`/video/comments/${video._id}`)}
                     className="flex flex-col items-center gap-1"
                   >
-                    <FaComment className="text-xl" /> {video.comments || 0}
+                    <FaComment className="text-xl cursor-pointer" />
+                    <span className="text-xs">{video.comments || 0}</span>
                   </button>
 
                   <button className="flex flex-col items-center gap-1">

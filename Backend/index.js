@@ -8,12 +8,10 @@ dotenv.config({
 })
 
 
+
 const httpServer= http.createServer(app)
 
 initSocket(httpServer)
-
-
-
 
 
 connectDB()
