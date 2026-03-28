@@ -1,70 +1,83 @@
-import React from "react";
-import myVideo from "../assets/myvideo.mp4";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function AllVideos() {
-  const videos = [
-    {
-      id: 1,
-      time: "1d ago",
-      text: "My new painting 🎨",
-      videoUrl: myVideo,
-    },
-    {
-      id: 2,
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-      time: "2d ago",
-      text: "Chilling with friends 😎",
-      videoUrl: myVideo,
-    },
-    {
-      id: 3,
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:8000/api/v1/videos/myvideos",
+          { withCredentials: true },
+        );
+        setVideos(res.data?.data?.videos || []);
+      } catch (err) {
+        console.error("Video fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVideos();
+  }, []);
 
-      time: "3d ago",
-      text: "Nature vibes 🌿",
-      videoUrl: myVideo,
-    },
-    {
-      id: 4,
-      time: "4d ago",
-      text: "New artwork 🖌️",
-      videoUrl: myVideo,
-    },
-    {
-      id: 5,
-      time: "5d ago",
-      text: "Travel diaries ✈️",
-      videoUrl: "https://youtu.be/udgrClXV26Y", // ✅ YouTube short link
-    },
-  ];
+  if (loading) {
+    return (
+      <div className="text-center text-gray-400 py-10">Loading videos...</div>
+    );
+  }
+
+  if (videos.length === 0) {
+    return (
+      <div className="text-center text-gray-400 py-10">No videos yet 😕</div>
+    );
+  }
+
   return (
-    <div className="flex flex-col space-y-4">
-      {videos.map((video) => (
-        <div
-          key={video.id}
-          className="h-80 flex justify-center items-center bg-slate-800 rounded-md"
-        >
-          <div className="h-[95%] w-[96%] flex justify-center items-center bg-black rounded-xl">
-            <video
-              src={video.videoUrl}
-              controls
-              className="w-full h-full object-contain rounded-2xl"
-            />
+    <div className="grid grid-cols-2 gap-2">
+      {videos.map((video) => {
+        const videoSrc = video.videourl
+          ?.replace("/upload/", "/upload/f_mp4,vc_h264/")
+          ?.replace("http://", "https://");
+
+        return (
+          <div
+            key={video._id}
+            className="relative bg-black rounded-xl overflow-hidden cursor-pointer aspect-[9/16]"
+            onClick={() => navigate(`/video/comments/${video._id}`)}
+          >
+            {/* Thumbnail বা Video */}
+            {video.thumbnail ? (
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <video
+                src={videoSrc}
+                className="w-full h-full object-cover"
+                preload="metadata"
+              />
+            )}
+
+            {/* Title overlay */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
+              <p className="text-white text-xs font-medium line-clamp-2">
+                {video.title}
+              </p>
+              <p className="text-gray-400 text-xs mt-1">
+                {video.likes || 0} likes
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
-
-/**    <div
-       className="h-80 flex justify-center items-center bg-slate-800 rounded-md">
-        <div className="h-[95%] w-[96%] flex justify-center items-center bg-black rounded-xl">
-          <video
-            src={myVideo}
-            controls
-            className="w-full h-full object-contain rounded-2xl"
-          />
-        </div>
-      </div> */
 
 export default AllVideos;

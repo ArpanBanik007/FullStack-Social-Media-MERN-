@@ -1,23 +1,21 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { FaHeart, FaComment, FaShareNodes } from "react-icons/fa6";
-import { IoMdHeartDislike } from "react-icons/io";
 import { PiDotsThreeBold } from "react-icons/pi";
+import { useNavigate } from "react-router-dom";
 
 const AllSaved = () => {
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
-
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
-  // Fetch saved items
   useEffect(() => {
     const fetchSaved = async () => {
       try {
         const res = await axios.get(
           "http://localhost:8000/api/v1/watch/watchlater",
-          { withCredentials: true }
+          { withCredentials: true },
         );
         setSavedItems(res.data?.data || []);
       } catch (error) {
@@ -26,36 +24,34 @@ const AllSaved = () => {
         setLoading(false);
       }
     };
-
     fetchSaved();
   }, []);
 
-  // Toggle menu for each item
-  const toggleSaveMenu = (id) => {
-    setOpenMenuId((prev) => (prev === id ? null : id));
-  };
-
-  // Remove from watch later
   const handleRemoveWatchLater = async (savedItemId) => {
     try {
       await axios.delete("http://localhost:8000/api/v1/watch/watchlater", {
         data: { savedItemId },
         withCredentials: true,
       });
-
       setSavedItems((prev) => prev.filter((item) => item._id !== savedItemId));
-
-      alert("Removed from Watch Later");
+      setOpenMenuId(null);
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.message || "Failed to remove");
+    }
+  };
+
+  const handleClick = (item) => {
+    if (item.postId?._id) {
+      navigate(`/post/${item.postId._id}`);
+    } else if (item.videoId?._id) {
+      navigate(`/video/comments/${item.videoId._id}`);
     }
   };
 
   if (loading) {
     return (
       <div className="text-center text-gray-400 py-10 text-lg">
-        Loading your saved items...
+        Loading saved items...
       </div>
     );
   }
@@ -63,7 +59,7 @@ const AllSaved = () => {
   if (savedItems.length === 0) {
     return (
       <div className="text-center text-gray-200 py-10 text-lg">
-        You haven’t saved anything yet.
+        Nothing saved yet 😕
       </div>
     );
   }
@@ -75,88 +71,108 @@ const AllSaved = () => {
         const video = item.videoId;
         const createdBy = post?.createdBy || video?.createdBy;
 
+        const videoSrc = video?.videourl
+          ?.replace("http://", "https://")
+          ?.replace("/upload/", "/upload/f_mp4,vc_h264/");
+
         return (
           <div
             key={item._id}
-            className="relative bg-white dark:bg-slate-800 w-full max-w-xl mx-auto mt-4 border rounded-xl shadow-md mb-6 hover:shadow-lg"
+            className="relative bg-white dark:bg-slate-800 w-full max-w-xl mx-auto mt-4 border rounded-xl shadow-md mb-6 overflow-hidden"
           >
-            {/* Header */}
+            {/* HEADER */}
             <div className="flex items-center justify-between p-3">
               <div className="flex items-center">
                 <img
                   src={createdBy?.avatar || "https://via.placeholder.com/40"}
                   alt="avatar"
-                  className="h-10 w-10 rounded-full border"
+                  className="h-10 w-10 rounded-full border object-cover"
                 />
                 <div className="ml-3">
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                    {createdBy?.username || "Unknown User"}
+                    {createdBy?.username || "Unknown"}
                   </h3>
+                  <span className="text-xs text-gray-400">
+                    {post ? "📷 Post" : "🎬 Video"}
+                  </span>
                 </div>
               </div>
 
               <PiDotsThreeBold
                 className="text-2xl text-gray-400 cursor-pointer hover:text-gray-200"
-                onClick={() => toggleSaveMenu(item._id)}
+                onClick={() =>
+                  setOpenMenuId(openMenuId === item._id ? null : item._id)
+                }
               />
             </div>
 
-            {/* Content */}
-            <div className="px-3 pb-3">
-              {post?.title && (
-                <p className="mb-2 font-semibold text-gray-800 dark:text-gray-100">
-                  {post.title}
-                </p>
+            {/* CONTENT */}
+            <div className="cursor-pointer" onClick={() => handleClick(item)}>
+              {/* POST — 16:9 ratio */}
+              {post && (
+                <>
+                  {post.title && (
+                    <p className="px-3 mb-2 font-semibold text-gray-800 dark:text-gray-100">
+                      {post.title}
+                    </p>
+                  )}
+                  {post.posturl && (
+                    // ✅ 16:9 ratio box
+                    <div
+                      className="relative w-full"
+                      style={{ paddingTop: "56.25%" }}
+                    >
+                      <img
+                        src={post.posturl}
+                        alt="post"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </>
               )}
 
-              {post?.posturl && (
-                <img
-                  src={post.posturl}
-                  alt="Saved Post"
-                  className="w-full max-h-80 rounded-md object-contain"
-                />
-              )}
-
-              {video?.videoUrl && (
-                <video
-                  controls
-                  className="w-full rounded-md max-h-80 object-contain mt-2"
-                >
-                  <source src={video.videoUrl} type="video/mp4" />
-                </video>
+              {/* VIDEO — 16:9 ratio */}
+              {video && (
+                <>
+                  {video.title && (
+                    <p className="px-3 mb-2 font-semibold text-gray-800 dark:text-gray-100">
+                      {video.title}
+                    </p>
+                  )}
+                  {/* ✅ 16:9 ratio box */}
+                  <div
+                    className="relative w-full"
+                    style={{ paddingTop: "56.25%" }}
+                  >
+                    <video
+                      src={`${videoSrc}#t=0.1`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      preload="metadata"
+                      muted
+                    />
+                    {/* Play icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black bg-opacity-50 rounded-full p-3">
+                        <span className="text-white text-xl">▶</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="border-t flex justify-around py-2 text-gray-400 text-sm">
-              <button className="flex items-center gap-1 hover:text-red-500">
-                <FaHeart /> Like
-              </button>
-
-              <button className="flex items-center gap-1 hover:text-violet-900">
-                <IoMdHeartDislike /> Dislike
-              </button>
-
-              <button className="flex items-center gap-1 hover:text-green-500">
-                <FaComment /> Comment
-              </button>
-
-              <button className="flex items-center gap-1 hover:text-purple-600">
-                <FaShareNodes /> Share
-              </button>
-            </div>
-
-            {/* Menu */}
+            {/* 3 DOT MENU */}
             {openMenuId === item._id && (
               <div
                 ref={menuRef}
-                className="absolute top-14 right-4 bg-slate-800 text-gray-100 rounded-xl shadow-lg p-3 w-48 z-50 flex flex-col gap-2 border border-slate-600"
+                className="absolute top-14 right-4 bg-slate-800 text-gray-100 rounded-xl shadow-lg p-3 w-40 z-50 border border-slate-600"
               >
                 <button
-                  className="flex items-center gap-3 hover:bg-slate-700 p-2 rounded-lg text-red-400 hover:text-red-200"
+                  className="flex items-center gap-2 w-full hover:bg-slate-700 p-2 rounded-lg text-red-400"
                   onClick={() => handleRemoveWatchLater(item._id)}
                 >
-                  Remove
+                  🗑 Remove
                 </button>
               </div>
             )}

@@ -7,7 +7,7 @@ import { generateOTP, sendOTPEmail } from "../services/email.services.js"
 import getLocationFromIP from "../utils/getLocationFromIP.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import mongoose from "mongoose"
-import Follow from "../models/folllow.models.js"
+import {Follow} from "../models/folllow.models.js"
 
 
 

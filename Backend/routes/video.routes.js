@@ -13,6 +13,8 @@ import {
   toggleLikes,
   toggleDislike,
   getSingleVideo,
+  getMyAllVideos,
+  getClickedUserAllVideos,
 } from "../controller/video.controller.js";
 
 const router = Router();
@@ -45,6 +47,9 @@ router.delete("/:videoId", verifyJWT, deleteVideo);
 // ✅ Get shorts feed with optional search & category
 router.get("/feed", getShortsFeed);
 
+router.get("/myvideos", verifyJWT, getMyAllVideos);
+router.get("/user/:userId/videos", verifyJWT, getClickedUserAllVideos);
+
 // ✅ Get a single video by ID
 router.get("/:videoId", getSingleVideo);
 
@@ -56,5 +61,7 @@ router.post("/like/:videoId", verifyJWT, toggleLikes);
 
 // ✅ Dislike / Remove dislike
 router.post("/dislike/:videoId", verifyJWT, toggleDislike);
+
+
 
 export default router;

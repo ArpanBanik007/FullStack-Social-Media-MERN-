@@ -327,9 +327,9 @@ const getSingleVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
   // 1. ID validation
-  if (!mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(400, "Invalid Video ID"); 
-  }
+  // if (!mongoose.Types.ObjectId.isValid(videoId)) {
+  //   throw new ApiError(400, "Invalid Video ID"); 
+  // }
 
 
   const video = await Video.findById(videoId)
@@ -540,6 +540,78 @@ const getMyAllLikedVideos = asyncHandler(async (req, res) => {
 });
 
 
+const getMyAllVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(401, "Unauthorized");
+
+  const [videos, totalVideos] = await Promise.all([
+    Video.find({ createdBy: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("createdBy", "username avatar fullName")
+      .lean(),
+    Video.countDocuments({ createdBy: userId }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        videos,
+        totalVideos,
+        totalPages: Math.ceil(totalVideos / limit),
+        currentPage: page,
+      },
+      totalVideos === 0 ? "No videos found" : "Videos fetched successfully"
+    )
+  );
+});
+
+
+const getClickedUserAllVideos = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(400, "User ID is required");
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+
+  const userExists = await User.exists({ _id: userId });
+  if (!userExists) throw new ApiError(404, "User not found");
+
+  const [videos, totalVideos] = await Promise.all([
+    Video.find({ createdBy: userId, isPublished: true })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("createdBy", "username avatar fullName")
+      .lean(),
+    Video.countDocuments({ createdBy: userId, isPublished: true }),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        videos,
+        totalVideos,
+        totalPages: Math.ceil(totalVideos / limit),
+        currentPage: page,
+      },
+      totalVideos === 0 ? "No videos found" : "Videos fetched successfully"
+    )
+  );
+});
+
+
 export{
   createVideo,
   updateVideo,
@@ -550,8 +622,9 @@ export{
   toggleLikes,
   toggleDislike,
   getSingleVideo,
-  getMyAllLikedVideos
-  
+  getMyAllLikedVideos,
+  getMyAllVideos,
+  getClickedUserAllVideos,
 
 
 }

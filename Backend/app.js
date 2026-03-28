@@ -2,7 +2,7 @@ import cookieParser from "cookie-parser";
 import express from "express"
 import cors from "cors"
 
-const app= express();
+const app = express();
 
 
 // cors frontend
@@ -20,7 +20,7 @@ app.use(express.static("public"))// Access for public file data to server
 app.use(cookieParser())
 
 // importing routes
-import  userRoute from "./routes/user.routes.js"
+import userRoute from "./routes/user.routes.js"
 import followRoute from "./routes/follow.routes.js"
 import postRoute from "./routes/post.routes.js"
 import likesRoute from "./routes/like.routes.js"
@@ -33,7 +33,7 @@ import postcommentsRoutes from "./routes/post.comment.routes.js"
 
 // routes decleartion
 
-app.use("/api/v1/users", userRoute); 
+app.use("/api/v1/users", userRoute);
 app.use("/api/v1/users/interactions", followRoute);
 app.use("/api/v1/posts", postRoute);
 app.use("/api/v1/likes", likesRoute);
@@ -49,6 +49,3 @@ app.use("/api/v1/posts/comments", postcommentsRoutes);
 
 
 export default app;
-
-
-

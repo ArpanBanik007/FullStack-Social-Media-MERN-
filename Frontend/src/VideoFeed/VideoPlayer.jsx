@@ -91,6 +91,21 @@ function VideoPlayer() {
     return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
 
+  // ✅ handleSaveVideo function
+  const handleSaveVideo = async (videoId) => {
+    try {
+      const res = await axios.post(
+        "http://localhost:8000/api/v1/watch/watchlater",
+        { videoId }, // ✅ videoId পাঠাচ্ছো
+        { withCredentials: true },
+      );
+      alert(res.data?.message || "Saved ✅");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed ❌");
+    }
+  };
+
   // ===================== AUTO PLAY ON SCROLL =====================
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -274,7 +289,10 @@ function VideoPlayer() {
                     <FaShareNodes className="text-2xl" />
                   </button>
 
-                  <button className="flex flex-col items-center gap-1">
+                  <button
+                    className="flex flex-col items-center gap-1"
+                    onClick={() => handleSaveVideo(video._id)}
+                  >
                     <FaBookmark className="text-2xl" />
                   </button>
                 </div>
