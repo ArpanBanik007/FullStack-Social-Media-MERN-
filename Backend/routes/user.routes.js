@@ -13,6 +13,10 @@ import { registerUser,
          getCurrentUser,
          refreshAccessToken,
          getClickedUserDetails,
+         getMyFollowers,
+         getMyFollowings,
+         getClickedUserFollowers,
+         getClickedUserFollowings,
          
 
 
@@ -53,6 +57,16 @@ router.route("/refresh-token").post(refreshAccessToken)
 
 router.route("/sendOTP").post(sendOTP)
 router.route("/verifyOTP").post(verifyOTP)
+
+
+
+// Logged in user
+router.get("/my-followers", verifyJWT, getMyFollowers);
+router.get("/my-followings", verifyJWT, getMyFollowings);
+
+// For user
+router.get("/:userId/followers", verifyJWT, getClickedUserFollowers);
+router.get("/:userId/followings", verifyJWT, getClickedUserFollowings);
 
 
 router.route("/change-password").post(verifyJWT,changeCurrentPassword)
