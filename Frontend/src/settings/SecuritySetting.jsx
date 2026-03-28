@@ -3,56 +3,59 @@ import Navbar from "../home/Navbar";
 
 function SecuritySetting() {
   return (
-    <div className="bg-slate-800 min-h-screen  flex flex-col ">
+    <div className="bg-gray-950 min-h-screen flex flex-col">
       <Navbar />
-      <div className="bg-slate-600 w-[60%]  h-40 mt-2.5 ml-36 rounded-xl flex  items-center pl-5">
-        <img
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCn-TbanZWBS1uNFOOkr8QavCC0A9p-4SaFw&s"
-          alt=""
-          className="h-32 w-32 rounded-full object-center border-4 border-white"
-        />
-        <div className=" flex flex-col">
-          <h4 className="text-3xl font-semibold text-gray-300 pl-10 ">
-            Arpan Banik
-          </h4>
-          <p className="text-base font-bold text-gray-200 pl-12 pt-2.5">
-            arpanbanik007
+
+      <div className="max-w-lg mx-auto w-full px-4 py-6 flex flex-col gap-4">
+        {/* Profile Card */}
+        <div className="bg-gray-800 rounded-2xl p-5 flex items-center gap-4">
+          <img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCn-TbanZWBS1uNFOOkr8QavCC0A9p-4SaFw&s"
+            alt="avatar"
+            className="h-16 w-16 rounded-full object-cover border-2 border-blue-500"
+          />
+          <div>
+            <h4 className="text-lg font-bold text-white">Arpan Banik</h4>
+            <p className="text-sm text-gray-400">@arpanbanik007</p>
+          </div>
+        </div>
+
+        {/* Password Card */}
+        <div className="bg-gray-800 rounded-2xl p-5 flex flex-col gap-4">
+          <h2 className="text-white font-semibold text-lg">Change Password</h2>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-gray-400 text-sm">Old Password</label>
+            <input
+              type="password"
+              placeholder="Enter old password"
+              className="bg-gray-700 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-gray-400 text-sm">New Password</label>
+            <input
+              type="password"
+              placeholder="Enter new password"
+              className="bg-gray-700 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button className="bg-blue-600 hover:bg-blue-500 transition-colors text-white font-semibold py-2.5 rounded-xl cursor-pointer">
+            Update Password
+          </button>
+        </div>
+
+        {/* Logout Card */}
+        <div className="bg-gray-800 rounded-2xl p-5">
+          <p className="text-gray-400 text-sm mb-3">
+            Logging out will end your current session.
           </p>
+          <button className="w-full bg-red-600 hover:bg-red-500 transition-colors text-white font-semibold py-2.5 rounded-xl cursor-pointer">
+            Logout
+          </button>
         </div>
-      </div>
-
-      <div className="bg-slate-600 w-[60%]  h-44 mt-2.5 ml-36 rounded-xl pt-1.5 pl-5 mb-2.5">
-        <div className="flex flex-row  items-center mb-4">
-          <div>
-            <h2 className="text-2xl ml-3 mt-2.5 text-gray-200 font-medium">
-              Old Password:
-            </h2>
-            <input
-              type="text"
-              placeholder=" Enter old password"
-              className="h-10 w-90  ml-2.5 mt-1.5 border-2 text-white border-white rounded-md hover:border-gray-400"
-            />
-          </div>
-          <div>
-            <h2 className="text-2xl ml-2.5 mt-2.5 text-gray-200 font-medium">
-              New Password:
-            </h2>
-            <input
-              type="text"
-              placeholder=" Enter new password"
-              className="h-10 w-90  ml-2.5 mt-1.5 border-2 text-white border-white rounded-md hover:border-gray-400"
-            />
-          </div>
-        </div>
-        <button className="bg-amber-600 hover:bg-amber-400 w-30 h-12 rounded-md cursor-pointer ml-[41%]">
-          Submit
-        </button>
-      </div>
-
-      <div className="bg-slate-600 w-[60%]  h-15 mt-2.5 ml-36 rounded-xl flex justify-center  items-center ">
-        <button className="bg-pink-800 hover:bg-pink-400 w-30 h-12 rounded-md cursor-pointer">
-          Logout
-        </button>
       </div>
     </div>
   );

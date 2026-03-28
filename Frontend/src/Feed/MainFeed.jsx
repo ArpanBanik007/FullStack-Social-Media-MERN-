@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { socket } from "../socket";
 
-import { FaHeart } from "react-icons/fa";
 import { FaComment, FaShareNodes } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 
@@ -24,12 +23,10 @@ function MainFeed() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const navigate = useNavigate();
 
-  /* ================= FETCH CURRENT USER FOLLOWINGS ================= */
   useEffect(() => {
     dispatch(fetchMyFollowings());
   }, [dispatch]);
 
-  /* ================= FETCH FEED ================= */
   useEffect(() => {
     const fetchFeed = async () => {
       try {
@@ -46,7 +43,6 @@ function MainFeed() {
     fetchFeed();
   }, []);
 
-  /* ================= SAVE POST ================= */
   const handleSavePost = async (postId) => {
     try {
       await axios.post(
@@ -60,19 +56,13 @@ function MainFeed() {
     }
   };
 
-  /* ================= SOCKET JOIN ================= */
   useEffect(() => {
     if (!posts.length) return;
-
-    posts.forEach((post) => {
-      socket.emit("join-post", `post:${post._id}`);
-    });
+    posts.forEach((post) => socket.emit("join-post", `post:${post._id}`));
   }, [posts.length]);
 
-  /* ================= SOCKET REACTIONS ================= */
   useEffect(() => {
     posts.forEach((post) => socket.emit("join-post", post._id));
-
     const handleReactionUpdate = (data) => {
       setPosts((prev) =>
         prev.map((post) =>
@@ -88,12 +78,10 @@ function MainFeed() {
         ),
       );
     };
-
     socket.on("post-reaction-updated", handleReactionUpdate);
     return () => socket.off("post-reaction-updated", handleReactionUpdate);
   }, []);
 
-  /* ================= COMMENT COUNT LISTENER ================= */
   useEffect(() => {
     const handleCommentCountUpdate = ({ postId, comments }) => {
       setPosts((prev) =>
@@ -102,13 +90,10 @@ function MainFeed() {
         ),
       );
     };
-
     socket.on("comment-count-updated", handleCommentCountUpdate);
-
     return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
 
-  /* ================= LIKE ================= */
   const handleLike = async (postId) => {
     try {
       const res = await axios.post(
@@ -116,10 +101,8 @@ function MainFeed() {
         {},
         { withCredentials: true },
       );
-
       const liked = res.data?.liked;
       if (typeof liked !== "boolean") return;
-
       setPosts((prev) =>
         prev.map((post) =>
           post._id === postId
@@ -136,105 +119,330 @@ function MainFeed() {
     }
   };
 
-  /* ================= LOADING ================= */
   if (feedLoading || userLoading) {
     return (
-      <div className="text-center text-gray-400 py-10 text-lg">
-        Loading posts...
-      </div>
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap');
+          @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+          .skeleton { background: linear-gradient(90deg, #1e293b 25%, #263348 50%, #1e293b 75%); background-size: 400px 100%; animation: shimmer 1.4s infinite linear; border-radius: 12px; }
+        `}</style>
+        <div
+          style={{
+            maxWidth: 480,
+            margin: "0 auto",
+            padding: "8px 0",
+            fontFamily: "'Syne', sans-serif",
+          }}
+        >
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              style={{
+                background: "linear-gradient(160deg,#1e293b,#0f172a)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 18,
+                padding: 16,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 14,
+                }}
+              >
+                <div
+                  className="skeleton"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div
+                    className="skeleton"
+                    style={{ height: 13, width: "55%", marginBottom: 7 }}
+                  />
+                  <div
+                    className="skeleton"
+                    style={{ height: 10, width: "35%" }}
+                  />
+                </div>
+              </div>
+              <div
+                className="skeleton"
+                style={{ height: 220, width: "100%", marginBottom: 14 }}
+              />
+              <div style={{ display: "flex", gap: 12 }}>
+                <div
+                  className="skeleton"
+                  style={{ height: 11, width: "25%" }}
+                />
+                <div
+                  className="skeleton"
+                  style={{ height: 11, width: "20%" }}
+                />
+                <div
+                  className="skeleton"
+                  style={{ height: 11, width: "20%" }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
     );
   }
 
   if (posts.length === 0) {
     return (
-      <div className="text-center text-gray-400 py-10 text-lg">
-        No posts available 😕
+      <div
+        style={{
+          fontFamily: "'Syne',sans-serif",
+          textAlign: "center",
+          padding: "60px 20px",
+          color: "rgba(255,255,255,0.3)",
+        }}
+      >
+        <div style={{ fontSize: 48, marginBottom: 12 }}>🌌</div>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
+          Nothing here yet
+        </div>
+        <div style={{ fontSize: 13 }}>
+          Follow some people to see their posts
+        </div>
       </div>
     );
   }
 
-  /* ================= RENDER ================= */
   return (
     <>
-      {posts.map((post) => (
-        <div
-          key={post._id}
-          className="bg-cyan-300 w-full max-w-md mx-auto mt-2 mb-6 border rounded-xl shadow-md relative"
-        >
-          {/* HEADER */}
-          <div className="flex items-center justify-between p-3 cursor-pointer">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() => {
-                if (post?.createdBy?._id === mydetails?._id) {
-                  navigate("/profile"); // নিজের profile
-                } else {
-                  navigate(`/profile/${post?.createdBy?._id}`); // অন্য user
-                }
-              }}
-            >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap');
+
+        .post-card {
+          font-family: 'Syne', sans-serif;
+          background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          overflow: hidden;
+          margin-bottom: 16px;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+          transition: box-shadow 0.25s, transform 0.2s;
+          position: relative;
+        }
+        .post-card:hover {
+          box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+          transform: translateY(-1px);
+        }
+
+        .post-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px 10px;
+          position: relative;
+        }
+
+        .post-avatar {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid rgba(6,182,212,0.35);
+          cursor: pointer;
+          transition: border-color 0.2s;
+          flex-shrink: 0;
+        }
+        .post-avatar:hover { border-color: #06b6d4; }
+
+        .post-username {
+          font-size: 14px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.9);
+          cursor: pointer;
+          transition: color 0.2s;
+        }
+        .post-username:hover { color: #06b6d4; }
+
+        .post-time {
+          font-size: 11px;
+          color: rgba(255,255,255,0.3);
+          margin-top: 2px;
+          font-weight: 400;
+        }
+
+        .post-menu-btn {
+          margin-left: auto;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          cursor: pointer;
+          color: rgba(255,255,255,0.35);
+          transition: background 0.2s, color 0.2s;
+        }
+        .post-menu-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+
+        .post-body { padding: 0 16px 14px; }
+
+        .post-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.82);
+          margin-bottom: 10px;
+          line-height: 1.5;
+        }
+
+        .post-image {
+          width: 100%;
+          max-height: 340px;
+          border-radius: 14px;
+          object-fit: cover;
+          display: block;
+        }
+
+        .post-actions {
+          display: flex;
+          align-items: center;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          padding: 4px 6px;
+        }
+
+        .action-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          padding: 10px 0;
+          font-size: 13px;
+          font-weight: 600;
+          font-family: 'Syne', sans-serif;
+          color: rgba(255,255,255,0.38);
+          cursor: pointer;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          transition: background 0.2s, color 0.2s;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
+        .action-btn.comment:hover { color: #38bdf8; }
+        .action-btn.share:hover { color: #a78bfa; }
+
+        .action-btn svg { font-size: 16px; }
+
+        .action-divider {
+          width: 1px;
+          height: 22px;
+          background: rgba(255,255,255,0.06);
+        }
+      `}</style>
+
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "4px 0" }}>
+        {posts.map((post) => (
+          <div key={post._id} className="post-card">
+            {/* HEADER */}
+            <div className="post-header">
               <img
                 src={
-                  post?.createdBy?.avatar || "https://via.placeholder.com/40"
+                  post?.createdBy?.avatar || "https://via.placeholder.com/42"
                 }
-                className="h-10 w-10 rounded-full"
+                className="post-avatar"
+                onClick={() =>
+                  post?.createdBy?._id === mydetails?._id
+                    ? navigate("/profile")
+                    : navigate(`/profile/${post?.createdBy?._id}`)
+                }
               />
-              <div className="ml-3">
-                <h3 className="font-semibold">@{post?.createdBy?.username}</h3>
-                <p className="text-sm text-gray-700">
+              <div
+                onClick={() =>
+                  post?.createdBy?._id === mydetails?._id
+                    ? navigate("/profile")
+                    : navigate(`/profile/${post?.createdBy?._id}`)
+                }
+              >
+                <div className="post-username">
+                  @{post?.createdBy?.username}
+                </div>
+                <div className="post-time">
                   {new Date(post.createdAt).toLocaleString()}
-                </p>
+                </div>
               </div>
+
+              {post.createdBy._id !== mydetails?._id && (
+                <div style={{ marginLeft: "auto", marginRight: 8 }}>
+                  <FollowButton
+                    userId={post.createdBy._id}
+                    isFollowedByBackend={post.createdBy.isFollowedByMe}
+                  />
+                </div>
+              )}
+
+              <div
+                className="post-menu-btn"
+                style={
+                  post.createdBy._id === mydetails?._id
+                    ? { marginLeft: "auto" }
+                    : {}
+                }
+                onClick={() =>
+                  setOpenMenuId(openMenuId === post._id ? null : post._id)
+                }
+              >
+                <PiDotsThreeBold />
+              </div>
+
+              <PostActionMenu
+                isOpen={openMenuId === post._id}
+                onClose={() => setOpenMenuId(null)}
+                onSave={() => handleSavePost(post._id)}
+                onBlock={() => console.log("Block user:", post.createdBy._id)}
+              />
             </div>
 
-            {post.createdBy._id !== mydetails?._id && (
-              <FollowButton
-                userId={post.createdBy._id}
-                isFollowedByBackend={post.createdBy.isFollowedByMe}
-              />
-            )}
+            {/* BODY */}
+            <div className="post-body">
+              {post.title && <p className="post-title">{post.title}</p>}
+              {post.posturl && (
+                <img src={post.posturl} className="post-image" alt="post" />
+              )}
+            </div>
 
-            <PiDotsThreeBold
-              className="text-2xl cursor-pointer"
-              onClick={() =>
-                setOpenMenuId(openMenuId === post._id ? null : post._id)
-              }
-            />
+            {/* ACTIONS */}
+            <div className="post-actions">
+              <div
+                style={{ flex: 1, display: "flex", justifyContent: "center" }}
+              >
+                <LikeButton postId={post._id} likeCount={post.likes || 0} />
+              </div>
 
-            {/* 🔥 STEP 6 MENU */}
-            <PostActionMenu
-              isOpen={openMenuId === post._id}
-              onClose={() => setOpenMenuId(null)}
-              onSave={() => handleSavePost(post._id)}
-              onBlock={() => console.log("Block user:", post.createdBy._id)}
-            />
+              <div className="action-divider" />
+
+              <button
+                className="action-btn comment"
+                onClick={() => navigate(`/post/${post._id}`)}
+              >
+                <FaComment /> {post.comments || 0}
+              </button>
+
+              <div className="action-divider" />
+
+              <button className="action-btn share">
+                <FaShareNodes /> Share
+              </button>
+            </div>
           </div>
-
-          {/* CONTENT */}
-          <div className="px-3 pb-3">
-            {post.title && <p className="mb-2 font-semibold">{post.title}</p>}
-            {post.posturl && (
-              <img
-                src={post.posturl}
-                className="w-full max-h-80 rounded-md object-contain"
-              />
-            )}
-          </div>
-
-          {/* ACTIONS */}
-          <div className="border-t flex justify-around py-2 text-sm">
-            <LikeButton postId={post._id} likeCount={post.likes || 0} />
-
-            <button onClick={() => navigate(`/post/${post._id}`)}>
-              <FaComment className=" cursor-pointer" /> {post.comments || 0}
-            </button>
-
-            <button>
-              <FaShareNodes /> Share
-            </button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </>
   );
 }

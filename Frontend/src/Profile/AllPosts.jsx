@@ -1,17 +1,90 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import {
-  FaHeart,
-  FaComment,
-  FaShareNodes,
-  FaRegBookmark,
-} from "react-icons/fa6";
-import { IoMdHeartDislike } from "react-icons/io";
+import { FaComment, FaShareNodes, FaRegBookmark } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { MdEdit, MdDelete } from "react-icons/md";
 import LikeButton from "../componants/LikeButton";
 import { socket } from "../socket";
 import { useNavigate } from "react-router-dom";
+
+const SHARED_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap');
+  @keyframes shimmerA { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+  @keyframes menuIn { from{opacity:0;transform:translateY(-6px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .skA { background:linear-gradient(90deg,#1e293b 25%,#263348 50%,#1e293b 75%); background-size:400px 100%; animation:shimmerA 1.3s infinite linear; border-radius:10px; }
+
+  .ap-card {
+    font-family: 'Syne', sans-serif;
+    position: relative;
+    background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: box-shadow 0.25s, transform 0.2s;
+  }
+  .ap-card:hover { box-shadow:0 8px 36px rgba(0,0,0,0.45); transform:translateY(-1px); }
+
+  .ap-header { display:flex; align-items:center; gap:11px; padding:14px 14px 10px; }
+
+  .ap-avatar {
+    width:40px; height:40px; border-radius:50%; object-fit:cover;
+    border:2px solid rgba(6,182,212,0.3); flex-shrink:0;
+    transition:border-color 0.2s;
+  }
+  .ap-avatar:hover { border-color:#06b6d4; }
+
+  .ap-username { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); }
+  .ap-time { font-size:11px; color:rgba(255,255,255,0.28); margin-top:2px; }
+
+  .ap-dots {
+    margin-left:auto; width:32px; height:32px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; color:rgba(255,255,255,0.3);
+    transition:background 0.2s, color 0.2s;
+  }
+  .ap-dots:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.75); }
+
+  .ap-body { padding:0 14px 14px; }
+  .ap-title { font-size:13px; font-weight:600; color:rgba(255,255,255,0.78); margin-bottom:10px; line-height:1.5; }
+  .ap-img { width:100%; max-height:300px; border-radius:14px; object-fit:cover; display:block; }
+
+  .ap-actions {
+    display:flex; align-items:center;
+    border-top:1px solid rgba(255,255,255,0.05);
+    padding:4px 6px;
+  }
+  .ap-act-btn {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:10px 0; font-size:13px; font-weight:600; font-family:'Syne',sans-serif;
+    color:rgba(255,255,255,0.32); cursor:pointer; border-radius:10px;
+    border:none; background:transparent; transition:background 0.2s, color 0.2s;
+  }
+  .ap-act-btn:hover { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.8); }
+  .ap-act-btn.comment:hover { color:#38bdf8; }
+  .ap-act-btn.share:hover { color:#a78bfa; }
+  .ap-act-divider { width:1px; height:22px; background:rgba(255,255,255,0.05); }
+
+  .ap-menu {
+    position:absolute; top:52px; right:12px; z-index:50;
+    background:linear-gradient(160deg,#1e293b,#0f172a);
+    border:1px solid rgba(255,255,255,0.08); border-radius:14px;
+    padding:6px; width:170px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.5);
+    animation:menuIn 0.18s ease;
+  }
+  .ap-menu-item {
+    display:flex; align-items:center; gap:10px; padding:9px 12px;
+    border-radius:10px; font-size:13px; font-weight:600; font-family:'Syne',sans-serif;
+    cursor:pointer; border:none; background:transparent; width:100%; text-align:left;
+    color:rgba(255,255,255,0.65); transition:background 0.15s, color 0.15s;
+  }
+  .ap-menu-item:hover { background:rgba(255,255,255,0.06); color:#fff; }
+  .ap-menu-item.danger { color:#f87171; }
+  .ap-menu-item.danger:hover { background:rgba(239,68,68,0.1); }
+  .ap-menu-sep { height:1px; background:rgba(255,255,255,0.06); margin:4px 0; }
+`;
 
 const AllPosts = () => {
   const [posts, setPosts] = useState([]);
@@ -25,9 +98,7 @@ const AllPosts = () => {
       try {
         const res = await axios.get(
           "http://localhost:8000/api/v1/posts/my-posts",
-          {
-            withCredentials: true,
-          },
+          { withCredentials: true },
         );
         setPosts(res.data?.data || []);
       } catch (error) {
@@ -36,15 +107,12 @@ const AllPosts = () => {
         setLoading(false);
       }
     };
-
     fetchMyPosts();
   }, []);
 
   useEffect(() => {
     if (!posts.length) return;
-    posts.forEach((post) => {
-      socket.emit("join-post", post._id);
-    });
+    posts.forEach((post) => socket.emit("join-post", post._id));
   }, [posts.length]);
 
   useEffect(() => {
@@ -55,166 +123,175 @@ const AllPosts = () => {
         ),
       );
     };
-
     socket.on("post-reaction-updated", handleReactionUpdate);
     return () => socket.off("post-reaction-updated", handleReactionUpdate);
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target))
         setOpenMenuId(null);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleMenu = (postId) => {
-    setOpenMenuId((prevId) => (prevId === postId ? null : postId));
-  };
-
   const handleDeletePost = async (postId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this post?",
-    );
-    if (!confirmDelete) return;
-
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
       await axios.delete(`http://localhost:8000/api/v1/posts/${postId}`, {
         withCredentials: true,
       });
-
-      setPosts(posts.filter((post) => post._id !== postId));
-
-      alert("Post deleted successfully ✅");
+      setPosts(posts.filter((p) => p._id !== postId));
     } catch (error) {
       console.error(error);
-      alert("Failed to delete post ❌");
     }
   };
 
   const handleAddToWatchLater = async (postId) => {
     try {
-      const res = await axios.post(
+      await axios.post(
         "http://localhost:8000/api/v1/watch/watchlater",
-        { postId }, // 👈 backend-এ postId পাঠাচ্ছি
+        { postId },
         { withCredentials: true },
       );
-
-      alert(res.data?.message || "Added to Watch Later ✅");
+      setOpenMenuId(null);
     } catch (error) {
-      console.error("Failed to add to Watch Later:", error);
-      alert(error.response?.data?.message || "Failed to add ❌");
+      console.error(error);
     }
   };
 
   if (loading) {
     return (
-      <div className="text-center text-gray-400 py-10 text-lg">
-        Loading your posts...
-      </div>
+      <>
+        <style>{SHARED_STYLES}</style>
+        {[1, 2, 2].map((i) => (
+          <div key={i} className="ap-card" style={{ padding: 14 }}>
+            <div style={{ display: "flex", gap: 11, marginBottom: 14 }}>
+              <div
+                className="skA"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flex: 1 }}>
+                <div
+                  className="skA"
+                  style={{ height: 12, width: "50%", marginBottom: 8 }}
+                />
+                <div className="skA" style={{ height: 10, width: "32%" }} />
+              </div>
+            </div>
+            <div
+              className="skA"
+              style={{ height: 200, width: "100%", marginBottom: 12 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <div className="skA" style={{ height: 10, width: "25%" }} />
+              <div className="skA" style={{ height: 10, width: "20%" }} />
+              <div className="skA" style={{ height: 10, width: "20%" }} />
+            </div>
+          </div>
+        ))}
+      </>
     );
   }
 
   if (posts.length === 0) {
     return (
-      <div className="text-center text-gray-200 py-10 text-lg">
-        You don’t have any posts yet 😕
-      </div>
+      <>
+        <style>{SHARED_STYLES}</style>
+        <div
+          style={{
+            fontFamily: "'Syne',sans-serif",
+            textAlign: "center",
+            padding: "50px 20px",
+            color: "rgba(255,255,255,0.25)",
+          }}
+        >
+          <div style={{ fontSize: 44, marginBottom: 10 }}>📷</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+            No posts yet
+          </div>
+          <div style={{ fontSize: 12 }}>Your posts will appear here</div>
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      <style>{SHARED_STYLES}</style>
       {posts.map((post) => (
-        <div
-          key={post._id}
-          className="relative bg-white dark:bg-slate-800 w-full max-w-xl mx-auto mt-4 border rounded-xl shadow-md mb-6"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-3">
-            <div className="flex items-center">
-              <img
-                src={
-                  post?.createdBy?.avatar || "https://via.placeholder.com/40"
-                }
-                alt="avatar"
-                className="h-10 w-10 rounded-full border"
-              />
-              <div className="ml-3">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  {post?.createdBy?.username || "Unknown"}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {new Date(post.createdAt).toLocaleString()}
-                </p>
+        <div key={post._id} className="ap-card">
+          <div className="ap-header">
+            <img
+              src={post?.createdBy?.avatar || "https://via.placeholder.com/40"}
+              alt="avatar"
+              className="ap-avatar"
+            />
+            <div>
+              <div className="ap-username">
+                @{post?.createdBy?.username || "Unknown"}
+              </div>
+              <div className="ap-time">
+                {new Date(post.createdAt).toLocaleString()}
               </div>
             </div>
-
-            {/* Right section: 3 dots */}
-            <PiDotsThreeBold
-              className="text-2xl text-gray-400 hover:text-gray-200 cursor-pointer"
-              onClick={() => toggleMenu(post._id)}
-            />
-          </div>
-
-          {/* Post Content */}
-          <div className="px-3 pb-3">
-            {post.title && (
-              <p className="mb-2 font-semibold text-gray-800 dark:text-gray-100">
-                {post.title}
-              </p>
-            )}
-            {post.posturl && (
-              <img
-                src={post.posturl}
-                alt="post"
-                className="w-full max-h-80 rounded-md object-contain"
-              />
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="border-t flex justify-around py-2 text-gray-400 text-sm">
-            <LikeButton postId={post._id} likeCount={post.likes || 0} />
-
-            <button onClick={() => navigate(`/post/${post._id}`)}>
-              <FaComment className=" cursor-pointer" /> {post.comments || 0}
-            </button>
-
-            <button className="flex items-center gap-1 hover:text-purple-600">
-              <FaShareNodes className="text-base" />
-              <span>Share</span>
-            </button>
-          </div>
-
-          {/* Dot Menu */}
-          {openMenuId === post._id && (
             <div
-              ref={menuRef}
-              className="absolute top-14 right-4 bg-slate-800 text-gray-100 rounded-xl shadow-lg p-3 w-48 z-50 flex flex-col gap-2 border border-slate-600 transition-all duration-300 animate-fadeIn"
+              className="ap-dots"
+              onClick={() =>
+                setOpenMenuId(openMenuId === post._id ? null : post._id)
+              }
             >
+              <PiDotsThreeBold />
+            </div>
+          </div>
+
+          <div className="ap-body">
+            {post.title && <p className="ap-title">{post.title}</p>}
+            {post.posturl && (
+              <img src={post.posturl} alt="post" className="ap-img" />
+            )}
+          </div>
+
+          <div className="ap-actions">
+            <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+              <LikeButton postId={post._id} likeCount={post.likes || 0} />
+            </div>
+            <div className="ap-act-divider" />
+            <button
+              className="ap-act-btn comment"
+              onClick={() => navigate(`/post/${post._id}`)}
+            >
+              <FaComment /> {post.comments || 0}
+            </button>
+            <div className="ap-act-divider" />
+            <button className="ap-act-btn share">
+              <FaShareNodes /> Share
+            </button>
+          </div>
+
+          {openMenuId === post._id && (
+            <div className="ap-menu" ref={menuRef}>
               <button
+                className="ap-menu-item"
                 onClick={() => handleAddToWatchLater(post._id)}
-                className="flex items-center gap-3 hover:bg-slate-700 p-2 rounded-lg"
               >
-                <FaRegBookmark className="text-lg" />
-                <span className="text-sm font-medium">Save</span>
+                <FaRegBookmark /> Save
               </button>
-              <button className="flex items-center gap-3 hover:bg-slate-700 p-2 rounded-lg">
-                <MdEdit className="text-lg" />
-                <span className="text-sm font-medium">Edit</span>
+              <button className="ap-menu-item">
+                <MdEdit /> Edit
               </button>
+              <div className="ap-menu-sep" />
               <button
-                className="flex items-center gap-3 hover:bg-slate-700 p-2 rounded-lg text-red-400 hover:text-red-300"
+                className="ap-menu-item danger"
                 onClick={() => handleDeletePost(post._id)}
               >
-                <MdDelete className="text-lg" />
-                <span className="text-sm font-medium">Delete</span>
+                <MdDelete /> Delete
               </button>
             </div>
           )}
