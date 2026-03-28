@@ -461,6 +461,180 @@ const getClickedUserDetails = asyncHandler(async (req, res) => {
     );
 });
 
+
+
+const getMyFollowers = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(401, "Unauthorized");
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+
+  const [followers, total] = await Promise.all([
+    Follow.find({ following: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("follower", "username avatar fullName")
+      .lean(),
+    Follow.countDocuments({ following: userId }),
+  ]);
+
+  const followerList = followers
+    .map((f) => f.follower)
+    .filter(Boolean); 
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        followers: followerList,
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+      "Followers fetched successfully"
+    )
+  );
+});
+
+
+const getMyFollowings = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(401, "Unauthorized");
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+
+  const [followings, total] = await Promise.all([
+    Follow.find({ follower: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("following", "username avatar fullName")
+      .lean(),
+    Follow.countDocuments({ follower: userId }),
+  ]);
+
+  const followingList = followings
+    .map((f) => f.following)
+    .filter(Boolean); 
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        followings: followingList,
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+      "Followings fetched successfully"
+    )
+  );
+});
+
+
+
+
+const getClickedUserFollowers = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(400, "User ID is required");
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+
+  const userExists = await User.exists({ _id: userId });
+  if (!userExists) throw new ApiError(404, "User not found");
+
+  const [followers, total] = await Promise.all([
+    Follow.find({ following: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("follower", "username avatar fullName")
+      .lean(),
+    Follow.countDocuments({ following: userId }),
+  ]);
+
+  const followerList = followers
+    .map((f) => f.follower)
+    .filter(Boolean);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        followers: followerList,
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+      "Followers fetched successfully"
+    )
+  );
+});
+
+
+const getClickedUserFollowings = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  if (!userId) throw new ApiError(400, "User ID is required");
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+
+  const userExists = await User.exists({ _id: userId });
+  if (!userExists) throw new ApiError(404, "User not found");
+
+  const [followings, total] = await Promise.all([
+    Follow.find({ follower: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("following", "username avatar fullName")
+      .lean(),
+    Follow.countDocuments({ follower: userId }),
+  ]);
+
+  const followingList = followings
+    .map((f) => f.following)
+    .filter(Boolean);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        followings: followingList,
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+      "Followings fetched successfully"
+    )
+  );
+});
+
+
 export {
     registerUser,
     sendOTP,
@@ -474,7 +648,9 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     refreshAccessToken,
+    getMyFollowers,
+    getMyFollowings,
+    getClickedUserFollowers,
+    getClickedUserFollowings
     
-
-
 }
