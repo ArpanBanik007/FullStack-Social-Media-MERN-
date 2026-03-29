@@ -41,6 +41,12 @@ function LeftBar() {
           top: 80px;
           left: 12px;
           width: 240px;
+
+          /* ✅ FIX: viewport height থেকে top offset বাদ দিয়ে max-height সেট */
+          max-height: calc(100vh - 100px);
+          display: flex;
+          flex-direction: column;
+
           background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 20px;
@@ -68,6 +74,7 @@ function LeftBar() {
           padding: 8px 12px 18px;
           border-bottom: 1px solid rgba(255,255,255,0.06);
           margin-bottom: 10px;
+          flex-shrink: 0; /* ✅ brand section কখনো shrink হবে না */
         }
 
         .leftbar-brand-dot {
@@ -84,6 +91,29 @@ function LeftBar() {
           letter-spacing: 0.15em;
           text-transform: uppercase;
           color: rgba(255,255,255,0.35);
+        }
+
+        /* ✅ FIX: scroll হবে এই wrapper এর ভেতরে */
+        .leftbar-scroll-area {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding-right: 2px;
+        }
+
+        /* scrollbar styling */
+        .leftbar-scroll-area::-webkit-scrollbar {
+          width: 4px;
+        }
+        .leftbar-scroll-area::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .leftbar-scroll-area::-webkit-scrollbar-thumb {
+          background: rgba(6,182,212,0.25);
+          border-radius: 4px;
+        }
+        .leftbar-scroll-area::-webkit-scrollbar-thumb:hover {
+          background: rgba(6,182,212,0.5);
         }
 
         .nav-item {
@@ -203,57 +233,17 @@ function LeftBar() {
       `}</style>
 
       <div className="leftbar-root">
+        {/* Brand — fixed at top, never scrolls */}
         <div className="leftbar-brand">
           <div className="leftbar-brand-dot" />
           <span className="leftbar-brand-text">Navigate</span>
         </div>
 
-        <div className="leftbar-section-label">Main</div>
+        {/* ✅ Scrollable area */}
+        <div className="leftbar-scroll-area">
+          <div className="leftbar-section-label">Main</div>
 
-        {NAV_ITEMS.slice(0, 3).map(({ path, icon: Icon, label, badge }) => {
-          const isActive = location.pathname === path;
-          return (
-            <div
-              key={path}
-              className={`nav-item ${isActive ? "active" : ""}`}
-              onClick={() => handleClick(path)}
-              onMouseEnter={() => setHovered(path)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className="nav-icon-wrap">
-                <Icon />
-              </div>
-              <span className="nav-label">{label}</span>
-              {badge && <span className="nav-badge">{badge}</span>}
-            </div>
-          );
-        })}
-
-        <div className="leftbar-section-label" style={{ marginTop: 6 }}>
-          Library
-        </div>
-
-        {NAV_ITEMS.slice(3, 6).map(({ path, icon: Icon, label, badge }) => {
-          const isActive = location.pathname === path;
-          return (
-            <div
-              key={path}
-              className={`nav-item ${isActive ? "active" : ""}`}
-              onClick={() => handleClick(path)}
-              onMouseEnter={() => setHovered(path)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className="nav-icon-wrap">
-                <Icon />
-              </div>
-              <span className="nav-label">{label}</span>
-              {badge && <span className="nav-badge">{badge}</span>}
-            </div>
-          );
-        })}
-
-        <div className="leftbar-footer">
-          {NAV_ITEMS.slice(6).map(({ path, icon: Icon, label }) => {
+          {NAV_ITEMS.slice(0, 3).map(({ path, icon: Icon, label, badge }) => {
             const isActive = location.pathname === path;
             return (
               <div
@@ -267,9 +257,54 @@ function LeftBar() {
                   <Icon />
                 </div>
                 <span className="nav-label">{label}</span>
+                {badge && <span className="nav-badge">{badge}</span>}
               </div>
             );
           })}
+
+          <div className="leftbar-section-label" style={{ marginTop: 6 }}>
+            Library
+          </div>
+
+          {NAV_ITEMS.slice(3, 6).map(({ path, icon: Icon, label, badge }) => {
+            const isActive = location.pathname === path;
+            return (
+              <div
+                key={path}
+                className={`nav-item ${isActive ? "active" : ""}`}
+                onClick={() => handleClick(path)}
+                onMouseEnter={() => setHovered(path)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <div className="nav-icon-wrap">
+                  <Icon />
+                </div>
+                <span className="nav-label">{label}</span>
+                {badge && <span className="nav-badge">{badge}</span>}
+              </div>
+            );
+          })}
+
+          {/* Settings footer — এখন scroll area এর ভেতরে, সব সময় দেখা যাবে */}
+          <div className="leftbar-footer">
+            {NAV_ITEMS.slice(6).map(({ path, icon: Icon, label }) => {
+              const isActive = location.pathname === path;
+              return (
+                <div
+                  key={path}
+                  className={`nav-item ${isActive ? "active" : ""}`}
+                  onClick={() => handleClick(path)}
+                  onMouseEnter={() => setHovered(path)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  <div className="nav-icon-wrap">
+                    <Icon />
+                  </div>
+                  <span className="nav-label">{label}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </>

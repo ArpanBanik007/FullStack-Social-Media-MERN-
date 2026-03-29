@@ -174,9 +174,15 @@ function MainFeed() {
                   />
                 </div>
               </div>
+              {/* ✅ skeleton ও 4:5 ratio তে */}
               <div
                 className="skeleton"
-                style={{ height: 220, width: "100%", marginBottom: 14 }}
+                style={{
+                  width: "100%",
+                  aspectRatio: "4/5",
+                  marginBottom: 14,
+                  borderRadius: 14,
+                }}
               />
               <div style={{ display: "flex", gap: 12 }}>
                 <div
@@ -302,12 +308,26 @@ function MainFeed() {
           line-height: 1.5;
         }
 
+        /* ✅ FIX: Instagram/Facebook এর মতো 4:5 portrait ratio */
+        .post-image-wrapper {
+          width: 100%;
+          aspect-ratio: 4 / 5;
+          border-radius: 14px;
+          overflow: hidden;
+          background: #0f172a;
+        }
+
         .post-image {
           width: 100%;
-          max-height: 340px;
-          border-radius: 14px;
-          object-fit: cover;
+          height: 100%;
+          object-fit: cover;   /* image টা crop হয়ে ratio fill করবে */
+          object-position: center;
           display: block;
+          transition: transform 0.3s ease;
+        }
+
+        .post-image-wrapper:hover .post-image {
+          transform: scale(1.02);
         }
 
         .post-actions {
@@ -412,8 +432,11 @@ function MainFeed() {
             {/* BODY */}
             <div className="post-body">
               {post.title && <p className="post-title">{post.title}</p>}
+              {/* ✅ Image wrapper দিয়ে ratio enforce করা হচ্ছে */}
               {post.posturl && (
-                <img src={post.posturl} className="post-image" alt="post" />
+                <div className="post-image-wrapper">
+                  <img src={post.posturl} className="post-image" alt="post" />
+                </div>
               )}
             </div>
 
