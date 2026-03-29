@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { IoMdHome } from "react-icons/io";
 import { MdOndemandVideo } from "react-icons/md";
 import { BiVideoPlus } from "react-icons/bi";
+import { IoSettingsSharp } from "react-icons/io5";
 import { FaBell } from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { TiThMenu } from "react-icons/ti";
@@ -432,6 +433,17 @@ function Navbar() {
                 </span>
                 My Profile
               </button>
+              <button
+                className="mobile-item"
+                onClick={() => {
+                  navigate("/settings");
+                  setShowMenu(false);
+                }}
+              >
+                <span className="mobile-item-icon">⚙️</span>
+                Settings
+              </button>
+
               <button
                 className="mobile-item danger"
                 onClick={() => {

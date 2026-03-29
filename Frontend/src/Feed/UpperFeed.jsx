@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { fetchMydetils } from "../slices/mydetails.slice";
+import { MdOutlineEmojiEmotions } from "react-icons/md";
 
 function UpperFeedpage() {
   const navigate = useNavigate();
@@ -134,59 +135,89 @@ function UpperFeedpage() {
         .upper-feed {
           font-family: 'Syne', sans-serif;
           max-width: 480px;
-          margin: 12px auto 0;
+          margin: 16px auto 0;
           background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 20px;
-          padding: 16px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 22px;
+          padding: 20px 18px 16px;
+          box-shadow: 0 4px 30px rgba(0,0,0,0.4);
         }
 
-        .upper-feed-top {
+        /* ✅ User info row — avatar + greeting */
+        .upper-feed-user-row {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 14px;
+          margin-bottom: 14px;
         }
 
         .upper-feed-avatar {
-          width: 44px;
-          height: 44px;
+          width: 52px;
+          height: 52px;
           border-radius: 50%;
           object-fit: cover;
-          border: 2px solid rgba(6,182,212,0.35);
+          border: 2.5px solid rgba(6,182,212,0.45);
           cursor: pointer;
           flex-shrink: 0;
-          transition: border-color 0.2s;
+          transition: border-color 0.2s, transform 0.2s;
         }
-        .upper-feed-avatar:hover { border-color: #06b6d4; }
+        .upper-feed-avatar:hover {
+          border-color: #06b6d4;
+          transform: scale(1.05);
+        }
 
-        .upper-feed-input {
+        .upper-feed-user-info {
           flex: 1;
-          height: 42px;
-          background: rgba(255,255,255,0.05);
+        }
+
+        .upper-feed-username {
+          font-size: 14px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.85);
+          margin-bottom: 2px;
+        }
+
+        .upper-feed-subtitle {
+          font-size: 11px;
+          color: rgba(255,255,255,0.28);
+          font-weight: 500;
+        }
+
+        /* ✅ Big textarea-style input like FB */
+        .upper-feed-input-box {
+          width: 100%;
+          min-height: 52px;
+          background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 14px;
+          border-radius: 16px;
           display: flex;
           align-items: center;
-          padding: 0 16px;
-          font-size: 13px;
+          padding: 14px 18px;
+          font-size: 15px;
           font-family: 'Syne', sans-serif;
-          color: rgba(255,255,255,0.3);
+          color: rgba(255,255,255,0.28);
           cursor: pointer;
           transition: background 0.2s, border-color 0.2s;
+          box-sizing: border-box;
+          letter-spacing: 0.01em;
         }
-        .upper-feed-input:hover {
-          background: rgba(6,182,212,0.08);
-          border-color: rgba(6,182,212,0.25);
-          color: rgba(255,255,255,0.5);
+        .upper-feed-input-box:hover {
+          background: rgba(6,182,212,0.06);
+          border-color: rgba(6,182,212,0.2);
+          color: rgba(255,255,255,0.45);
         }
 
+        /* ✅ Divider */
+        .upper-feed-divider {
+          height: 1px;
+          background: rgba(255,255,255,0.05);
+          margin: 14px 0;
+        }
+
+        /* ✅ Action buttons row */
         .upper-feed-actions {
           display: flex;
-          gap: 8px;
-          margin-top: 14px;
-          border-top: 1px solid rgba(255,255,255,0.05);
-          padding-top: 14px;
+          gap: 6px;
         }
 
         .media-btn {
@@ -195,27 +226,42 @@ function UpperFeedpage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 9px 0;
-          border-radius: 12px;
+          padding: 11px 0;
+          border-radius: 14px;
           font-size: 13px;
-          font-weight: 600;
+          font-weight: 700;
           font-family: 'Syne', sans-serif;
           cursor: pointer;
           border: 1px solid rgba(255,255,255,0.07);
           background: rgba(255,255,255,0.03);
           color: rgba(255,255,255,0.4);
-          transition: background 0.2s, color 0.2s, border-color 0.2s;
+          transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+          letter-spacing: 0.02em;
         }
-        .media-btn svg { font-size: 18px; }
-        .media-btn.photo:hover { background: rgba(6,182,212,0.1); color: #06b6d4; border-color: rgba(6,182,212,0.25); }
-        .media-btn.video:hover { background: rgba(168,85,247,0.1); color: #a855f7; border-color: rgba(168,85,247,0.25); }
+        .media-btn svg { font-size: 20px; }
+        .media-btn:hover { transform: translateY(-1px); }
+        .media-btn.photo:hover {
+          background: rgba(6,182,212,0.12);
+          color: #06b6d4;
+          border-color: rgba(6,182,212,0.3);
+        }
+        .media-btn.video:hover {
+          background: rgba(168,85,247,0.12);
+          color: #a855f7;
+          border-color: rgba(168,85,247,0.3);
+        }
+        .media-btn.feeling:hover {
+          background: rgba(251,191,36,0.1);
+          color: #fbbf24;
+          border-color: rgba(251,191,36,0.25);
+        }
 
         /* MODAL */
         .modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.65);
-          backdrop-filter: blur(6px);
+          background: rgba(0,0,0,0.7);
+          backdrop-filter: blur(8px);
           z-index: 40;
         }
 
@@ -225,17 +271,22 @@ function UpperFeedpage() {
           left: 50%;
           transform: translate(-50%, -50%);
           z-index: 50;
-          width: 90%;
-          max-width: 440px;
+          width: 92%;
+          max-width: 460px;
+          max-height: 90vh;
+          overflow-y: auto;
           background: linear-gradient(160deg, #1e293b, #0f172a);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 22px;
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 24px;
           padding: 24px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+          box-shadow: 0 32px 100px rgba(0,0,0,0.7);
           animation: modalIn 0.22s ease;
         }
+        .modal-box::-webkit-scrollbar { width: 4px; }
+        .modal-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
         @keyframes modalIn {
-          from { opacity:0; transform:translate(-50%,-52%) scale(0.96); }
+          from { opacity:0; transform:translate(-50%,-52%) scale(0.95); }
           to { opacity:1; transform:translate(-50%,-50%) scale(1); }
         }
 
@@ -244,16 +295,19 @@ function UpperFeedpage() {
           align-items: center;
           justify-content: space-between;
           margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
         }
         .modal-title {
-          font-size: 17px;
+          font-size: 18px;
           font-weight: 800;
           color: #e2e8f0;
+          letter-spacing: -0.01em;
         }
         .modal-close {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
           background: rgba(255,255,255,0.06);
           border: none;
           color: rgba(255,255,255,0.5);
@@ -264,65 +318,92 @@ function UpperFeedpage() {
           cursor: pointer;
           transition: background 0.2s, color 0.2s;
         }
-        .modal-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .modal-close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+        /* Modal user row */
+        .modal-user-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        .modal-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid rgba(6,182,212,0.35);
+        }
+        .modal-username {
+          font-size: 14px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.85);
+        }
+        .modal-audience {
+          font-size: 10px;
+          color: rgba(255,255,255,0.3);
+          margin-top: 2px;
+        }
 
         .modal-textarea {
           width: 100%;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 14px;
+          background: transparent;
+          border: none;
+          border-radius: 0;
           color: rgba(255,255,255,0.85);
           font-family: 'Syne', sans-serif;
-          font-size: 14px;
-          padding: 14px;
+          font-size: 16px;
+          padding: 0;
           resize: none;
           outline: none;
           box-sizing: border-box;
-          transition: border-color 0.2s;
-          margin-bottom: 14px;
+          margin-bottom: 16px;
+          line-height: 1.6;
         }
-        .modal-textarea:focus { border-color: rgba(6,182,212,0.4); }
-        .modal-textarea::placeholder { color: rgba(255,255,255,0.22); }
+        .modal-textarea::placeholder { color: rgba(255,255,255,0.2); }
 
-        .modal-file-input {
-          display: block;
+        .modal-file-zone {
           width: 100%;
-          font-size: 12px;
-          color: rgba(255,255,255,0.4);
-          margin-bottom: 12px;
-          font-family: 'Syne', sans-serif;
-        }
-        .modal-file-input::file-selector-button {
-          background: rgba(6,182,212,0.15);
-          border: 1px solid rgba(6,182,212,0.3);
-          color: #06b6d4;
-          font-family: 'Syne', sans-serif;
-          font-size: 12px;
-          font-weight: 600;
-          padding: 6px 14px;
-          border-radius: 8px;
+          background: rgba(255,255,255,0.03);
+          border: 2px dashed rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 20px;
+          text-align: center;
+          margin-bottom: 14px;
           cursor: pointer;
-          margin-right: 10px;
-          transition: background 0.2s;
+          transition: border-color 0.2s, background 0.2s;
+          box-sizing: border-box;
         }
-        .modal-file-input::file-selector-button:hover { background: rgba(6,182,212,0.25); }
+        .modal-file-zone:hover {
+          border-color: rgba(6,182,212,0.35);
+          background: rgba(6,182,212,0.04);
+        }
+        .modal-file-zone-text {
+          font-size: 13px;
+          color: rgba(255,255,255,0.3);
+          font-weight: 600;
+          margin-top: 8px;
+        }
+        .modal-file-input {
+          display: none;
+        }
 
         .modal-preview-img {
           width: 100%;
-          max-height: 240px;
+          aspect-ratio: 4/5;
           object-fit: cover;
-          border-radius: 14px;
+          border-radius: 16px;
           border: 1px solid rgba(6,182,212,0.2);
-          margin-bottom: 12px;
+          margin-bottom: 14px;
           display: block;
         }
 
         .modal-preview-video {
           width: 100%;
-          max-height: 220px;
-          border-radius: 14px;
+          max-height: 240px;
+          border-radius: 16px;
           border: 1px solid rgba(168,85,247,0.2);
-          margin-bottom: 12px;
+          margin-bottom: 14px;
           display: block;
         }
 
@@ -330,61 +411,81 @@ function UpperFeedpage() {
           display: flex;
           justify-content: flex-end;
           gap: 10px;
-          margin-top: 6px;
+          margin-top: 8px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(255,255,255,0.06);
         }
 
         .btn-cancel {
-          padding: 9px 20px;
+          padding: 10px 22px;
           border-radius: 12px;
           background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.08);
           color: rgba(255,255,255,0.5);
           font-family: 'Syne', sans-serif;
           font-size: 13px;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
           transition: background 0.2s;
         }
         .btn-cancel:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.8); }
 
         .btn-post {
-          padding: 9px 24px;
+          padding: 10px 28px;
           border-radius: 12px;
           background: linear-gradient(135deg, #06b6d4, #3b82f6);
           border: none;
           color: #fff;
           font-family: 'Syne', sans-serif;
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 800;
           cursor: pointer;
           transition: opacity 0.2s, transform 0.15s;
-          box-shadow: 0 4px 16px rgba(6,182,212,0.3);
+          box-shadow: 0 4px 20px rgba(6,182,212,0.35);
+          letter-spacing: 0.03em;
         }
-        .btn-post:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-        .btn-post:disabled { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); box-shadow: none; cursor: not-allowed; }
+        .btn-post:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+        .btn-post:disabled {
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.25);
+          box-shadow: none;
+          cursor: not-allowed;
+        }
       `}</style>
 
       <div className="upper-feed">
-        {/* INPUT ROW */}
-        <div className="upper-feed-top">
+        {/* User info row */}
+        <div className="upper-feed-user-row">
           <img
             src={mydetails?.avatar}
             alt="profile"
             className="upper-feed-avatar"
             onClick={() => navigate("/profile")}
           />
-          <div
-            className="upper-feed-input"
-            onClick={() => {
-              setPostType("text");
-              setShowPostBox(true);
-            }}
-          >
-            What's on your mind?
+          <div className="upper-feed-user-info">
+            <div className="upper-feed-username">
+              @{mydetails?.username || "you"}
+            </div>
+            <div className="upper-feed-subtitle">
+              Share something with your followers
+            </div>
           </div>
         </div>
 
-        {/* ACTION BUTTONS */}
+        {/* Big input box */}
+        <div
+          className="upper-feed-input-box"
+          onClick={() => {
+            setPostType("text");
+            setShowPostBox(true);
+          }}
+        >
+          What's on your mind, {mydetails?.username?.split(" ")[0] || "friend"}?
+        </div>
+
+        <div className="upper-feed-divider" />
+
+        {/* Action buttons */}
         <div className="upper-feed-actions">
           <div
             className="media-btn photo"
@@ -404,6 +505,15 @@ function UpperFeedpage() {
           >
             <RiVideoUploadFill /> Video
           </div>
+          <div
+            className="media-btn feeling"
+            onClick={() => {
+              setPostType("text");
+              setShowPostBox(true);
+            }}
+          >
+            <MdOutlineEmojiEmotions /> Feeling
+          </div>
         </div>
       </div>
 
@@ -417,6 +527,19 @@ function UpperFeedpage() {
               <button className="modal-close" onClick={resetAll}>
                 <IoClose />
               </button>
+            </div>
+
+            {/* Modal user info */}
+            <div className="modal-user-row">
+              <img
+                src={mydetails?.avatar}
+                className="modal-avatar"
+                alt="avatar"
+              />
+              <div>
+                <div className="modal-username">@{mydetails?.username}</div>
+                <div className="modal-audience">🌍 Public</div>
+              </div>
             </div>
 
             {/* TEXT */}
@@ -433,13 +556,22 @@ function UpperFeedpage() {
             {/* PHOTO */}
             {postType === "photo" && (
               <>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="modal-file-input"
-                />
-                {imagePreview && (
+                {!imagePreview ? (
+                  <label className="modal-file-zone">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="modal-file-input"
+                    />
+                    <IoMdPhotos
+                      style={{ fontSize: 36, color: "rgba(255,255,255,0.2)" }}
+                    />
+                    <div className="modal-file-zone-text">
+                      Click to add photos
+                    </div>
+                  </label>
+                ) : (
                   <img
                     src={imagePreview}
                     className="modal-preview-img"
@@ -448,7 +580,7 @@ function UpperFeedpage() {
                 )}
                 <textarea
                   className="modal-textarea"
-                  rows={2}
+                  rows={3}
                   placeholder="Say something about this photo..."
                   value={postDescription}
                   onChange={(e) => setPostDescription(e.target.value)}
@@ -459,13 +591,22 @@ function UpperFeedpage() {
             {/* VIDEO */}
             {postType === "video" && (
               <>
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoSelect}
-                  className="modal-file-input"
-                />
-                {previewVideo && (
+                {!previewVideo ? (
+                  <label className="modal-file-zone">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoSelect}
+                      className="modal-file-input"
+                    />
+                    <RiVideoUploadFill
+                      style={{ fontSize: 36, color: "rgba(255,255,255,0.2)" }}
+                    />
+                    <div className="modal-file-zone-text">
+                      Click to upload video
+                    </div>
+                  </label>
+                ) : (
                   <video
                     src={previewVideo}
                     controls
@@ -474,7 +615,7 @@ function UpperFeedpage() {
                 )}
                 <textarea
                   className="modal-textarea"
-                  rows={2}
+                  rows={3}
                   placeholder="Add a description..."
                   value={videoDescription}
                   onChange={(e) => setVideoDescription(e.target.value)}

@@ -14,8 +14,14 @@ const NAV_ITEMS = [
   { path: "/notifications", icon: FaBell, label: "Notifications", badge: 3 },
   { path: "/saved", icon: FaBookmark, label: "Saved" },
   { path: "/history", icon: FaHistory, label: "History" },
-  { path: "/settings", icon: IoMdSettings, label: "Settings" },
 ];
+
+// Settings আলাদা রাখা হলো
+const SETTINGS_ITEM = {
+  path: "/settings",
+  icon: IoMdSettings,
+  label: "Settings",
+};
 
 function LeftBar() {
   const navigate = useNavigate();
@@ -41,12 +47,10 @@ function LeftBar() {
           top: 80px;
           left: 12px;
           width: 240px;
-
-          /* ✅ FIX: viewport height থেকে top offset বাদ দিয়ে max-height সেট */
-          max-height: calc(100vh - 100px);
+          /* ✅ viewport থেকে top + bottom gap বাদ দিয়ে height */
+          height: calc(100vh - 96px);
           display: flex;
           flex-direction: column;
-
           background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
           border: 1px solid rgba(255,255,255,0.06);
           border-radius: 20px;
@@ -74,7 +78,7 @@ function LeftBar() {
           padding: 8px 12px 18px;
           border-bottom: 1px solid rgba(255,255,255,0.06);
           margin-bottom: 10px;
-          flex-shrink: 0; /* ✅ brand section কখনো shrink হবে না */
+          flex-shrink: 0;
         }
 
         .leftbar-brand-dot {
@@ -93,27 +97,26 @@ function LeftBar() {
           color: rgba(255,255,255,0.35);
         }
 
-        /* ✅ FIX: scroll হবে এই wrapper এর ভেতরে */
+        /* ✅ এই অংশটাই scroll হবে */
         .leftbar-scroll-area {
           flex: 1;
           overflow-y: auto;
           overflow-x: hidden;
-          padding-right: 2px;
+          min-height: 0; /* flex child এর জন্য গুরুত্বপূর্ণ */
         }
-
-        /* scrollbar styling */
-        .leftbar-scroll-area::-webkit-scrollbar {
-          width: 4px;
-        }
-        .leftbar-scroll-area::-webkit-scrollbar-track {
-          background: transparent;
-        }
+        .leftbar-scroll-area::-webkit-scrollbar { width: 4px; }
+        .leftbar-scroll-area::-webkit-scrollbar-track { background: transparent; }
         .leftbar-scroll-area::-webkit-scrollbar-thumb {
-          background: rgba(6,182,212,0.25);
+          background: rgba(6,182,212,0.2);
           border-radius: 4px;
         }
-        .leftbar-scroll-area::-webkit-scrollbar-thumb:hover {
-          background: rgba(6,182,212,0.5);
+
+        /* ✅ Settings সবসময় দৃশ্যমান — scroll area এর বাইরে */
+        .leftbar-pinned-footer {
+          flex-shrink: 0;
+          padding-top: 10px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          margin-top: 6px;
         }
 
         .nav-item {
@@ -129,18 +132,15 @@ function LeftBar() {
           overflow: hidden;
           border: 1px solid transparent;
         }
-
         .nav-item.active {
           background: rgba(6, 182, 212, 0.15);
           border-color: rgba(6, 182, 212, 0.3);
         }
-
         .nav-item:not(.active):hover {
           background: rgba(255,255,255,0.05);
           border-color: rgba(255,255,255,0.08);
           transform: translateX(3px);
         }
-
         .nav-item.active::before {
           content: '';
           position: absolute;
@@ -162,20 +162,16 @@ function LeftBar() {
           font-size: 18px;
           transition: background 0.2s ease, color 0.2s ease;
           flex-shrink: 0;
-          position: relative;
         }
-
         .nav-item.active .nav-icon-wrap {
           background: linear-gradient(135deg, #06b6d4, #3b82f6);
           color: #fff;
           box-shadow: 0 4px 14px rgba(6,182,212,0.35);
         }
-
         .nav-item:not(.active) .nav-icon-wrap {
           background: rgba(255,255,255,0.05);
           color: rgba(255,255,255,0.45);
         }
-
         .nav-item:not(.active):hover .nav-icon-wrap {
           background: rgba(6,182,212,0.12);
           color: #06b6d4;
@@ -187,18 +183,9 @@ function LeftBar() {
           letter-spacing: 0.01em;
           transition: color 0.2s ease;
         }
-
-        .nav-item.active .nav-label {
-          color: #e2e8f0;
-        }
-
-        .nav-item:not(.active) .nav-label {
-          color: rgba(255,255,255,0.4);
-        }
-
-        .nav-item:not(.active):hover .nav-label {
-          color: rgba(255,255,255,0.75);
-        }
+        .nav-item.active .nav-label { color: #e2e8f0; }
+        .nav-item:not(.active) .nav-label { color: rgba(255,255,255,0.4); }
+        .nav-item:not(.active):hover .nav-label { color: rgba(255,255,255,0.75); }
 
         .nav-badge {
           margin-left: auto;
@@ -224,25 +211,18 @@ function LeftBar() {
           color: rgba(255,255,255,0.2);
           padding: 10px 14px 6px;
         }
-
-        .leftbar-footer {
-          margin-top: 10px;
-          padding-top: 14px;
-          border-top: 1px solid rgba(255,255,255,0.06);
-        }
       `}</style>
 
       <div className="leftbar-root">
-        {/* Brand — fixed at top, never scrolls */}
+        {/* Brand — সবসময় উপরে */}
         <div className="leftbar-brand">
           <div className="leftbar-brand-dot" />
           <span className="leftbar-brand-text">Navigate</span>
         </div>
 
-        {/* ✅ Scrollable area */}
+        {/* Scrollable nav items */}
         <div className="leftbar-scroll-area">
           <div className="leftbar-section-label">Main</div>
-
           {NAV_ITEMS.slice(0, 3).map(({ path, icon: Icon, label, badge }) => {
             const isActive = location.pathname === path;
             return (
@@ -265,8 +245,7 @@ function LeftBar() {
           <div className="leftbar-section-label" style={{ marginTop: 6 }}>
             Library
           </div>
-
-          {NAV_ITEMS.slice(3, 6).map(({ path, icon: Icon, label, badge }) => {
+          {NAV_ITEMS.slice(3).map(({ path, icon: Icon, label, badge }) => {
             const isActive = location.pathname === path;
             return (
               <div
@@ -284,27 +263,27 @@ function LeftBar() {
               </div>
             );
           })}
+        </div>
 
-          {/* Settings footer — এখন scroll area এর ভেতরে, সব সময় দেখা যাবে */}
-          <div className="leftbar-footer">
-            {NAV_ITEMS.slice(6).map(({ path, icon: Icon, label }) => {
-              const isActive = location.pathname === path;
-              return (
-                <div
-                  key={path}
-                  className={`nav-item ${isActive ? "active" : ""}`}
-                  onClick={() => handleClick(path)}
-                  onMouseEnter={() => setHovered(path)}
-                  onMouseLeave={() => setHovered(null)}
-                >
-                  <div className="nav-icon-wrap">
-                    <Icon />
-                  </div>
-                  <span className="nav-label">{label}</span>
+        {/* ✅ Settings — সবসময় নিচে pin করা, scroll এ লুকাবে না */}
+        <div className="leftbar-pinned-footer">
+          {(() => {
+            const { path, icon: Icon, label } = SETTINGS_ITEM;
+            const isActive = location.pathname === path;
+            return (
+              <div
+                className={`nav-item ${isActive ? "active" : ""}`}
+                onClick={() => handleClick(path)}
+                onMouseEnter={() => setHovered(path)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <div className="nav-icon-wrap">
+                  <Icon />
                 </div>
-              );
-            })}
-          </div>
+                <span className="nav-label">{label}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </>

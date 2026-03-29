@@ -125,7 +125,12 @@ function MainFeed() {
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap');
           @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
-          .skeleton { background: linear-gradient(90deg, #1e293b 25%, #263348 50%, #1e293b 75%); background-size: 400px 100%; animation: shimmer 1.4s infinite linear; border-radius: 12px; }
+          .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #263348 50%, #1e293b 75%);
+            background-size: 400px 100%;
+            animation: shimmer 1.4s infinite linear;
+            border-radius: 12px;
+          }
         `}</style>
         <div
           style={{
@@ -174,7 +179,7 @@ function MainFeed() {
                   />
                 </div>
               </div>
-              {/* ✅ skeleton ও 4:5 ratio তে */}
+              {/* skeleton ও 4:5 ratio তে */}
               <div
                 className="skeleton"
                 style={{
@@ -308,24 +313,46 @@ function MainFeed() {
           line-height: 1.5;
         }
 
-        /* ✅ FIX: Instagram/Facebook এর মতো 4:5 portrait ratio */
+        /* ✅ 4:5 fixed wrapper — structure same থাকে */
         .post-image-wrapper {
           width: 100%;
           aspect-ratio: 4 / 5;
           border-radius: 14px;
           overflow: hidden;
-          background: #0f172a;
+          background: #0a1628;   /* contain এর পাশে dark fill */
+          cursor: pointer;
+          position: relative;
         }
 
+        /* ✅ Hover overlay */
+        .post-image-wrapper::after {
+          content: '💬 View Post';
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0.45);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Syne', sans-serif;
+          font-size: 15px;
+          font-weight: 700;
+          color: #fff;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+          border-radius: 14px;
+        }
+        .post-image-wrapper:hover::after { opacity: 1; }
+
+        /* ✅ contain — পুরো image দেখাবে, crop নেই, পাশে dark gap */
         .post-image {
           width: 100%;
           height: 100%;
-          object-fit: cover;   /* image টা crop হয়ে ratio fill করবে */
+          object-fit: contain;
           object-position: center;
+          background: #0a1628;
           display: block;
-          transition: transform 0.3s ease;
+          transition: transform 0.35s ease;
         }
-
         .post-image-wrapper:hover .post-image {
           transform: scale(1.02);
         }
@@ -357,7 +384,6 @@ function MainFeed() {
         .action-btn:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
         .action-btn.comment:hover { color: #38bdf8; }
         .action-btn.share:hover { color: #a78bfa; }
-
         .action-btn svg { font-size: 16px; }
 
         .action-divider {
@@ -432,9 +458,12 @@ function MainFeed() {
             {/* BODY */}
             <div className="post-body">
               {post.title && <p className="post-title">{post.title}</p>}
-              {/* ✅ Image wrapper দিয়ে ratio enforce করা হচ্ছে */}
               {post.posturl && (
-                <div className="post-image-wrapper">
+                // ✅ Click → comment page, contain → পুরো image দেখায়
+                <div
+                  className="post-image-wrapper"
+                  onClick={() => navigate(`/post/${post._id}`)}
+                >
                   <img src={post.posturl} className="post-image" alt="post" />
                 </div>
               )}

@@ -229,7 +229,26 @@ function CommentPage() {
         .cp-post-time { font-size: 11px; color: rgba(255,255,255,0.28); margin-top: 2px; }
         .cp-post-body { padding: 0 14px 14px; }
         .cp-post-desc { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 10px; line-height: 1.6; }
-        .cp-post-img { width: 100%; border-radius: 14px; object-fit: cover; display: block; max-height: 320px; }
+
+        /* ✅ Natural image — জেমন size তেমন দেখাবে, crop নেই */
+        .cp-post-img-wrapper {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: rgba(0,0,0,0.2);
+          border-radius: 14px;
+          overflow: hidden;
+        }
+        .cp-post-img {
+          display: block;
+          max-width: 100%;
+          width: auto;
+          height: auto;
+          max-height: 80vh;   /* ✅ screen এর বাইরে যাবে না */
+          object-fit: contain; /* ✅ কোনো crop নেই */
+          border-radius: 14px;
+        }
 
         /* Comments section */
         .cp-comments-section {
@@ -333,8 +352,11 @@ function CommentPage() {
               {post.description && (
                 <p className="cp-post-desc">{post.description}</p>
               )}
+              {/* ✅ Natural image — wrapper center করে, image নিজের size এ থাকে */}
               {post.posturl && (
-                <img src={post.posturl} className="cp-post-img" alt="post" />
+                <div className="cp-post-img-wrapper">
+                  <img src={post.posturl} className="cp-post-img" alt="post" />
+                </div>
               )}
             </div>
           </div>
