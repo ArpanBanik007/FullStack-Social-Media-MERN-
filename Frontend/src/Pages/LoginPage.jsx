@@ -227,7 +227,7 @@ function LoginPage() {
             </div>
 
             <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? <span className="auth-spinner" /> : "Sign In"}
+              {loading ? <span className="auth-spinner" /> : "Log In"}
             </button>
           </form>
 

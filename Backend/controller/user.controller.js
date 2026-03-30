@@ -1,4 +1,5 @@
 import asyncHandler from "../utils/asyncHandler.js"
+import { v2 as cloudinary } from "cloudinary";
 import { User } from "../models/user.models.js"
 import UserOTP from "../models/otp.models.js"
 import ApiError from "../utils/ApiError.js"
@@ -29,6 +30,20 @@ const generateAccessAndRefereshTokens = async(userId) =>{
     }
 }
 
+
+const deleteFromCloudinary = async (imageUrl) => {
+    if (!imageUrl) return;
+    try {
+        // URL থেকে public_id বের করো
+        const urlParts = imageUrl.split("/");
+        const fileWithExt = urlParts[urlParts.length - 1];
+        const publicId = fileWithExt.split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+        console.error("Cloudinary delete error:", error);
+        
+    }
+};
 
 
 
@@ -342,95 +357,107 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 
-const updateAccountDetails = asyncHandler(async(req, res) => {
-    const {fullName, email} = req.body
+// ── Update Account Details ───────────────────────────────────────────
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { fullName, email } = req.body;
 
-    if (!fullName || !email) {
-        throw new ApiError(400, "All fields are required")
+    if (!fullName?.trim() || !email?.trim()) {
+        throw new ApiError(400, "Full name and email are required");
+    }
+
+    // Email format validate করো
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        throw new ApiError(400, "Invalid email format");
+    }
+
+    // অন্য কেউ এই email ব্যবহার করছে কিনা check করো
+    const emailExists = await User.findOne({
+        email: email.toLowerCase(),
+        _id: { $ne: req.user._id },
+    });
+
+    if (emailExists) {
+        throw new ApiError(409, "Email is already taken by another account");
     }
 
     const user = await User.findByIdAndUpdate(
-        req.user?._id,
+        req.user._id,
         {
             $set: {
-                fullName,
-                email: email
-            }
+                fullName: fullName.trim(),
+                email: email.toLowerCase().trim(),
+            },
         },
-        {new: true}
-        
-    ).select("-password")
+        { new: true }
+    ).select("-password -refreshToken");
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"))
+        .status(200)
+        .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
 
-const updateUserAvatar = asyncHandler(async(req, res) => {
-    const avatarLocalPath = req.file?.path
+// ── Update Avatar ────────────────────────────────────────────────────
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path;
 
     if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar file is missing")
-    }
-
-
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
-
-    if (!avatar.url) {
-        throw new ApiError(400, "Error while uploading on avatar")
-        
-    }
-
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set:{
-                avatar: avatar.url
-            }
-        },
-        {new: true}
-    ).select("-password")
-
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, user, "Avatar image updated successfully")
-    )
-})
-
-const updateUserCoverImage = asyncHandler(async(req, res) => {
-    const coverImageLocalPath = req.file?.path
-
-    if (!coverImageLocalPath) {
-        throw new ApiError(400, "Cover image file is missing")
+        throw new ApiError(400, "Avatar file is missing");
     }
 
  
+    const oldAvatarUrl = req.user?.avatar;
 
 
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
 
-    if (!coverImage.url) {
-        throw new ApiError(400, "Error while uploading on avatar")
-        
+    if (!avatar?.url) {
+        throw new ApiError(500, "Failed to upload avatar. Please try again");
     }
 
     const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set:{
-                coverImage: coverImage.url
-            }
-        },
-        {new: true}
-    ).select("-password")
+        req.user._id,
+        { $set: { avatar: avatar.url } },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    
+    await deleteFromCloudinary(oldAvatarUrl);
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, user, "Cover image updated successfully")
-    )
-})
+        .status(200)
+        .json(new ApiResponse(200, user, "Avatar updated successfully"));
+});
+
+// ── Update Cover Image ───────────────────────────────────────────────
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+    const coverImageLocalPath = req.file?.path;
+
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, "Cover image file is missing");
+    }
+
+    const oldCoverImageUrl = req.user?.coverImage;
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+    if (!coverImage?.url) {
+        throw new ApiError(500, "Failed to upload cover image. Please try again");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { $set: { coverImage: coverImage.url } },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    await deleteFromCloudinary(oldCoverImageUrl);
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "Cover image updated successfully"));
+});
+
 
 
 const getClickedUserDetails = asyncHandler(async (req, res) => {
@@ -636,6 +663,10 @@ const getClickedUserFollowings = asyncHandler(async (req, res) => {
 });
 
 
+
+
+
+
 export {
     registerUser,
     sendOTP,
@@ -652,6 +683,7 @@ export {
     getMyFollowers,
     getMyFollowings,
     getClickedUserFollowers,
-    getClickedUserFollowings
+    getClickedUserFollowings,
+ 
     
 }
