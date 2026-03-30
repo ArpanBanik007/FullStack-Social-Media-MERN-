@@ -361,34 +361,41 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { fullName, email } = req.body;
 
-    if (!fullName?.trim() || !email?.trim()) {
-        throw new ApiError(400, "Full name and email are required");
+    // কমপক্ষে একটা field থাকতে হবে
+    if (!fullName?.trim() && !email?.trim()) {
+        throw new ApiError(400, "Provide at least one field to update (fullName or email)");
     }
 
-    // Email format validate করো
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        throw new ApiError(400, "Invalid email format");
+    const updateFields = {};
+
+    // ── Full Name update ──
+    if (fullName?.trim()) {
+        updateFields.fullName = fullName.trim();
     }
 
-    // অন্য কেউ এই email ব্যবহার করছে কিনা check করো
-    const emailExists = await User.findOne({
-        email: email.toLowerCase(),
-        _id: { $ne: req.user._id },
-    });
+    // ── Email update ──
+    if (email?.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            throw new ApiError(400, "Invalid email format");
+        }
 
-    if (emailExists) {
-        throw new ApiError(409, "Email is already taken by another account");
+        // অন্য কেউ এই email ব্যবহার করছে কিনা check
+        const emailExists = await User.findOne({
+            email: email.toLowerCase().trim(),
+            _id: { $ne: req.user._id },
+        });
+
+        if (emailExists) {
+            throw new ApiError(409, "Email is already taken by another account");
+        }
+
+        updateFields.email = email.toLowerCase().trim();
     }
 
     const user = await User.findByIdAndUpdate(
         req.user._id,
-        {
-            $set: {
-                fullName: fullName.trim(),
-                email: email.toLowerCase().trim(),
-            },
-        },
+        { $set: updateFields },
         { new: true }
     ).select("-password -refreshToken");
 
