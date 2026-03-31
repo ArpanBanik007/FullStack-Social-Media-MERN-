@@ -302,6 +302,27 @@ const toggleLikeOnComment = asyncHandler(async (req, res) => {
 
 
 
+const getMyVideoComments = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+ 
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
+  }
+ 
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid User ID");
+  }
+ 
+  const comments = await VideoComment.find({ user: userId })
+    .populate("user", "username avatar")
+    .populate("video", "title videourl")
+    .sort({ createdAt: -1 });
+ 
+  return res
+    .status(200)
+    .json(new ApiResponse(200, comments, "Video comments fetched successfully"));
+});
+ 
 
 
 export {
@@ -312,4 +333,5 @@ export {
     updateComment,
     deleteComment,
     toggleLikeOnComment,
+    getMyVideoComments,
 }

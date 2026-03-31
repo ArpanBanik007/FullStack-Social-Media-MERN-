@@ -8,6 +8,7 @@ import {
   updateComment,
   deleteComment,
   toggleLikeOnComment,
+  getMyVideoComments,
 } from "../controller/comments.controller.js";
 
 const router = Router();
@@ -22,5 +23,6 @@ router.route("/:videoId").post(verifyJWT, createComment);
 router.route("/:videoId").get(getAllComments); // ← getSingleVideo সরাও এখান থেকে
 router.route("/:videoId/:commentId").patch(verifyJWT, updateComment);
 router.route("/:videoId/:commentId").delete(verifyJWT, deleteComment);
+router.route("/getAllvideoComments").get(verifyJWT,getMyVideoComments)
 
 export default router;

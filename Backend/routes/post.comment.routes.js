@@ -8,6 +8,7 @@ import {
   updateCommentForPost,
   deleteCommentForPost,
   toggleLikeOnCommentForPost,
+  getMyPostComments,
 } from "../controller/post.comments.controller.js";
 
 import { verifyJWT } from "../middlewire/auth.middlewire.js";
@@ -37,5 +38,7 @@ router.delete("/:postId/:commentId", verifyJWT, deleteCommentForPost);
 
 // ✅ Toggle like on a comment
 router.post("/like/:commentId", verifyJWT, toggleLikeOnCommentForPost);
+
+router.route("/getAllpostCommnents").get(verifyJWT,getMyPostComments)
 
 export default router;
