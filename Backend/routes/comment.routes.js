@@ -14,6 +14,7 @@ import {
 const router = Router();
 
 // ✅ Specific routes আগে
+router.route("/getAllvideoComments").get(verifyJWT,getMyVideoComments)
 router.route("/replies/:commentId").get(getRepliesByCommentId);
 router.route("/reply/:commentId").post(verifyJWT, commentReply);
 router.route("/like/:commentId").post(verifyJWT, toggleLikeOnComment);
@@ -23,6 +24,6 @@ router.route("/:videoId").post(verifyJWT, createComment);
 router.route("/:videoId").get(getAllComments); // ← getSingleVideo সরাও এখান থেকে
 router.route("/:videoId/:commentId").patch(verifyJWT, updateComment);
 router.route("/:videoId/:commentId").delete(verifyJWT, deleteComment);
-router.route("/getAllvideoComments").get(verifyJWT,getMyVideoComments)
+
 
 export default router;

@@ -18,6 +18,7 @@ import { fetchMydetils, selectCurrentUser } from "./slices/mydetails.slice";
 import CommentPage from "./Pages/CommentPage";
 import { fetchMyVideoLikes } from "./slices/video.like.slice";
 import VideoCommentPage from "./Pages/VideoCommentPage";
+import CommentCountpage from "./Pages/CommentCountpage";
 
 function App() {
   const dispatch = useDispatch();
@@ -52,6 +53,7 @@ function App() {
       <Route path="/post/:postId" element={<CommentPage />} />
       <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
       <Route path="/videos/:videoId" element={<VideoPlayer />} />
+      <Route path="/mycomments" element={<CommentCountpage />} />
     </Routes>
   );
 }

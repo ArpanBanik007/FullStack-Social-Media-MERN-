@@ -305,7 +305,7 @@ const getMyPostComments = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid User ID");
   }
  
-  const comments = await PostComment.find({ user: userId })
+  const comments = await Comment.find({ user: userId })
     .populate("user", "username avatar")
     .populate("post", "title posturl")
     .sort({ createdAt: -1 });

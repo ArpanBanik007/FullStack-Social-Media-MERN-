@@ -4,6 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import Comment from "../models/comments.models.js"
 import Video from "../models/video.model.js";
 import {io} from "../socket.js"
+import mongoose from "mongoose";
 
 const createComment = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -313,7 +314,7 @@ const getMyVideoComments = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid User ID");
   }
  
-  const comments = await VideoComment.find({ user: userId })
+  const comments = await Comment.find({ user: userId })
     .populate("user", "username avatar")
     .populate("video", "title videourl")
     .sort({ createdAt: -1 });

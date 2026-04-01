@@ -34,7 +34,7 @@ const settingsItems = [
   {
     icon: <FaComments />,
     label: "Comments Count",
-    route: null,
+    route: "/mycomments",
     color: "text-green-400",
   },
   {

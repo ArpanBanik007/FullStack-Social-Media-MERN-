@@ -30,6 +30,8 @@ router.get("/replies/:commentId", getRepliesByCommentIdForPost);
 // ✅ Reply to a comment
 router.post("/reply/:commentId", verifyJWT, isBlocked, commentReplyForPost);
 
+router.route("/getAllpostCommnents").get(verifyJWT,getMyPostComments)
+
 // ✅ Update a comment
 router.put("/:postId/:commentId", verifyJWT, updateCommentForPost);
 
@@ -39,6 +41,6 @@ router.delete("/:postId/:commentId", verifyJWT, deleteCommentForPost);
 // ✅ Toggle like on a comment
 router.post("/like/:commentId", verifyJWT, toggleLikeOnCommentForPost);
 
-router.route("/getAllpostCommnents").get(verifyJWT,getMyPostComments)
+
 
 export default router;
