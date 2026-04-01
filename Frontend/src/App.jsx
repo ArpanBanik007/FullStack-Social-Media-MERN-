@@ -19,6 +19,9 @@ import CommentPage from "./Pages/CommentPage";
 import { fetchMyVideoLikes } from "./slices/video.like.slice";
 import VideoCommentPage from "./Pages/VideoCommentPage";
 import CommentCountpage from "./Pages/CommentCountpage";
+import LikeCountpage from "./Pages/LikeCountpage";
+import SinglePostViewPage from "./Pages/SinglePostViewPage";
+import SingleVideoViewPage from "./Pages/SinglevideoViewpage";
 
 function App() {
   const dispatch = useDispatch();
@@ -51,9 +54,15 @@ function App() {
       <Route path="/settings/security" element={<SecuritySetting />} />
       <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
       <Route path="/post/:postId" element={<CommentPage />} />
+      <Route path="/posts/:postId" element={<SinglePostViewPage />} />
       <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
+      <Route path="/videoss/:videoId" element={<SingleVideoViewPage />} />
       <Route path="/videos/:videoId" element={<VideoPlayer />} />
       <Route path="/mycomments" element={<CommentCountpage />} />
+      <Route path="/myallLikes" element={<LikeCountpage />} />
+      <Route path="/videos/:videoId" element={<VideoPlayer />} />
+      <Route path="/mycomments" element={<CommentCountpage />} />
+      <Route path="/myallLikes" element={<LikeCountpage />} />
     </Routes>
   );
 }

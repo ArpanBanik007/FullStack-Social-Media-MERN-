@@ -11,6 +11,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import Like from "../models/likes.models.js";
 import Dislike from "../models/dislikes.models.js";
 import { Follow } from "../models/folllow.models.js";
+import Comment from "../models/comments.models.js"
 import mongoose from "mongoose";
 import { io } from "../socket.js";
 
@@ -231,9 +232,9 @@ const getPostsFeed = asyncHandler(async (req, res) => {
 
 
 
-/**
- * Get Single Post
- */
+
+
+// ── Get Single Post ─────────────────────────────────────────────────
 const getSinglePost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
 
@@ -241,21 +242,33 @@ const getSinglePost = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid Post ID");
   }
 
+  const userId = req.user?._id; // verifyJWT optional middleware
+
   const post = await Post.findById(postId)
     .populate("createdBy", "username avatar")
     .lean();
 
   if (!post) throw new ApiError(404, "Post not found");
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, post, "Fetched single post successfully"));
+  // ── Like status + count ──
+  const likeDoc = await Like.findOne({ post: postId });
+  const likedBy = likeDoc?.likedBy || [];
+  const isLiked = userId
+    ? likedBy.some((id) => id.toString() === userId.toString())
+    : false;
+
+  // ── Comment count ──
+  const commentCount = await Comment.countDocuments({ post: postId });
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      ...post,
+      likes: likedBy.length,
+      isLiked,
+      commentCount,
+    }, "Fetched single post successfully")
+  );
 });
-
-
-
-
-
  const togglePostLike = async (req, res) => {
   try {
     const userId = req.user?._id;

@@ -40,7 +40,7 @@ const settingsItems = [
   {
     icon: <FcLike />,
     label: "Like Count",
-    route: null,
+    route: "/myallLikes",
     color: "text-pink-400",
   },
 ];

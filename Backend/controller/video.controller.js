@@ -323,28 +323,44 @@ const getShortsFeed = asyncHandler(async (req, res) => {
   );
 });
 
+
+
+// ── Get Single Video ─────────────────────────────────────────────────
 const getSingleVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  // 1. ID validation
-  // if (!mongoose.Types.ObjectId.isValid(videoId)) {
-  //   throw new ApiError(400, "Invalid Video ID"); 
-  // }
-
-
-  const video = await Video.findById(videoId)
-    .populate("createdBy", "username avatar") 
-    .lean(); 
-  // 3. Not Found check
-  if (!video) {
-    throw new ApiError(404, "Video not found");
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid Video ID");
   }
 
-  // 4. Successful response
-  return res
-    .status(200)
-    .json(new ApiResponse(200, video, "Fetched single video successfully"));
+  const userId = req.user?._id;
+
+  const video = await Video.findById(videoId)
+    .populate("createdBy", "username avatar")
+    .lean();
+
+  if (!video) throw new ApiError(404, "Video not found");
+
+  // ── Like status + count ──
+  const likeDoc = await VideoLike.findOne({ video: videoId });
+  const likedBy = likeDoc?.likedBy || [];
+  const isLiked = userId
+    ? likedBy.some((id) => id.toString() === userId.toString())
+    : false;
+
+  // ── Comment count ──
+  const commentCount = await VideoComment.countDocuments({ video: videoId });
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      ...video,
+      likes: likedBy.length,
+      isLiked,
+      commentCount,
+    }, "Fetched single video successfully")
+  );
 });
+
 
 
 const addViews = asyncHandler(async (req, res) => {
