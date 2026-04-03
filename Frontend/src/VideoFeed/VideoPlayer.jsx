@@ -12,6 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket";
 import VideoLikeButton from "../componants/VideoLikeButton";
+import { syncVideoLike } from "../slices/video.like.slice";
 import FollowButton from "../componants/FollowButton";
 import { fetchMyFollowings } from "../slices/follow.slice";
 
@@ -40,6 +41,11 @@ function VideoPlayer() {
         );
         const fetchedVideos = res.data?.data?.videos || [];
         setVideos(fetchedVideos);
+        fetchedVideos.forEach(v => {
+           if (v.userLiked !== undefined) {
+               dispatch(syncVideoLike({ videoId: v._id, isLiked: v.userLiked }));
+           }
+        });
         if (fetchedVideos.length > 0)
           navigate(`/videos/${fetchedVideos[0]._id}`, { replace: true });
       } catch (err) {
@@ -60,7 +66,11 @@ function VideoPlayer() {
     const handleReactionUpdate = (data) => {
       setVideos((prev) =>
         prev.map((v) =>
-          v._id === data.videoId ? { ...v, likes: data.likes } : v,
+          v._id === data.videoId ? { 
+            ...v, 
+            likes: data.likes,
+            userLiked: data.userLiked !== undefined ? data.userLiked : v.userLiked 
+          } : v,
         ),
       );
     };

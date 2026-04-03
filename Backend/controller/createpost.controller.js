@@ -251,10 +251,8 @@ const getSinglePost = asyncHandler(async (req, res) => {
   if (!post) throw new ApiError(404, "Post not found");
 
   // ── Like status + count ──
-  const likeDoc = await Like.findOne({ post: postId });
-  const likedBy = likeDoc?.likedBy || [];
   const isLiked = userId
-    ? likedBy.some((id) => id.toString() === userId.toString())
+    ? await Like.exists({ post: postId, user: userId })
     : false;
 
   // ── Comment count ──
@@ -263,8 +261,7 @@ const getSinglePost = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse(200, {
       ...post,
-      likes: likedBy.length,
-      isLiked,
+      isLiked: !!isLiked,
       commentCount,
     }, "Fetched single post successfully")
   );
@@ -432,10 +429,60 @@ const getOwnAllPosts = asyncHandler(async (req, res) => {
   console.log("UserId",userId)
   if (!userId) throw new ApiError(401, "Unauthorized");
 
-  const userPosts = await Post.find({ createdBy: userId,})
-    .sort({ createdAt: -1 })
-    .populate("createdBy", "username avatar")
-    .lean();
+  const userPosts = await Post.aggregate([
+    { $match: { createdBy: new mongoose.Types.ObjectId(userId) } },
+    { $sort: { createdAt: -1 } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "createdBy",
+        foreignField: "_id",
+        as: "createdBy",
+      },
+    },
+    { $unwind: "$createdBy" },
+    {
+      $lookup: {
+        from: "likes",
+        let: { postId: "$_id", userId: new mongoose.Types.ObjectId(userId) },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$post", "$$postId"] },
+                  { $eq: ["$user", "$$userId"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "userLike",
+      },
+    },
+    {
+      $addFields: {
+        userLiked: { $gt: [{ $size: "$userLike" }, 0] },
+      },
+    },
+    {
+      $project: {
+        title: 1,
+        posturl: 1,
+        likes: 1,
+        dislikes: 1,
+        comments: 1,
+        createdAt: 1,
+        createdBy: {
+          _id: 1,
+          username: 1,
+          fullName: 1,
+          avatar: 1,
+        },
+        userLiked: 1,
+      },
+    },
+  ]);
 
   if (!userPosts || userPosts.length === 0) {
     return res.status(404).json({

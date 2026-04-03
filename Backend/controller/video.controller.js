@@ -1,9 +1,9 @@
 import asyncHandler from "../utils/asyncHandler.js"
-import {User} from "../models/user.models.js"
+import { User } from "../models/user.models.js"
 import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
- import { uploadVideoOnCloudinary } from "../utils/cloudinary.video.js"
+import { uploadVideoOnCloudinary } from "../utils/cloudinary.video.js"
 import Video from "../models/video.model.js"
 import VideoLike from "../models/videoLike.models.js"
 import { deleteFromCloudinary } from "../utils/deleteFromCloudynary.js"
@@ -14,6 +14,7 @@ import { View } from "../models/views.model.js"
 import Like from "../models/likes.models.js"
 import { io } from "../socket.js";
 import mongoose from "mongoose";
+import Comment from "../models/comments.models.js";
 
 const createVideo = asyncHandler(async (req, res) => {
   const { title, description, tags = [], category, isPublished } = req.body;
@@ -28,7 +29,7 @@ const createVideo = asyncHandler(async (req, res) => {
   const thumbnailFile = req.files?.thumbnail?.[0] || null;
 
   console.log(videoFile)
-  
+
   if (!videoFile?.path) {
     throw new ApiError(400, "Video file is required");
   }
@@ -84,7 +85,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not allowed to update this video");
   }
 
-  
+
 
   // ✅ Validations
   if (title !== undefined) {
@@ -206,7 +207,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 //   const query = {
 //     isPublished: true,
-   
+
 //   };
 
 //   if (search.trim() !== "") {
@@ -215,7 +216,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 //     query.$or = [
 //       { title: { $regex: searchRegex } },
-      
+
 //     ];
 //   }
 
@@ -309,7 +310,7 @@ const getShortsFeed = asyncHandler(async (req, res) => {
         thumbnail: 1,
         views: 1,
         likes: 1,
-        comments:1,
+        comments: 1,
         createdAt: 1,
         category: 1,
         createdBy: { _id: 1, username: 1, avatar: 1 },
@@ -342,20 +343,17 @@ const getSingleVideo = asyncHandler(async (req, res) => {
   if (!video) throw new ApiError(404, "Video not found");
 
   // ── Like status + count ──
-  const likeDoc = await VideoLike.findOne({ video: videoId });
-  const likedBy = likeDoc?.likedBy || [];
   const isLiked = userId
-    ? likedBy.some((id) => id.toString() === userId.toString())
+    ? await VideoLike.exists({ video: videoId, user: userId })
     : false;
 
   // ── Comment count ──
-  const commentCount = await VideoComment.countDocuments({ video: videoId });
+  const commentCount = await Comment.countDocuments({ video: videoId });
 
   return res.status(200).json(
     new ApiResponse(200, {
       ...video,
-      likes: likedBy.length,
-      isLiked,
+      isLiked: !!isLiked,
       commentCount,
     }, "Fetched single video successfully")
   );
@@ -374,19 +372,19 @@ const addViews = asyncHandler(async (req, res) => {
 
   const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
 
-  
+
   const existingView = await View.findOne({
     video: videoId,
     $or: [
       userId ? { user: userId, createdAt: { $gte: sixHoursAgo } } : null,
       ip ? { ip, createdAt: { $gte: sixHoursAgo } } : null,
-    ].filter(Boolean), 
+    ].filter(Boolean),
   });
 
-  
+
   if (!existingView) {
-    await View.create({ video: videoId, user: userId, ip }); 
-    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } }); 
+    await View.create({ video: videoId, user: userId, ip });
+    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
   }
 
   return res.status(200).json(
@@ -411,7 +409,7 @@ const addViews = asyncHandler(async (req, res) => {
 //   if (alreadyLiked) {
 
 //     await Like.deleteOne({ user: userId, video: videoId });
- 
+
 //     await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
 
 
@@ -466,7 +464,7 @@ const toggleLikes = asyncHandler(async (req, res) => {
 
 
 
- const toggleDislike = asyncHandler(async (req, res) => {
+const toggleDislike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const userId = req.user?._id;
 
@@ -485,10 +483,10 @@ const toggleLikes = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(new ApiResponse(200, null, "Dislike removed successfully"));
-  } 
-  
+  }
+
   else {
-   
+
     await Dislike.create({ user: userId, video: videoId });
 
     await Video.findByIdAndUpdate(videoId, { $inc: { dislikes: 1 } });
@@ -496,8 +494,8 @@ const toggleLikes = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(new ApiResponse(200, null, "Disliked the video"));
-  }
-});  
+  }
+});
 
 
 const getMyAllLikedVideos = asyncHandler(async (req, res) => {
@@ -628,7 +626,7 @@ const getClickedUserAllVideos = asyncHandler(async (req, res) => {
 });
 
 
-export{
+export {
   createVideo,
   updateVideo,
   updateVideoThumbnail,

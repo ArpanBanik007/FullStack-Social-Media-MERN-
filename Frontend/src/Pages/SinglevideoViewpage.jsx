@@ -8,6 +8,7 @@ import { FaHeart, FaRegHeart, FaComment, FaShareNodes } from "react-icons/fa6";
 import {
   toggleVideoLike,
   selectIsVideoLiked,
+  syncVideoLike
 } from "../slices/video.like.slice";
 import { socket } from "../socket";
 
@@ -52,6 +53,9 @@ function SingleVideoViewPage() {
           }),
         ]);
         setVideo(videoRes.data?.data);
+        if (videoRes.data?.data?.isLiked !== undefined) {
+          dispatch(syncVideoLike({ videoId, isLiked: videoRes.data.data.isLiked }));
+        }
         setLikeCount(videoRes.data?.data?.likes || 0);
         setComments(commentsRes.data?.data || []);
       } catch (err) {

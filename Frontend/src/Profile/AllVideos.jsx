@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaHeart, FaPlay } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { syncVideoLike } from "../slices/video.like.slice";
 
 function AllVideos() {
+  const dispatch = useDispatch();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -15,7 +18,13 @@ function AllVideos() {
           "http://localhost:8000/api/v1/videos/myvideos",
           { withCredentials: true },
         );
-        setVideos(res.data?.data?.videos || []);
+        const fetchedVideos = res.data?.data?.videos || [];
+        setVideos(fetchedVideos);
+        fetchedVideos.forEach(v => {
+           if (v.userLiked !== undefined) {
+               dispatch(syncVideoLike({ videoId: v._id, isLiked: v.userLiked }));
+           }
+        });
       } catch (err) {
         console.error("Video fetch error:", err);
       } finally {

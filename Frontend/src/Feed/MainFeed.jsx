@@ -11,6 +11,7 @@ import { fetchMyFollowings } from "../slices/follow.slice";
 import PostActionMenu from "../componants/PostActionMenu";
 import { useNavigate } from "react-router-dom";
 import LikeButton from "../componants/LikeButton";
+import { syncPostLike } from "../slices/like.slice";
 
 function MainFeed() {
   const dispatch = useDispatch();
@@ -33,7 +34,13 @@ function MainFeed() {
         const res = await axios.get("http://localhost:8000/api/v1/posts/feed", {
           withCredentials: true,
         });
-        setPosts(res.data?.posts || []);
+        const fetchedPosts = res.data?.posts || [];
+        setPosts(fetchedPosts);
+        fetchedPosts.forEach(post => {
+          if (post.userLiked !== undefined) {
+             dispatch(syncPostLike({ postId: post._id, isLiked: post.userLiked }));
+          }
+        });
       } catch (err) {
         console.error("Failed to fetch posts:", err);
       } finally {
@@ -71,8 +78,8 @@ function MainFeed() {
                 ...post,
                 likes: data.likes,
                 dislikes: data.dislikes,
-                userLiked: data.userLiked,
-                userDisliked: data.userDisliked,
+                userLiked: data.userLiked !== undefined ? data.userLiked : post.userLiked,
+                userDisliked: data.userDisliked !== undefined ? data.userDisliked : post.userDisliked,
               }
             : post,
         ),
@@ -94,30 +101,7 @@ function MainFeed() {
     return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
 
-  const handleLike = async (postId) => {
-    try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/posts/${postId}/like`,
-        {},
-        { withCredentials: true },
-      );
-      const liked = res.data?.liked;
-      if (typeof liked !== "boolean") return;
-      setPosts((prev) =>
-        prev.map((post) =>
-          post._id === postId
-            ? {
-                ...post,
-                userLiked: liked,
-                userDisliked: liked ? false : post.userDisliked,
-              }
-            : post,
-        ),
-      );
-    } catch (err) {
-      console.error("Like failed", err);
-    }
-  };
+
 
   if (feedLoading || userLoading) {
     return (

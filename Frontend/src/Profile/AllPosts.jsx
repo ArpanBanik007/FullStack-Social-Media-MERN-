@@ -6,6 +6,8 @@ import { MdEdit, MdDelete } from "react-icons/md";
 import LikeButton from "../componants/LikeButton";
 import { socket } from "../socket";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { syncPostLike } from "../slices/like.slice";
 
 const SHARED_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap');
@@ -87,6 +89,7 @@ const SHARED_STYLES = `
 `;
 
 const AllPosts = () => {
+  const dispatch = useDispatch();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -100,7 +103,13 @@ const AllPosts = () => {
           "http://localhost:8000/api/v1/posts/my-posts",
           { withCredentials: true },
         );
-        setPosts(res.data?.data || []);
+        const fetchedPosts = res.data?.data || [];
+        setPosts(fetchedPosts);
+        fetchedPosts.forEach(post => {
+          if (post.userLiked !== undefined) {
+             dispatch(syncPostLike({ postId: post._id, isLiked: post.userLiked }));
+          }
+        });
       } catch (error) {
         console.error("Failed to fetch posts:", error);
       } finally {

@@ -5,7 +5,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { FaHeart, FaRegHeart, FaComment, FaShareNodes } from "react-icons/fa6";
-import { toggleLike, selectIsPostLiked } from "../slices/like.slice";
+import {
+  toggleLike,
+  selectIsPostLiked,
+  syncPostLike,
+} from "../slices/like.slice";
 import { socket } from "../socket";
 
 const timeAgo = (d) => {
@@ -35,16 +39,15 @@ function SinglePostViewPage() {
   const { mydetails } = useSelector((state) => state.mydetails);
   const commentsEndRef = useRef(null);
 
-  // ── Fetch post + comments ──────────────────────────────────────────
+  // ── Fetch post + comments ──
   useEffect(() => {
     const fetchAll = async () => {
       try {
         const [postRes, commentsRes] = await Promise.all([
-          // ✅ relative URL, সঠিক route
           axios.get(`http://localhost:8000/api/v1/posts/single/${postId}`, {
             withCredentials: true,
           }),
-          // ✅ comment route — তোমার comment.routes.js অনুযায়ী
+
           axios.get(
             `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
             {
@@ -52,9 +55,15 @@ function SinglePostViewPage() {
             },
           ),
         ]);
-        setPost(postRes.data?.data);
-        setLikeCount(postRes.data?.data?.likes || 0);
+
+        const fetchedPost = postRes.data?.data;
+        setPost(fetchedPost);
+        setLikeCount(fetchedPost?.likes || 0);
         setComments(commentsRes.data?.data || []);
+
+        if (fetchedPost?.isLiked !== undefined) {
+          dispatch(syncPostLike({ postId, isLiked: fetchedPost.isLiked }));
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -62,44 +71,49 @@ function SinglePostViewPage() {
       }
     };
     fetchAll();
-  }, [postId]);
+  }, [postId, dispatch]);
 
-  // ── Socket: real-time like + comment count ─────────────────────────
+  // ── Socket ──
   useEffect(() => {
     socket.emit("join-post", `post:${postId}`);
 
-    socket.on("post-reaction-updated", (data) => {
+    const handleReaction = (data) => {
       if (data.postId === postId) setLikeCount(data.likes);
-    });
+    };
 
-    socket.on("comment-count-updated", ({ postId: pid, comments: count }) => {
+    const handleCommentCount = ({ postId: pid, comments: count }) => {
       if (pid === postId)
         setPost((prev) => (prev ? { ...prev, commentCount: count } : prev));
-    });
+    };
+
+    socket.on("post-reaction-updated", handleReaction);
+    socket.on("comment-count-updated", handleCommentCount);
 
     return () => {
-      socket.off("post-reaction-updated");
-      socket.off("comment-count-updated");
+      // ✅ specific listener reference দিয়ে remove
+      socket.off("post-reaction-updated", handleReaction);
+      socket.off("comment-count-updated", handleCommentCount);
     };
   }, [postId]);
 
-  // ── Like toggle ────────────────────────────────────────────────────
+  // ── Like toggle ──
   const handleLike = async () => {
     if (likeLoading) return;
     setLikeLoading(true);
-    // Optimistic update
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
+
+    const wasLiked = isLiked;
+    setLikeCount((prev) => (wasLiked ? prev - 1 : prev + 1));
+
     try {
       await dispatch(toggleLike(postId)).unwrap();
     } catch {
-      // Revert on error
-      setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
+      setLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
     } finally {
       setLikeLoading(false);
     }
   };
 
-  // ── Add comment ────────────────────────────────────────────────────
+  // ── Add comment ──
   const handleAddComment = async () => {
     if (!content.trim() || sending) return;
     try {
@@ -119,7 +133,7 @@ function SinglePostViewPage() {
     }
   };
 
-  // ── Loading ────────────────────────────────────────────────────────
+  // ── Loading skeleton ──
   if (loading) {
     return (
       <div className="bg-gray-950 min-h-screen flex flex-col">
@@ -165,7 +179,7 @@ function SinglePostViewPage() {
 
   return (
     <div className="bg-gray-950 min-h-screen flex flex-col pb-24">
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="sticky top-0 z-20 bg-gray-950/90 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
@@ -177,7 +191,7 @@ function SinglePostViewPage() {
       </div>
 
       <div className="max-w-lg mx-auto w-full px-4 py-4 flex flex-col gap-3">
-        {/* ── Post Card ── */}
+        {/* Post Card */}
         <div className="bg-gray-800/60 rounded-2xl overflow-hidden border border-white/5">
           {/* Post Header */}
           <div className="flex items-center gap-3 p-4">
@@ -192,7 +206,14 @@ function SinglePostViewPage() {
                 }
               />
             ) : (
-              <RiAccountCircleFill className="text-4xl text-gray-600 flex-shrink-0" />
+              <RiAccountCircleFill
+                className="text-4xl text-gray-600 flex-shrink-0 cursor-pointer"
+                onClick={() =>
+                  post.createdBy._id === mydetails?._id
+                    ? navigate("/profile")
+                    : navigate(`/profile/${post.createdBy._id}`)
+                }
+              />
             )}
             <div
               className="cursor-pointer"
@@ -227,7 +248,7 @@ function SinglePostViewPage() {
             )}
           </div>
 
-          {/* ── Actions ── */}
+          {/* Actions */}
           <div className="flex items-center border-t border-white/5 px-2 py-1">
             {/* Like */}
             <button
@@ -261,7 +282,7 @@ function SinglePostViewPage() {
           </div>
         </div>
 
-        {/* ── Comments Section ── */}
+        {/* Comments Section */}
         <div className="flex flex-col gap-2">
           <p className="text-xs text-gray-600 uppercase font-bold tracking-widest px-1">
             Comments · {comments.length}
@@ -307,7 +328,7 @@ function SinglePostViewPage() {
         </div>
       </div>
 
-      {/* ── Fixed Comment Input ── */}
+      {/* Fixed Comment Input */}
       <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-950/95 backdrop-blur border-t border-white/5 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           {mydetails?.avatar ? (

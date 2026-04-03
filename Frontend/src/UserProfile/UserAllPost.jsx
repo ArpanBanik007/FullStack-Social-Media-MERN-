@@ -5,8 +5,11 @@ import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket";
+import { useDispatch } from "react-redux";
+import { syncPostLike } from "../slices/like.slice";
 
 function UserAllPost({ userId }) {
+  const dispatch = useDispatch();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -20,7 +23,13 @@ function UserAllPost({ userId }) {
           `http://localhost:8000/api/v1/posts/user/${userId}`,
           { withCredentials: true },
         );
-        setPosts(res.data.data);
+        const fetchedPosts = res.data.data || [];
+        setPosts(fetchedPosts);
+        fetchedPosts.forEach(post => {
+          if (post.userLiked !== undefined) {
+             dispatch(syncPostLike({ postId: post._id, isLiked: post.userLiked }));
+          }
+        });
       } catch (err) {
         console.log("Post fetch error", err);
       } finally {
@@ -40,7 +49,12 @@ function UserAllPost({ userId }) {
       setPosts((prev) =>
         prev.map((post) =>
           post._id === data.postId
-            ? { ...post, likes: data.likes, dislikes: data.dislikes }
+            ? { 
+                ...post, 
+                likes: data.likes, 
+                dislikes: data.dislikes,
+                userLiked: data.userLiked !== undefined ? data.userLiked : post.userLiked,
+              }
             : post,
         ),
       );

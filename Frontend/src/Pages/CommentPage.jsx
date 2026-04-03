@@ -19,7 +19,7 @@ function CommentPage() {
     const fetchPost = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/v1/posts/${postId}`,
+          `http://localhost:8000/api/v1/posts/single/${postId}`,
         );
         setPost(res.data?.data);
       } catch (err) {

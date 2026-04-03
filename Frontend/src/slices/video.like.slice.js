@@ -60,6 +60,19 @@ const videoLikeSlice = createSlice({
       state.status = "idle";
       state.error = null;
     },
+    syncVideoLike: (state, action) => {
+      const { videoId, isLiked } = action.payload;
+      const id = normalizeId(videoId);
+      const exists = state.videos.some((v) => normalizeId(v._id) === id);
+
+      if (isLiked && !exists) {
+        state.videos.push({ _id: id });
+        state.totalLikes += 1;
+      } else if (!isLiked && exists) {
+        state.videos = state.videos.filter((v) => normalizeId(v._id) !== id);
+        if (state.totalLikes > 0) state.totalLikes -= 1;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -100,7 +113,7 @@ const videoLikeSlice = createSlice({
   },
 });
 
-export const { removeFromLikedVideos, clearLikedVideos } =
+export const { removeFromLikedVideos, clearLikedVideos, syncVideoLike } =
   videoLikeSlice.actions;
 export default videoLikeSlice.reducer;
 
