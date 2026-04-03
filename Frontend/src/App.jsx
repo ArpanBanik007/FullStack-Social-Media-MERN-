@@ -40,27 +40,28 @@ function App() {
 
   return (
     <Routes>
-      {/* login and signup */}
       <Route path="/" element={<LoginPage />} />
       <Route path="/signup" element={<SignUp />} />
-      {/* other pages */}
       <Route path="/home" element={<HomePage />} />
       <Route path="/profile" element={<OwnProfilepage />} />
       <Route path="/videos" element={<VideoPlayer />} />
+      <Route path="/videos/:videoId" element={<VideoPlayer />} />
       <Route path="/saved" element={<SavePage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/settings" element={<SettingPage />} />
       <Route path="/settings/profile" element={<ProfileSettting />} />
       <Route path="/settings/security" element={<SecuritySetting />} />
       <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
+
+      {/* ✅ Post routes */}
       <Route path="/post/:postId" element={<CommentPage />} />
-      <Route path="/posts/:postId" element={<SinglePostViewPage />} />
+      <Route path="/post/single/:postId" element={<SinglePostViewPage />} />
+
+      {/* ✅ Video routes */}
       <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
-      <Route path="/videoss/:videoId" element={<SingleVideoViewPage />} />
-      <Route path="/videos/:videoId" element={<VideoPlayer />} />
-      <Route path="/mycomments" element={<CommentCountpage />} />
-      <Route path="/myallLikes" element={<LikeCountpage />} />
-      <Route path="/videos/:videoId" element={<VideoPlayer />} />
+      <Route path="/video/single/:videoId" element={<SingleVideoViewPage />} />
+
+      {/* ✅ Other pages */}
       <Route path="/mycomments" element={<CommentCountpage />} />
       <Route path="/myallLikes" element={<LikeCountpage />} />
     </Routes>

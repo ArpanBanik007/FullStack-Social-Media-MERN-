@@ -40,12 +40,17 @@ function SinglePostViewPage() {
     const fetchAll = async () => {
       try {
         const [postRes, commentsRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/v1/posts/${postId}`, {
+          // ✅ relative URL, সঠিক route
+          axios.get(`http://localhost:8000/api/v1/posts/single/${postId}`, {
             withCredentials: true,
           }),
-          axios.get(`http://localhost:8000/api/v1/comments/post/${postId}`, {
-            withCredentials: true,
-          }),
+          // ✅ comment route — তোমার comment.routes.js অনুযায়ী
+          axios.get(
+            `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
+            {
+              withCredentials: true,
+            },
+          ),
         ]);
         setPost(postRes.data?.data);
         setLikeCount(postRes.data?.data?.likes || 0);

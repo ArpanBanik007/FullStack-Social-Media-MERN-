@@ -156,10 +156,11 @@ function LikeCountpage() {
 
   // ── Navigate on click ──
   const handleClick = (item, type) => {
-    if (type === "post" && item._id) navigate(`/posts/${item._id}`);
-    else if (type === "video" && item._id) navigate(`/videoss/${item._id}`);
+    if (type === "post" && item._id)
+      navigate(`/post/single/${item._id}`); // ✅ /post/ not /posts/
+    else if (type === "video" && item._id)
+      navigate(`/video/single/${item._id}`); // ✅ match App.jsx route
   };
-
   const activeItems = activeTab === "post" ? likedPosts : likedVideos;
   const activeTotal = activeTab === "post" ? totalPostLikes : totalVideoLikes;
 

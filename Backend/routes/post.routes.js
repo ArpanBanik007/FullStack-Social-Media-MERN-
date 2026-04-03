@@ -42,12 +42,12 @@ router.get("/feed",verifyJWT,getPostsFeed);
 router.route("/my-posts").get(verifyJWT,getOwnAllPosts)
 
 
-router.route("/my-posts/:postId").get(verifyJWT,getSinglePost)
+// router.route("/my-posts/:postId").get(verifyJWT,getSinglePost)
 
 router.get("/user/:userId", verifyJWT, getClickedUserPosts);
 
 // ✅ Get single post by ID
-router.get("/:postId", getSinglePost);
+router.get("/single/:postId", verifyJWT,getSinglePost);
 
 // ✅ Update post (only owner, image optional)
 router.patch("/:postId", verifyJWT,  updatePost);
