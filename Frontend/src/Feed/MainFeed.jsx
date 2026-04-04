@@ -284,6 +284,7 @@ function MainFeed() {
           cursor: pointer;
           color: rgba(255,255,255,0.35);
           transition: background 0.2s, color 0.2s;
+          flex-shrink: 0;
         }
         .post-menu-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
 
@@ -394,13 +395,14 @@ function MainFeed() {
                 }
               />
               <div
+                style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
                 onClick={() =>
                   post?.createdBy?._id === mydetails?._id
                     ? navigate("/profile")
                     : navigate(`/profile/${post?.createdBy?._id}`)
                 }
               >
-                <div className="post-username">
+                <div className="post-username" style={{ textOverflow: "ellipsis", whiteSpace: "nowrap", overflow: "hidden" }}>
                   @{post?.createdBy?.username}
                 </div>
                 <div className="post-time">
@@ -409,7 +411,7 @@ function MainFeed() {
               </div>
 
               {post.createdBy._id !== mydetails?._id && (
-                <div style={{ marginLeft: "auto", marginRight: 8 }}>
+                <div style={{ marginRight: 4, flexShrink: 0 }}>
                   <FollowButton
                     userId={post.createdBy._id}
                     isFollowedByBackend={post.createdBy.isFollowedByMe}
@@ -446,7 +448,7 @@ function MainFeed() {
                 // ✅ Click → comment page, contain → পুরো image দেখায়
                 <div
                   className="post-image-wrapper"
-                  onClick={() => navigate(`/post/${post._id}`)}
+                  onClick={() => navigate(`/post/single/${post._id}`)}
                 >
                   <img src={post.posturl} className="post-image" alt="post" />
                 </div>
@@ -465,7 +467,7 @@ function MainFeed() {
 
               <button
                 className="action-btn comment"
-                onClick={() => navigate(`/post/${post._id}`)}
+                onClick={() => navigate(`/post/single/${post._id}`)}
               >
                 <FaComment /> {post.comments || 0}
               </button>

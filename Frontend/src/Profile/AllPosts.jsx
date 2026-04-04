@@ -45,6 +45,7 @@ const SHARED_STYLES = `
     display:flex; align-items:center; justify-content:center;
     font-size:20px; cursor:pointer; color:rgba(255,255,255,0.3);
     transition:background 0.2s, color 0.2s;
+    flex-shrink:0;
   }
   .ap-dots:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.75); }
 
@@ -242,8 +243,8 @@ const AllPosts = () => {
               alt="avatar"
               className="ap-avatar"
             />
-            <div>
-              <div className="ap-username">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="ap-username" style={{ textOverflow: "ellipsis", whiteSpace: "nowrap", overflow: "hidden" }}>
                 @{post?.createdBy?.username || "Unknown"}
               </div>
               <div className="ap-time">
@@ -263,7 +264,12 @@ const AllPosts = () => {
           <div className="ap-body">
             {post.title && <p className="ap-title">{post.title}</p>}
             {post.posturl && (
-              <img src={post.posturl} alt="post" className="ap-img" />
+              <div 
+                style={{ cursor: "pointer" }} 
+                onClick={() => navigate(`/post/single/${post._id}`)}
+              >
+                <img src={post.posturl} alt="post" className="ap-img" />
+              </div>
             )}
           </div>
 
@@ -274,7 +280,7 @@ const AllPosts = () => {
             <div className="ap-act-divider" />
             <button
               className="ap-act-btn comment"
-              onClick={() => navigate(`/post/${post._id}`)}
+              onClick={() => navigate(`/post/single/${post._id}`)}
             >
               <FaComment /> {post.comments || 0}
             </button>

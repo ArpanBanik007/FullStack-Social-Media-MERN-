@@ -159,9 +159,9 @@ function UserAllPost({ userId }) {
 
         .uap-header { display:flex; align-items:center; gap:11px; padding:14px 14px 10px; }
         .uap-avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid rgba(6,182,212,0.3); flex-shrink:0; }
-        .uap-username { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); }
+        .uap-username { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
         .uap-time { font-size:11px; color:rgba(255,255,255,0.28); margin-top:2px; }
-        .uap-dots { margin-left:auto; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; color:rgba(255,255,255,0.3); transition:background 0.2s, color 0.2s; }
+        .uap-dots { margin-left:auto; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; color:rgba(255,255,255,0.3); transition:background 0.2s, color 0.2s; flex-shrink:0; }
         .uap-dots:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.75); }
 
         .uap-body { padding:0 14px 14px; }
@@ -188,7 +188,7 @@ function UserAllPost({ userId }) {
               alt="avatar"
               className="uap-avatar"
             />
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div className="uap-username">
                 @{post?.createdBy?.username || "Unknown"}
               </div>
@@ -209,12 +209,17 @@ function UserAllPost({ userId }) {
           <div className="uap-body">
             {post.title && <p className="uap-title">{post.title}</p>}
             {post.posturl && (
-              <img
-                src={post.posturl}
-                alt="post"
-                className="uap-img"
-                loading="lazy"
-              />
+              <div 
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate(`/post/single/${post._id}`)}
+              >
+                <img
+                  src={post.posturl}
+                  alt="post"
+                  className="uap-img"
+                  loading="lazy"
+                />
+              </div>
             )}
           </div>
 
@@ -225,7 +230,7 @@ function UserAllPost({ userId }) {
             <div className="uap-act-divider" />
             <button
               className="uap-act-btn comment"
-              onClick={() => navigate(`/post/${post._id}`)}
+              onClick={() => navigate(`/post/single/${post._id}`)}
             >
               <FaComment /> {post.comments || 0}
             </button>

@@ -6,7 +6,7 @@ import { BiVideoPlus } from "react-icons/bi";
 import { IoSettingsSharp } from "react-icons/io5";
 import { FaBell } from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
-import { TiThMenu } from "react-icons/ti";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import SearchBar from "../componants/SearchBar";
 import { persistor } from "../store/store";
 import { resetMyDetails } from "../slices/mydetails.slice";
@@ -99,6 +99,7 @@ function Navbar() {
         .navbar-search {
           flex: 1;
           max-width: 380px;
+          min-width: 0;
         }
 
         /* Desktop icons area */
@@ -245,14 +246,15 @@ function Navbar() {
         /* Mobile menu button */
         .mobile-menu-btn {
           display: none;
-          font-size: 22px;
-          color: rgba(255,255,255,0.5);
+          font-size: 24px;
+          color: rgba(255,255,255,0.7);
           cursor: pointer;
           padding: 8px;
           border-radius: 10px;
           transition: background 0.2s, color 0.2s;
           border: none;
           background: transparent;
+          flex-shrink: 0;
         }
         .mobile-menu-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
@@ -300,8 +302,16 @@ function Navbar() {
 
         @media (max-width: 768px) {
           .navbar-icons { display: none; }
-          .mobile-menu-btn { display: flex; align-items: center; }
-          .navbar-search { max-width: 200px; }
+          .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+          .navbar-search { max-width: none; flex: 1; }
+          .navbar-root { padding: 0 16px; gap: 10px; }
+        }
+        
+        @media (max-width: 480px) {
+          .navbar-root { padding: 0 12px; gap: 8px; }
+          .navbar-logo { font-size: 20px; }
+          .mobile-menu-btn { padding: 4px; font-size: 22px; width: 36px; height: 36px; }
+          .navbar-search { min-width: 0; }
         }
       `}</style>
 
@@ -381,7 +391,7 @@ function Navbar() {
           className="mobile-menu-btn"
           onClick={() => setShowMenu(!showMenu)}
         >
-          <TiThMenu />
+          <BsThreeDotsVertical />
         </button>
 
         {/* Mobile Dropdown */}
