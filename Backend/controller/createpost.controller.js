@@ -4,7 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import { User } from "../models/user.models.js";
-import { View } from "../models/views.model.js";
+
 import { deleteFromCloudinary } from "../utils/deleteFromCloudynary.js";
 import escapeStringRegexp from "escape-string-regexp";
 import ApiResponse from "../utils/ApiResponse.js";

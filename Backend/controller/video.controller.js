@@ -10,7 +10,6 @@ import { deleteFromCloudinary } from "../utils/deleteFromCloudynary.js"
 import { getVideoDurationInSeconds } from "get-video-duration"
 import escapeStringRegexp from 'escape-string-regexp';
 import fs from "fs"
-import { View } from "../models/views.model.js"
 import Like from "../models/likes.models.js"
 import { io } from "../socket.js";
 import mongoose from "mongoose";
@@ -361,69 +360,6 @@ const getSingleVideo = asyncHandler(async (req, res) => {
 
 
 
-const addViews = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  const userId = req.user?._id;
-  const ip = req.ip;
-
-  if (!videoId || (!userId && !ip)) {
-    throw new ApiError(400, "Video ID or viewer info not found");
-  }
-
-  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
-
-
-  const existingView = await View.findOne({
-    video: videoId,
-    $or: [
-      userId ? { user: userId, createdAt: { $gte: sixHoursAgo } } : null,
-      ip ? { ip, createdAt: { $gte: sixHoursAgo } } : null,
-    ].filter(Boolean),
-  });
-
-
-  if (!existingView) {
-    await View.create({ video: videoId, user: userId, ip });
-    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, null, "View added successfully if viewer is new")
-  );
-});
-
-
-
-// const toggleLikes = asyncHandler(async (req, res) => {
-//   const userId = req.user?._id;
-//   const {videoId} = req.params; 
-
-
-//   if (!userId || !videoId) {
-//     throw new ApiError(400, "VideoId or UserId not found");
-//   }
-
-
-//   const alreadyLiked = await Like.isLiked(userId, videoId);
-
-//   if (alreadyLiked) {
-
-//     await Like.deleteOne({ user: userId, video: videoId });
-
-//     await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
-
-
-//   }
-//    else {
-//     await Like.create({ user: userId, video: videoId });
-//     await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } });
-//   }
-
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, null, "Like toggled successfully"));
-// });
-
 const toggleLikes = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const { videoId } = req.params;
@@ -632,7 +568,6 @@ export {
   updateVideoThumbnail,
   deleteVideo,
   getShortsFeed,
-  addViews,
   toggleLikes,
   toggleDislike,
   getSingleVideo,

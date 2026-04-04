@@ -9,7 +9,6 @@ import {
   updateVideoThumbnail,
   deleteVideo,
   getShortsFeed,
-  addViews,
   toggleLikes,
   toggleDislike,
   getSingleVideo,
@@ -52,9 +51,6 @@ router.get("/user/:userId/videos", verifyJWT, getClickedUserAllVideos);
 
 // ✅ Get a single video by ID
 router.get("/:videoId", getSingleVideo);
-
-// ✅ Add a view
-router.post("/view/:videoId", verifyJWT, addViews);
 
 // ✅ Like / Unlike a video
 router.post("/like/:videoId", verifyJWT, toggleLikes);
