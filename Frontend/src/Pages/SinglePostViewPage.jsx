@@ -5,11 +5,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { FaHeart, FaRegHeart, FaComment, FaShareNodes } from "react-icons/fa6";
+import { FaEye } from "react-icons/fa"; // ✅ নতুন
 import {
   toggleLike,
   selectIsPostLiked,
   syncPostLike,
 } from "../slices/like.slice";
+import {
+  getPostViews,
+  addPostView,
+  updatePostViews,
+} from "../slices/postView.slice"; // ✅ নতুন
 import { socket } from "../socket";
 
 const timeAgo = (d) => {
@@ -37,9 +43,10 @@ function SinglePostViewPage() {
 
   const isLiked = useSelector(selectIsPostLiked(postId));
   const { mydetails } = useSelector((state) => state.mydetails);
+  const views = useSelector((state) => state.postView.views);
   const commentsEndRef = useRef(null);
 
-  // ── Fetch post + comments ──
+  // ── Fetch post + comments + views ──────────────────────
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -47,12 +54,9 @@ function SinglePostViewPage() {
           axios.get(`http://localhost:8000/api/v1/posts/single/${postId}`, {
             withCredentials: true,
           }),
-
           axios.get(
             `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
-            {
-              withCredentials: true,
-            },
+            { withCredentials: true },
           ),
         ]);
 
@@ -64,6 +68,10 @@ function SinglePostViewPage() {
         if (fetchedPost?.isLiked !== undefined) {
           dispatch(syncPostLike({ postId, isLiked: fetchedPost.isLiked }));
         }
+
+        // ✅ Views fetch + add
+        dispatch(getPostViews(postId));
+        dispatch(addPostView(postId));
       } catch (err) {
         console.error(err);
       } finally {
@@ -73,7 +81,7 @@ function SinglePostViewPage() {
     fetchAll();
   }, [postId, dispatch]);
 
-  // ── Socket ──
+  // ── Socket ─────────────────────────────────────────────
   useEffect(() => {
     socket.emit("join-post", `post:${postId}`);
 
@@ -86,24 +94,30 @@ function SinglePostViewPage() {
         setPost((prev) => (prev ? { ...prev, commentCount: count } : prev));
     };
 
+    // ✅ নতুন — view count socket listener
+    const handleViewCount = (data) => {
+      if (data.postId === postId) {
+        dispatch(updatePostViews(data.views));
+      }
+    };
+
     socket.on("post-reaction-updated", handleReaction);
     socket.on("comment-count-updated", handleCommentCount);
+    socket.on("viewCountUpdate", handleViewCount); // ✅
 
     return () => {
-      // ✅ specific listener reference দিয়ে remove
       socket.off("post-reaction-updated", handleReaction);
       socket.off("comment-count-updated", handleCommentCount);
+      socket.off("viewCountUpdate", handleViewCount); // ✅
     };
-  }, [postId]);
+  }, [postId, dispatch]);
 
-  // ── Like toggle ──
+  // ── Like toggle ────────────────────────────────────────
   const handleLike = async () => {
     if (likeLoading) return;
     setLikeLoading(true);
-
     const wasLiked = isLiked;
     setLikeCount((prev) => (wasLiked ? prev - 1 : prev + 1));
-
     try {
       await dispatch(toggleLike(postId)).unwrap();
     } catch {
@@ -113,7 +127,7 @@ function SinglePostViewPage() {
     }
   };
 
-  // ── Add comment ──
+  // ── Add comment ────────────────────────────────────────
   const handleAddComment = async () => {
     if (!content.trim() || sending) return;
     try {
@@ -133,7 +147,7 @@ function SinglePostViewPage() {
     }
   };
 
-  // ── Loading skeleton ──
+  // ── Loading skeleton ───────────────────────────────────
   if (loading) {
     return (
       <div className="bg-gray-950 min-h-screen flex flex-col">
@@ -274,6 +288,14 @@ function SinglePostViewPage() {
 
             <div className="w-px h-5 bg-white/5" />
 
+            {/* ✅ Views — নতুন */}
+            <div className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-gray-500">
+              <FaEye />
+              <span>{views}</span>
+            </div>
+
+            <div className="w-px h-5 bg-white/5" />
+
             {/* Share */}
             <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 transition">
               <FaShareNodes />
@@ -287,7 +309,6 @@ function SinglePostViewPage() {
           <p className="text-xs text-gray-600 uppercase font-bold tracking-widest px-1">
             Comments · {comments.length}
           </p>
-
           {comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <div className="text-4xl mb-3">💬</div>
