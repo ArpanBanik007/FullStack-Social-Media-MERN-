@@ -210,7 +210,8 @@ const getPostsFeed = asyncHandler(async (req, res) => {
         posturl: 1,
         likes: 1,
         dislikes: 1,
-        comments: 1,   // ✅ IMPORTANT
+        comments: 1,  
+        views:1, 
         createdAt: 1,
         createdBy: {
           _id: 1,

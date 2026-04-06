@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-
-
 export const getPostViews = createAsyncThunk(
   "postView/getPostViews",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/v1/views/post/${postId}`);
+      const res = await axios.get(
+        `http://localhost:8000/api/v1/views/post/${postId}`,
+        { withCredentials: true } // ✅
+      );
       return res.data.data.views;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch views");
@@ -15,12 +16,15 @@ export const getPostViews = createAsyncThunk(
   }
 );
 
-
 export const addPostView = createAsyncThunk(
   "postView/addPostView",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`http://localhost:8000/api/v1/views/post/${postId}`);
+      const res = await axios.post(
+        `http://localhost:8000/api/v1/views/post/${postId}`,
+        {}, // ✅ body empty
+        { withCredentials: true } // ✅
+      );
       return res.data.data.alreadyViewed;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to add view");
@@ -28,10 +32,6 @@ export const addPostView = createAsyncThunk(
   }
 );
 
-
-
-
-// ── Slice ──────────────────────────────────────────────
 const postViewSlice = createSlice({
   name: "postView",
   initialState: {
@@ -40,14 +40,12 @@ const postViewSlice = createSlice({
     error: null,
   },
   reducers: {
-
     updatePostViews: (state, action) => {
       state.views = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      // getPostViews
       .addCase(getPostViews.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -60,8 +58,6 @@ const postViewSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
-      // addPostView
       .addCase(addPostView.pending, (state) => {
         state.loading = true;
         state.error = null;

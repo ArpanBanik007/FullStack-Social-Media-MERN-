@@ -3,6 +3,7 @@ import axios from "axios";
 import { socket } from "../socket";
 
 import { FaComment, FaShareNodes } from "react-icons/fa6";
+import { FaEye } from "react-icons/fa";
 import { PiDotsThreeBold } from "react-icons/pi";
 
 import { useSelector, useDispatch } from "react-redux";
@@ -36,9 +37,11 @@ function MainFeed() {
         });
         const fetchedPosts = res.data?.posts || [];
         setPosts(fetchedPosts);
-        fetchedPosts.forEach(post => {
+        fetchedPosts.forEach((post) => {
           if (post.userLiked !== undefined) {
-             dispatch(syncPostLike({ postId: post._id, isLiked: post.userLiked }));
+            dispatch(
+              syncPostLike({ postId: post._id, isLiked: post.userLiked }),
+            );
           }
         });
       } catch (err) {
@@ -78,8 +81,14 @@ function MainFeed() {
                 ...post,
                 likes: data.likes,
                 dislikes: data.dislikes,
-                userLiked: data.userLiked !== undefined ? data.userLiked : post.userLiked,
-                userDisliked: data.userDisliked !== undefined ? data.userDisliked : post.userDisliked,
+                userLiked:
+                  data.userLiked !== undefined
+                    ? data.userLiked
+                    : post.userLiked,
+                userDisliked:
+                  data.userDisliked !== undefined
+                    ? data.userDisliked
+                    : post.userDisliked,
               }
             : post,
         ),
@@ -100,8 +109,6 @@ function MainFeed() {
     socket.on("comment-count-updated", handleCommentCountUpdate);
     return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
-
-
 
   if (feedLoading || userLoading) {
     return (
@@ -402,7 +409,14 @@ function MainFeed() {
                     : navigate(`/profile/${post?.createdBy?._id}`)
                 }
               >
-                <div className="post-username" style={{ textOverflow: "ellipsis", whiteSpace: "nowrap", overflow: "hidden" }}>
+                <div
+                  className="post-username"
+                  style={{
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                  }}
+                >
                   @{post?.createdBy?.username}
                 </div>
                 <div className="post-time">
@@ -472,6 +486,11 @@ function MainFeed() {
                 <FaComment /> {post.comments || 0}
               </button>
 
+              <div className="action-divider" />
+
+              <button className="action-btn">
+                <FaEye /> {post.views || 0}
+              </button>
               <div className="action-divider" />
 
               <button className="action-btn share">
