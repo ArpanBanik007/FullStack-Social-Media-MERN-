@@ -473,6 +473,7 @@ const getOwnAllPosts = asyncHandler(async (req, res) => {
         likes: 1,
         dislikes: 1,
         comments: 1,
+        views:1,
         createdAt: 1,
         createdBy: {
           _id: 1,
@@ -588,6 +589,7 @@ const getClickedUserPosts = asyncHandler(async (req, res) => {
         likes: 1,
         dislikes: 1,
         comments: 1,
+        views:1,
         createdAt: 1,
         createdBy: {
           _id: 1,

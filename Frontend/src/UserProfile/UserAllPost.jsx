@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { FaComment, FaShareNodes, FaRegBookmark } from "react-icons/fa6";
+import { FaComment, FaShareNodes, FaRegBookmark, FaEye } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
 import { useNavigate } from "react-router-dom";
@@ -25,9 +25,11 @@ function UserAllPost({ userId }) {
         );
         const fetchedPosts = res.data.data || [];
         setPosts(fetchedPosts);
-        fetchedPosts.forEach(post => {
+        fetchedPosts.forEach((post) => {
           if (post.userLiked !== undefined) {
-             dispatch(syncPostLike({ postId: post._id, isLiked: post.userLiked }));
+            dispatch(
+              syncPostLike({ postId: post._id, isLiked: post.userLiked }),
+            );
           }
         });
       } catch (err) {
@@ -49,11 +51,14 @@ function UserAllPost({ userId }) {
       setPosts((prev) =>
         prev.map((post) =>
           post._id === data.postId
-            ? { 
-                ...post, 
-                likes: data.likes, 
+            ? {
+                ...post,
+                likes: data.likes,
                 dislikes: data.dislikes,
-                userLiked: data.userLiked !== undefined ? data.userLiked : post.userLiked,
+                userLiked:
+                  data.userLiked !== undefined
+                    ? data.userLiked
+                    : post.userLiked,
               }
             : post,
         ),
@@ -209,7 +214,7 @@ function UserAllPost({ userId }) {
           <div className="uap-body">
             {post.title && <p className="uap-title">{post.title}</p>}
             {post.posturl && (
-              <div 
+              <div
                 style={{ cursor: "pointer" }}
                 onClick={() => navigate(`/post/single/${post._id}`)}
               >
@@ -234,6 +239,11 @@ function UserAllPost({ userId }) {
             >
               <FaComment /> {post.comments || 0}
             </button>
+            <div className="uap-act-divider" />
+            <button className="uap-act-btn comment">
+              <FaEye /> {post.views || 0}
+            </button>
+
             <div className="uap-act-divider" />
             <button className="uap-act-btn share">
               <FaShareNodes /> Share

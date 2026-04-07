@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { FaComment, FaShareNodes, FaRegBookmark } from "react-icons/fa6";
+import { FaComment, FaShareNodes, FaRegBookmark, FaEye } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { MdEdit, MdDelete } from "react-icons/md";
 import LikeButton from "../componants/LikeButton";
@@ -106,9 +106,11 @@ const AllPosts = () => {
         );
         const fetchedPosts = res.data?.data || [];
         setPosts(fetchedPosts);
-        fetchedPosts.forEach(post => {
+        fetchedPosts.forEach((post) => {
           if (post.userLiked !== undefined) {
-             dispatch(syncPostLike({ postId: post._id, isLiked: post.userLiked }));
+            dispatch(
+              syncPostLike({ postId: post._id, isLiked: post.userLiked }),
+            );
           }
         });
       } catch (error) {
@@ -244,7 +246,14 @@ const AllPosts = () => {
               className="ap-avatar"
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="ap-username" style={{ textOverflow: "ellipsis", whiteSpace: "nowrap", overflow: "hidden" }}>
+              <div
+                className="ap-username"
+                style={{
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                }}
+              >
                 @{post?.createdBy?.username || "Unknown"}
               </div>
               <div className="ap-time">
@@ -264,8 +273,8 @@ const AllPosts = () => {
           <div className="ap-body">
             {post.title && <p className="ap-title">{post.title}</p>}
             {post.posturl && (
-              <div 
-                style={{ cursor: "pointer" }} 
+              <div
+                style={{ cursor: "pointer" }}
                 onClick={() => navigate(`/post/single/${post._id}`)}
               >
                 <img src={post.posturl} alt="post" className="ap-img" />
@@ -283,6 +292,10 @@ const AllPosts = () => {
               onClick={() => navigate(`/post/single/${post._id}`)}
             >
               <FaComment /> {post.comments || 0}
+            </button>
+            <div className="ap-act-divider" />
+            <button className="ap-act-btn comment">
+              <FaEye /> {post.views || 0}
             </button>
             <div className="ap-act-divider" />
             <button className="ap-act-btn share">
