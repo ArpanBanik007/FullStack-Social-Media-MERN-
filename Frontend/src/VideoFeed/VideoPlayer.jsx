@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useSelector, useDispatch } from "react-redux"; // ✅ একবারই
 import axios from "axios";
 import { FaBookmark, FaPlay } from "react-icons/fa";
+import { FaEye } from "react-icons/fa"; // ✅ নতুন
 import {
   FaComment,
   FaShareNodes,
@@ -8,9 +10,9 @@ import {
   FaVolumeHigh,
 } from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
-import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { socket } from "../socket";
+import { addVideoView, updateVideoViews } from "../slices/videoView.slice";
 import VideoLikeButton from "../componants/VideoLikeButton";
 import { syncVideoLike } from "../slices/video.like.slice";
 import FollowButton from "../componants/FollowButton";
@@ -23,6 +25,7 @@ function VideoPlayer() {
   const [isMuted, setIsMuted] = useState(true);
   const [savedIds, setSavedIds] = useState(new Set());
   const videoRefs = useRef([]);
+  const viewedVideos = useRef(new Set()); // ✅ duplicate view রোখে
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { mydetails } = useSelector((state) => state.mydetails);
@@ -32,6 +35,7 @@ function VideoPlayer() {
     dispatch(fetchMyFollowings());
   }, [dispatch]);
 
+  // ── Videos fetch ───────────────────────────────────────
   useEffect(() => {
     const fetchFeedVideos = async () => {
       try {
@@ -41,10 +45,10 @@ function VideoPlayer() {
         );
         const fetchedVideos = res.data?.data?.videos || [];
         setVideos(fetchedVideos);
-        fetchedVideos.forEach(v => {
-           if (v.userLiked !== undefined) {
-               dispatch(syncVideoLike({ videoId: v._id, isLiked: v.userLiked }));
-           }
+        fetchedVideos.forEach((v) => {
+          if (v.userLiked !== undefined) {
+            dispatch(syncVideoLike({ videoId: v._id, isLiked: v.userLiked }));
+          }
         });
         if (fetchedVideos.length > 0)
           navigate(`/videos/${fetchedVideos[0]._id}`, { replace: true });
@@ -57,20 +61,25 @@ function VideoPlayer() {
     fetchFeedVideos();
   }, []);
 
+  // ── Socket room join ───────────────────────────────────
   useEffect(() => {
     if (!videos.length) return;
     videos.forEach((video) => socket.emit("join-video", `video:${video._id}`));
   }, [videos.length]);
 
+  // ── Socket: like update ────────────────────────────────
   useEffect(() => {
     const handleReactionUpdate = (data) => {
       setVideos((prev) =>
         prev.map((v) =>
-          v._id === data.videoId ? { 
-            ...v, 
-            likes: data.likes,
-            userLiked: data.userLiked !== undefined ? data.userLiked : v.userLiked 
-          } : v,
+          v._id === data.videoId
+            ? {
+                ...v,
+                likes: data.likes,
+                userLiked:
+                  data.userLiked !== undefined ? data.userLiked : v.userLiked,
+              }
+            : v,
         ),
       );
     };
@@ -78,6 +87,7 @@ function VideoPlayer() {
     return () => socket.off("video-reaction-updated", handleReactionUpdate);
   }, []);
 
+  // ── Socket: comment count update ───────────────────────
   useEffect(() => {
     const handleCommentCountUpdate = ({ videoId, comments }) => {
       setVideos((prev) =>
@@ -88,6 +98,20 @@ function VideoPlayer() {
     return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
 
+  // ── Socket: view count update ✅ নতুন ─────────────────
+  useEffect(() => {
+    const handleViewCount = (data) => {
+      setVideos((prev) =>
+        prev.map((v) =>
+          v._id === data.videoId ? { ...v, views: data.views } : v,
+        ),
+      );
+    };
+    socket.on("viewCountUpdate", handleViewCount);
+    return () => socket.off("viewCountUpdate", handleViewCount);
+  }, []);
+
+  // ── Save video ─────────────────────────────────────────
   const handleSaveVideo = async (videoId) => {
     try {
       await axios.post(
@@ -101,13 +125,16 @@ function VideoPlayer() {
     }
   };
 
+  // ── Autoplay Observer ──────────────────────────────────
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const videoEl = entry.target;
           const index = videoRefs.current.indexOf(videoEl);
+
           if (entry.isIntersecting) {
+            // অন্য সব video pause করো
             videoRefs.current.forEach((v) => {
               if (v && v !== videoEl) v.pause();
             });
@@ -130,6 +157,40 @@ function VideoPlayer() {
     return () => observer.disconnect();
   }, [videos, isMuted]);
 
+  // ── View Observer ✅ নতুন — আলাদা observer ────────────
+  useEffect(() => {
+    if (!videos.length) return;
+
+    const viewObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const videoId = entry.target.dataset.videoid;
+          if (!videoId) return;
+
+          // আগে দেখা হয়ে থাকলে skip করো
+          if (viewedVideos.current.has(videoId)) return;
+
+          // Lock করো — duplicate হবে না
+          viewedVideos.current.add(videoId);
+
+          // API call — view save করো
+          dispatch(addVideoView(videoId));
+        });
+      },
+      { threshold: 0.5 }, // 50% দেখা গেলে trigger
+    );
+
+    // সব video slide observe করো
+    document.querySelectorAll("[data-videoid]").forEach((el) => {
+      viewObserver.observe(el);
+    });
+
+    return () => viewObserver.disconnect();
+  }, [videos, dispatch]);
+
+  // ── Play/Pause toggle ──────────────────────────────────
   const handlePlayPause = (index) => {
     const videoEl = videoRefs.current[index];
     if (!videoEl) return;
@@ -142,6 +203,7 @@ function VideoPlayer() {
     }
   };
 
+  // ── Mute toggle ────────────────────────────────────────
   const handleMuteToggle = () => {
     const newMuted = !isMuted;
     setIsMuted(newMuted);
@@ -154,7 +216,6 @@ function VideoPlayer() {
     return (
       <>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap');
           @keyframes pulseVP { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
         `}</style>
         <div
@@ -229,174 +290,101 @@ function VideoPlayer() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap');
-
         .vp-root {
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          display: flex; align-items: center; justify-content: center;
           height: 100vh;
           background: radial-gradient(ellipse at center, #111827 0%, #0f172a 100%);
           font-family: 'Syne', sans-serif;
         }
-
         .vp-phone {
-          position: relative;
-          width: 100%;
-          max-width: 400px;
-          height: 92vh;
-          background: #000;
-          border-radius: 28px;
-          overflow: hidden;
+          position: relative; width: 100%; max-width: 400px; height: 92vh;
+          background: #000; border-radius: 28px; overflow: hidden;
           box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 32px 80px rgba(0,0,0,0.7);
         }
-
         .vp-scroll {
-          height: 100%;
-          overflow-y: scroll;
-          scroll-snap-type: y mandatory;
-          scrollbar-width: none;
+          height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none;
         }
         .vp-scroll::-webkit-scrollbar { display: none; }
-
-        /* Top controls */
         .vp-controls {
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          z-index: 30;
+          position: absolute; top: 0; left: 0; right: 0; z-index: 30;
           padding: 16px 16px 0;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+          display: flex; align-items: center; justify-content: space-between;
           background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
           pointer-events: none;
         }
         .vp-controls-title {
-          font-size: 15px;
-          font-weight: 800;
-          color: rgba(255,255,255,0.9);
-          letter-spacing: 0.02em;
+          font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.9); letter-spacing: 0.02em;
         }
         .vp-mute-btn {
-          pointer-events: all;
-          width: 36px; height: 36px;
-          border-radius: 50%;
-          background: rgba(0,0,0,0.4);
-          backdrop-filter: blur(6px);
+          pointer-events: all; width: 36px; height: 36px; border-radius: 50%;
+          background: rgba(0,0,0,0.4); backdrop-filter: blur(6px);
           border: 1px solid rgba(255,255,255,0.15);
           display: flex; align-items: center; justify-content: center;
           color: #fff; font-size: 16px; cursor: pointer;
           transition: background 0.2s, transform 0.15s;
         }
         .vp-mute-btn:hover { background: rgba(0,0,0,0.6); transform: scale(1.08); }
-
-        /* Each reel slide */
         .vp-slide {
-          height: 100%;
-          scroll-snap-align: start;
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
+          height: 100%; scroll-snap-align: start; position: relative;
+          display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
-
-        .vp-slide video {
-          height: 100%; width: 100%; object-fit: cover; display: block;
-        }
-
-        /* Play overlay */
+        .vp-slide video { height: 100%; width: 100%; object-fit: cover; display: block; }
         .vp-play-overlay {
           position: absolute; inset: 0;
-          display: flex; align-items: center; justify-content: center;
-          pointer-events: none;
+          display: flex; align-items: center; justify-content: center; pointer-events: none;
         }
         .vp-play-icon {
           width: 64px; height: 64px; border-radius: 50%;
-          background: rgba(0,0,0,0.45);
-          backdrop-filter: blur(4px);
+          background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
           border: 2px solid rgba(255,255,255,0.2);
           display: flex; align-items: center; justify-content: center;
-          font-size: 22px; color: #fff;
-          transition: opacity 0.2s;
+          font-size: 22px; color: #fff; transition: opacity 0.2s;
         }
-
-        /* Bottom gradient */
         .vp-bottom-grad {
           position: absolute; bottom: 0; left: 0; right: 0; height: 55%;
           background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
           pointer-events: none;
         }
-
-        /* Left info */
         .vp-info {
-          position: absolute; bottom: 80px; left: 14px;
-          max-width: 62%; color: #fff;
+          position: absolute; bottom: 80px; left: 14px; max-width: 62%; color: #fff;
         }
         .vp-user-row {
-          display: flex; align-items: center; gap: 8px;
-          margin-bottom: 8px; cursor: pointer;
+          display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;
         }
         .vp-avatar {
-          width: 34px; height: 34px; border-radius: 50%;
-          object-fit: cover;
-          border: 2px solid rgba(255,255,255,0.4);
-          flex-shrink: 0;
+          width: 34px; height: 34px; border-radius: 50%; object-fit: cover;
+          border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;
         }
-        .vp-username {
-          font-size: 13px; font-weight: 700;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-        }
+        .vp-username { font-size: 13px; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
         .vp-title {
-          font-size: 12px; font-weight: 500;
-          color: rgba(255,255,255,0.75);
-          line-height: 1.5;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+          font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.75);
+          line-height: 1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
-
-        /* Right actions */
         .vp-actions {
           position: absolute; right: 12px; bottom: 80px;
-          display: flex; flex-direction: column; gap: 20px;
-          align-items: center;
+          display: flex; flex-direction: column; gap: 20px; align-items: center;
         }
         .vp-action-btn {
           display: flex; flex-direction: column; align-items: center; gap: 4px;
-          color: #fff; background: none; border: none; cursor: pointer;
-          transition: transform 0.15s;
+          color: #fff; background: none; border: none; cursor: pointer; transition: transform 0.15s;
         }
         .vp-action-btn:hover { transform: scale(1.12); }
-
         .vp-action-icon {
           width: 42px; height: 42px; border-radius: 50%;
-          background: rgba(0,0,0,0.35);
-          backdrop-filter: blur(4px);
+          background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
           border: 1px solid rgba(255,255,255,0.12);
           display: flex; align-items: center; justify-content: center;
-          font-size: 18px;
-          transition: background 0.2s;
+          font-size: 18px; transition: background 0.2s;
         }
         .vp-action-btn:hover .vp-action-icon { background: rgba(255,255,255,0.15); }
         .vp-action-icon.saved { background: rgba(6,182,212,0.25); border-color: rgba(6,182,212,0.4); color: #06b6d4; }
-
-        .vp-action-count {
-          font-size: 11px; font-weight: 700;
-          color: rgba(255,255,255,0.8);
-          text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-        }
-
-        /* Progress dots */
+        .vp-action-count { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.8); text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
         .vp-progress {
-          position: absolute; right: 6px; top: 50%;
-          transform: translateY(-50%);
-          display: flex; flex-direction: column; gap: 4px;
-          z-index: 20; pointer-events: none;
+          position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+          display: flex; flex-direction: column; gap: 4px; z-index: 20; pointer-events: none;
         }
-        .vp-dot {
-          width: 3px; border-radius: 2px;
-          background: rgba(255,255,255,0.25);
-          transition: height 0.2s, background 0.2s;
-        }
+        .vp-dot { width: 3px; border-radius: 2px; background: rgba(255,255,255,0.25); transition: height 0.2s, background 0.2s; }
         .vp-dot.active { background: #06b6d4; box-shadow: 0 0 6px rgba(6,182,212,0.6); }
       `}</style>
 
@@ -436,7 +424,12 @@ function VideoPlayer() {
               const isSaved = savedIds.has(video._id);
 
               return (
-                <div key={video._id} className="vp-slide">
+                // ✅ data-videoid — IntersectionObserver এটা দিয়ে চেনে
+                <div
+                  key={video._id}
+                  className="vp-slide"
+                  data-videoid={video._id}
+                >
                   <video
                     ref={(el) => (videoRefs.current[index] = el)}
                     src={videoSrc}
@@ -447,7 +440,6 @@ function VideoPlayer() {
                     onClick={() => handlePlayPause(index)}
                   />
 
-                  {/* Play icon */}
                   {!isPlaying && (
                     <div className="vp-play-overlay">
                       <div className="vp-play-icon">
@@ -525,6 +517,16 @@ function VideoPlayer() {
                       </div>
                       <span className="vp-action-count">
                         {video.comments || 0}
+                      </span>
+                    </button>
+
+                    {/* ✅ Views — নতুন */}
+                    <button className="vp-action-btn">
+                      <div className="vp-action-icon">
+                        <FaEye />
+                      </div>
+                      <span className="vp-action-count">
+                        {video.views ?? 0}
                       </span>
                     </button>
 

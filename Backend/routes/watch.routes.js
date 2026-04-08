@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewire/auth.middlewire.js";
 import {
-  //createwatchHistory,
   getAllWatchHistory,
   deleteHistorybyID,
   deleteAllHistory,
@@ -16,14 +15,11 @@ const router = Router();
  * Watch History Routes
  */
 
-// ✅ Add or update watch history
-//router.post("/history", verifyJWT, createwatchHistory);
-
 // ✅ Get all watch history (paginated)
 router.get("/history", verifyJWT, getAllWatchHistory);
 
 // ✅ Delete a specific watch history entry
-router.delete("/history", verifyJWT, deleteHistorybyID);
+router.delete("/history/:historyId", verifyJWT, deleteHistorybyID);
 
 // ✅ Delete all watch history
 router.delete("/history/all", verifyJWT, deleteAllHistory);

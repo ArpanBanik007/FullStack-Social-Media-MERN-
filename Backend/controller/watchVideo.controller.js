@@ -25,10 +25,11 @@ const getAllWatchHistory = asyncHandler(async (req, res) => {
 
   const [watchHistory, totalCount] = await Promise.all([
     watchHistoryModel.find({ userId })
-      .sort({ watchAt: -1 }) // most recent first
+      .sort({ watchedAt: -1 }) // most recent first
       .skip(skip)
       .limit(limit)
-      .populate("videoId", "title thumbnail duration")
+      .populate("videoId", "title thumbnail duration videoUrl")
+      .populate("postId", "title images posturl content")
       .lean(),
 
     watchHistoryModel.countDocuments({ userId })
@@ -52,19 +53,19 @@ const getAllWatchHistory = asyncHandler(async (req, res) => {
 
 const deleteHistorybyID = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { videoId } = req.body;
+  const { historyId } = req.params;
 
   // Validate inputs
-  if (!userId || !videoId) {
-    throw new ApiError(400, "User ID and Video ID are required");
+  if (!userId || !historyId) {
+    throw new ApiError(400, "User ID and History ID are required");
   }
 
-  if (!mongoose.Types.ObjectId.isValid(videoId)) {
-    throw new ApiError(400, "Invalid video ID");
+  if (!mongoose.Types.ObjectId.isValid(historyId)) {
+    throw new ApiError(400, "Invalid history ID");
   }
 
   // Delete watch history
-  const deleteHistory = await watchHistoryModel.deleteOne({ userId, videoId });
+  const deleteHistory = await watchHistoryModel.deleteOne({ userId, _id: historyId });
 
   // Check if deletion happened
   if (deleteHistory.deletedCount === 0) {
@@ -108,30 +109,32 @@ const deleteAllHistory = asyncHandler(async (req, res) => {
 
 const addWatchLater = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
-  const videoId = req.body.videoId;
-  const postId = req.body.postId;
+  const { videoId, postId } = req.body;
 
-  if (!userId) throw new ApiError(400, "UserId is required");
+  if (!userId) throw new ApiError(401, "Unauthorized");
   if (!postId && !videoId)
     throw new ApiError(400, "Either postId or videoId is required");
 
-  // ✅ building conditions for AND query
-  const conditions = [{ userId }];
-  if (postId) conditions.push({ postId });
-  if (videoId) conditions.push({ videoId });
+  // ✅ Validate — postId বা videoId valid ObjectId কিনা
+  if (postId && !mongoose.Types.ObjectId.isValid(postId))
+    throw new ApiError(400, "Invalid postId");
+  if (videoId && !mongoose.Types.ObjectId.isValid(videoId))
+    throw new ApiError(400, "Invalid videoId");
 
-  // ✅ Check if already saved
-  const alreadyExists = await watchLaterModels
-    .findOne({ $and: conditions })
-    .lean();
+  // ✅ Already saved check
+  const query = { userId };
+  if (postId) query.postId = postId;
+  if (videoId) query.videoId = videoId;
+
+  const alreadyExists = await watchLaterModels.findOne(query).lean();
 
   if (alreadyExists) {
-    return res.status(200).json(
-      new ApiResponse(200, alreadyExists, "Already in Watch Later ✅")
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, alreadyExists, "Already in Watch Later ✅"));
   }
 
-  // ✅ Create new entry
+  // ✅ Save
   const newWatchLater = await watchLaterModels.create({
     userId,
     postId: postId || undefined,
@@ -139,13 +142,10 @@ const addWatchLater = asyncHandler(async (req, res) => {
     AddAt: new Date(),
   });
 
-  return res.status(201).json(
-    new ApiResponse(201, newWatchLater, "Added to Watch Later ✅")
-  );
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newWatchLater, "Added to Watch Later ✅"));
 });
-
-
-
 
 
 

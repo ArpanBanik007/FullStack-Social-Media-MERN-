@@ -3,11 +3,9 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import Video from "../models/video.model.js"
 import {VideoView } from "../models/videoView.model.js"
+import watchHistoryModel from "../models/watchHistory.model.js";
 
 
-
-
-// ── View Add করো ──────────────────────────────────────
 export const addVideoView = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
@@ -27,45 +25,46 @@ export const addVideoView = asyncHandler(async (req, res) => {
   }
 
   if (!alreadyViewed) {
+    // ✅ View save
     await VideoView.create({
       video: videoId,
       user: userId,
       ip: userId ? null : ip,
     });
 
-    // ✅ views field — তোমার Video model অনুযায়ী
+    // ✅ views count বাড়াও
     await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } });
 
-    const updatedVideo = await Video.findById(videoId).select("views");
+    // ✅ Watch History save — logged in user হলেই
+    if (userId) {
+      await watchHistoryModel.findOneAndUpdate(
+        { userId, videoId },
+        { userId, videoId, watchedAt: new Date() },
+        { upsert: true, new: true }
+      );
+    }
 
+    // ✅ Socket emit
+    const updatedVideo = await Video.findById(videoId).select("views");
     const io = req.app.get("io");
     io.to(`video:${videoId}`).emit("viewCountUpdate", {
       videoId,
-      views: updatedVideo.views, // ✅
+      views: updatedVideo.views,
     });
   }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        { alreadyViewed: !!alreadyViewed },
-        "Video view recorded"
-      )
+      new ApiResponse(200, { alreadyViewed: !!alreadyViewed }, "Video view recorded")
     );
 });
 
-// ── View Count আনো ────────────────────────────────────
 export const getVideoViews = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-
-  const video = await Video.findById(videoId).select("views"); // ✅
+  const video = await Video.findById(videoId).select("views");
   if (!video) throw new ApiError(404, "Video not found");
-
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, { views: video.views }, "Video view count fetched") // ✅
-    );
+    .json(new ApiResponse(200, { views: video.views }, "Video view count fetched"));
 });
