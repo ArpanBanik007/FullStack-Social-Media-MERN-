@@ -11,13 +11,13 @@ const watchHistorySchema = new mongoose.Schema(
     videoId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Video",
-      default: "", 
+      default: null,   // ✅ "" এর বদলে null
     },
 
     postId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Post", 
-      default: "", 
+      ref: "Post",
+      default: null,   // ✅ "" এর বদলে null
     },
 
     watchedAt: {
@@ -31,10 +31,12 @@ const watchHistorySchema = new mongoose.Schema(
   }
 );
 
-// ✅ Index: userId + postId + videoId (optional)
-watchHistorySchema.index({ userId: 1, postId: 1, videoId: 1 });
+// ✅ sparse: true দিলে null value-গুলো index-এ ignore হবে
+watchHistorySchema.index(
+  { userId: 1, postId: 1, videoId: 1 },
+  { sparse: true }
+);
 
-// ✅ Single field index
 watchHistorySchema.index({ userId: 1 });
 
 export default mongoose.model("WatchHistory", watchHistorySchema);

@@ -1,8 +1,8 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import watchHistoryModel from "../models/watchHistory.model.js";
 import watchLaterModels from "../models/watchLater.models.js";
+import watchHistoryModel from "../models/watchHistory.model.js";
 import mongoose from "mongoose";
 
 

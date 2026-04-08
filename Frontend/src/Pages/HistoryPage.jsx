@@ -8,6 +8,7 @@ import {
 import Navbar from "../home/Navbar";
 import LeftBar from "../home/LeftBar";
 import { RiDeleteBin7Line } from "react-icons/ri";
+import { Link } from "react-router-dom";
 
 function HistoryPage() {
   const dispatch = useDispatch();
@@ -136,9 +137,12 @@ function HistoryPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3">
-                      <p className="font-bold text-gray-300 truncate w-3/4 text-sm">
+                      <Link 
+                        to={isVideo ? `/video/single/${item.videoId?._id}` : `/post/single/${item.postId?._id}`}
+                        className="font-bold text-gray-300 truncate w-3/4 text-sm hover:text-blue-400 transition"
+                      >
                         {itemTitle}
-                      </p>
+                      </Link>
                       <div
                         onClick={() => handleDelete(item._id)}
                         className="text-gray-400 hover:text-red-600 text-xl cursor-pointer transition-colors"
