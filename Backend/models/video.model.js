@@ -103,7 +103,8 @@ isPublished: {
 );
 
 // Optional: Add indexing for performance (searching tags or uploader-based)
-videoSchema.index({ title: "text" });
+videoSchema.index({ title: "text", description: "text" });
+
 
 const Video = mongoose.model("Video", videoSchema);
 
