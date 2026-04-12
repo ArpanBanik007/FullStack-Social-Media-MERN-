@@ -11,6 +11,7 @@ import likedPostSlice from "../slices/like.slice"
 import videoLikeReducer from "../slices/video.like.slice"
 import postViewSlice from "../slices/postView.slice"
 import watchHistoryReducer from "../slices/watchHistory.slice"
+import searchSlice from "../slices/Search.slice"
 
 // persist config (only for user details)
 const persistDetailsConfig = {
@@ -32,6 +33,7 @@ export const store = configureStore({
     videoLikes: videoLikeReducer,    
     postView: postViewSlice,
     watchHistory: watchHistoryReducer,
+      search: searchSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({ serializableCheck: false }),

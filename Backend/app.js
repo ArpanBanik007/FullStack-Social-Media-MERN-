@@ -30,6 +30,7 @@ import commentsRoutes from "./routes/comment.routes.js"
 import postcommentsRoutes from "./routes/post.comment.routes.js"
 import videoViewRouter from "./routes/videoView.route.js"
 import postViewRouter from "./routes/postView.router.js"
+import searchRoute from "./routes/search.routes.js"
 
 
 
@@ -45,6 +46,8 @@ app.use("/api/v1/videos/comments", commentsRoutes);
 app.use("/api/v1/posts/comments", postcommentsRoutes);
 app.use("/api/v1/views/video", videoViewRouter);
 app.use("/api/v1/views/post", postViewRouter);
+app.use("/api/v1/search", searchRoute);
+
 
 
 
