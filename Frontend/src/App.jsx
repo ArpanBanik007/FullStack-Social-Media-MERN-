@@ -22,6 +22,8 @@ import CommentCountpage from "./Pages/CommentCountpage";
 import LikeCountpage from "./Pages/LikeCountpage";
 import SinglePostViewPage from "./Pages/SinglePostViewPage";
 import SingleVideoViewPage from "./Pages/SinglevideoViewpage";
+// ✅ PascalCase দিয়ে import করো — lowercase হলে React HTML tag মনে করে, render হয় না
+import ChatMainPage from "./Chat/chatmainpage";
 
 function App() {
   const dispatch = useDispatch();
@@ -47,19 +49,21 @@ function App() {
       <Route path="/videos" element={<VideoPlayer />} />
       <Route path="/videos/:videoId" element={<VideoPlayer />} />
       <Route path="/saved" element={<SavePage />} />
+      {/* ✅ ChatMainPage — PascalCase */}
+      <Route path="/chats" element={<ChatMainPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/settings" element={<SettingPage />} />
       <Route path="/settings/profile" element={<ProfileSettting />} />
       <Route path="/settings/security" element={<SecuritySetting />} />
       <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
 
-      {/* ✅ Post routes */}
-      <Route path="/post/:postId" element={<CommentPage />} />
+      {/* ✅ Post routes — specific আগে, dynamic পরে */}
       <Route path="/post/single/:postId" element={<SinglePostViewPage />} />
+      <Route path="/post/:postId" element={<CommentPage />} />
 
       {/* ✅ Video routes */}
-      <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
       <Route path="/video/single/:videoId" element={<SingleVideoViewPage />} />
+      <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
 
       {/* ✅ Other pages */}
       <Route path="/mycomments" element={<CommentCountpage />} />

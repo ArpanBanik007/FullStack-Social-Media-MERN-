@@ -3,10 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { IoMdHome } from "react-icons/io";
 import { MdOndemandVideo } from "react-icons/md";
 import { BiVideoPlus } from "react-icons/bi";
-import { IoSettingsSharp } from "react-icons/io5";
 import { FaBell } from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { BsChatLeftTextFill } from "react-icons/bs";
 import SearchBar from "../componants/SearchBar";
 import { persistor } from "../store/store";
 import { resetMyDetails } from "../slices/mydetails.slice";
@@ -25,6 +25,14 @@ const ICONS = [
     label: "Notifications",
     badge: 3,
   },
+  // ✅ label fix — আগে "Notifications" ছিল
+  {
+    id: 5,
+    path: "/chats",
+    icon: <BsChatLeftTextFill />,
+    label: "Chats",
+    badge: 3,
+  },
 ];
 
 function Navbar() {
@@ -41,11 +49,8 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/users/logout",
-        {},
-        { withCredentials: true },
-      );
+      // ✅ relative URL — hardcoded localhost সরানো হয়েছে
+      await axios.post("/api/v1/users/logout", {}, { withCredentials: true });
       dispatch(resetMyDetails());
       dispatch(resetMyPosts());
       await persistor.purge();
@@ -79,7 +84,6 @@ function Navbar() {
           gap: 16px;
         }
 
-        /* Logo */
         .navbar-logo {
           font-size: 22px;
           font-weight: 800;
@@ -95,14 +99,12 @@ function Navbar() {
         }
         .navbar-logo:hover { opacity: 0.8; }
 
-        /* Search */
         .navbar-search {
           flex: 1;
           max-width: 380px;
           min-width: 0;
         }
 
-        /* Desktop icons area */
         .navbar-icons {
           display: flex;
           align-items: center;
@@ -135,7 +137,6 @@ function Navbar() {
           color: #06b6d4;
         }
 
-        /* Tooltip */
         .nav-tooltip {
           position: absolute;
           bottom: -34px;
@@ -156,7 +157,6 @@ function Navbar() {
         }
         .nav-icon-btn:hover .nav-tooltip { opacity: 1; }
 
-        /* Badge */
         .nav-badge {
           position: absolute;
           top: 6px;
@@ -174,7 +174,6 @@ function Navbar() {
           box-shadow: 0 0 6px rgba(239,68,68,0.6);
         }
 
-        /* Divider */
         .nav-divider {
           width: 1px;
           height: 28px;
@@ -182,7 +181,6 @@ function Navbar() {
           margin: 0 4px;
         }
 
-        /* Profile dropdown */
         .profile-btn {
           width: 36px;
           height: 36px;
@@ -214,7 +212,7 @@ function Navbar() {
         }
         @keyframes dropIn {
           from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: translateY(0); }
         }
 
         .dropdown-item {
@@ -243,22 +241,71 @@ function Navbar() {
           margin: 6px 0;
         }
 
-        /* Mobile menu button */
-        .mobile-menu-btn {
+        /* ── Mobile ── */
+
+        /* ✅ Mobile right cluster — search + chat + menu */
+        .mobile-right {
           display: none;
-          font-size: 24px;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+
+        /* ✅ Mobile chat button */
+        .mobile-chat-btn {
+          position: relative;
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: rgba(255,255,255,0.5);
+          border: none;
+          background: transparent;
+          transition: background 0.2s, color 0.2s;
+          flex-shrink: 0;
+        }
+        .mobile-chat-btn:hover,
+        .mobile-chat-btn.active {
+          background: rgba(6,182,212,0.12);
+          color: #06b6d4;
+        }
+        .mobile-chat-badge {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 14px;
+          height: 14px;
+          background: #ef4444;
+          border-radius: 50%;
+          font-size: 8px;
+          font-weight: 700;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .mobile-menu-btn {
+          width: 38px;
+          height: 38px;
+          font-size: 22px;
           color: rgba(255,255,255,0.7);
           cursor: pointer;
-          padding: 8px;
           border-radius: 10px;
           transition: background 0.2s, color 0.2s;
           border: none;
           background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           flex-shrink: 0;
         }
         .mobile-menu-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
-        /* Mobile dropdown */
         .mobile-backdrop {
           position: fixed;
           inset: 0;
@@ -301,16 +348,15 @@ function Navbar() {
         .mobile-item-icon { font-size: 18px; }
 
         @media (max-width: 768px) {
-          .navbar-icons { display: none; }
-          .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+          .navbar-icons  { display: none; }
+          .mobile-right  { display: flex; }     /* ✅ mobile cluster দেখাবে */
           .navbar-search { max-width: none; flex: 1; }
-          .navbar-root { padding: 0 16px; gap: 10px; }
+          .navbar-root   { padding: 0 16px; gap: 10px; }
         }
-        
+
         @media (max-width: 480px) {
-          .navbar-root { padding: 0 12px; gap: 8px; }
-          .navbar-logo { font-size: 20px; }
-          .mobile-menu-btn { padding: 4px; font-size: 22px; width: 36px; height: 36px; }
+          .navbar-root   { padding: 0 12px; gap: 8px; }
+          .navbar-logo   { font-size: 20px; }
           .navbar-search { min-width: 0; }
         }
       `}</style>
@@ -326,7 +372,7 @@ function Navbar() {
           <SearchBar placeholder="Search..." />
         </div>
 
-        {/* Desktop Icons */}
+        {/* ── Desktop Icons ── */}
         <div className="navbar-icons">
           {ICONS.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -348,7 +394,11 @@ function Navbar() {
           {/* Profile */}
           <div style={{ position: "relative" }}>
             <div
-              className={`profile-btn ${location.pathname === "/profile" || showProfileMenu ? "active" : ""}`}
+              className={`profile-btn ${
+                location.pathname === "/profile" || showProfileMenu
+                  ? "active"
+                  : ""
+              }`}
               onClick={() => setShowProfileMenu((p) => !p)}
             >
               <RiAccountCircleFill />
@@ -386,15 +436,27 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="mobile-menu-btn"
-          onClick={() => setShowMenu(!showMenu)}
-        >
-          <BsThreeDotsVertical />
-        </button>
+        {/* ── Mobile Right Cluster: Chat + Menu ── */}
+        <div className="mobile-right">
+          {/* ✅ Chat Button */}
+          <button
+            className={`mobile-chat-btn ${location.pathname === "/chats" ? "active" : ""}`}
+            onClick={() => handleNav("/chats")}
+          >
+            <BsChatLeftTextFill />
+            <span className="mobile-chat-badge">3</span>
+          </button>
 
-        {/* Mobile Dropdown */}
+          {/* Menu Button */}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setShowMenu(!showMenu)}
+          >
+            <BsThreeDotsVertical />
+          </button>
+        </div>
+
+        {/* ── Mobile Dropdown ── */}
         {showMenu && (
           <>
             <div
@@ -402,7 +464,8 @@ function Navbar() {
               onClick={() => setShowMenu(false)}
             />
             <div className="mobile-dropdown">
-              {ICONS.map((item) => (
+              {/* Chat বাদে বাকি icons — chat already navbar-এ আছে */}
+              {ICONS.filter((i) => i.id !== 5).map((item) => (
                 <button
                   key={item.id}
                   className="mobile-item"
@@ -430,7 +493,9 @@ function Navbar() {
                   )}
                 </button>
               ))}
+
               <div className="dropdown-sep" />
+
               <button
                 className="mobile-item"
                 onClick={() => {
@@ -453,7 +518,6 @@ function Navbar() {
                 <span className="mobile-item-icon">⚙️</span>
                 Settings
               </button>
-
               <button
                 className="mobile-item danger"
                 onClick={() => {

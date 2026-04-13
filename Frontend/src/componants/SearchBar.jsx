@@ -12,16 +12,14 @@ import { useDebounce } from "../hooks/Usedebounce";
 import SearchDropdown from "./Searchdropdown";
 import { FiSearch, FiX } from "react-icons/fi";
 
-function SearchBar() {
+function SearchBar({ placeholder = "Search people, posts, videos..." }) {
   const dispatch = useDispatch();
   const query = useSelector(selectSearchQuery);
   const isOpen = useSelector(selectSearchIsOpen);
   const searchRef = useRef(null);
 
-  // ── Debounced query — 500ms পরে API call যাবে ───────────────────────────
   const debouncedQuery = useDebounce(query, 500);
 
-  // ── Query বদলালে search করো ─────────────────────────────────────────────
   useEffect(() => {
     if (debouncedQuery.trim().length >= 2) {
       dispatch(fetchSearchResults(debouncedQuery.trim()));

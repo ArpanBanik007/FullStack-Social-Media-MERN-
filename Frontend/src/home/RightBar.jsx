@@ -1,74 +1,34 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const users = [
-  {
-    id: 1,
-    name: "Arpan Banik",
-    username: "arpan007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 2,
-    name: "Soma Banik",
-    username: "soma007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 3,
-    name: "Abhinaba Banik",
-    username: "abhinaba007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 4,
-    name: "Ajit Banik",
-    username: "ajit007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 5,
-    name: "Ankit Mondal",
-    username: "ankit007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 6,
-    name: "Sangita Mondal",
-    username: "sangita007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 7,
-    name: "Aditya Shee",
-    username: "adi007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 8,
-    name: "Ankit Mondal",
-    username: "ankit2007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-  {
-    id: 9,
-    name: "Riya Das",
-    username: "riya007",
-    avatar:
-      "https://img.etimg.com/thumb/width-1200,height-1200,imgsize-1392094,resizemode-75,msid-111883605/magazines/panache/spider-man-4-release-date-update-marvels-kevin-feige-shares-major-details-check-plot-cast-new-characters.jpg",
-  },
-];
+import axios from "axios";
 
 function RightBar() {
   const navigate = useNavigate();
+  const [followers, setFollowers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ── Followers fetch ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchFollowers = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:8000/api/v1/users/my-followers",
+          {
+            withCredentials: true,
+          },
+        );
+
+        const data = res.data?.data;
+        setFollowers(Array.isArray(data) ? data : data?.followers || []);
+      } catch (err) {
+        console.error("Failed to fetch followers:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFollowers();
+  }, []);
 
   return (
     <>
@@ -121,8 +81,41 @@ function RightBar() {
         }
         .rightbar-list::-webkit-scrollbar { width: 4px; }
         .rightbar-list::-webkit-scrollbar-track { background: transparent; }
-        .rightbar-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+        .rightbar-list::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.08);
+          border-radius: 4px;
+        }
 
+        /* ── Skeleton ── */
+        .skeleton-card {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 10px;
+          margin-bottom: 3px;
+        }
+        .skeleton-avatar {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.07);
+          flex-shrink: 0;
+          animation: shimmer 1.4s infinite;
+        }
+        .skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .skeleton-line {
+          height: 10px;
+          border-radius: 6px;
+          background: rgba(255,255,255,0.07);
+          animation: shimmer 1.4s infinite;
+        }
+        .skeleton-line.short { width: 60%; }
+        @keyframes shimmer {
+          0%,100% { opacity: 0.5; }
+          50%      { opacity: 1; }
+        }
+
+        /* ── Follower Card ── */
         .follower-card {
           display: flex;
           align-items: center;
@@ -190,21 +183,20 @@ function RightBar() {
           margin-top: 1px;
         }
 
-        .follow-btn {
-          flex-shrink: 0;
-          font-size: 10px;
-          font-weight: 700;
-          font-family: 'Syne', sans-serif;
-          letter-spacing: 0.04em;
-          padding: 4px 10px;
-          border-radius: 8px;
-          border: 1px solid rgba(6,182,212,0.3);
-          background: rgba(6,182,212,0.08);
-          color: #06b6d4;
-          cursor: pointer;
-          transition: background 0.2s, color 0.2s;
+        /* ── Empty State ── */
+        .empty-state {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          color: rgba(255,255,255,0.18);
+          padding: 24px;
+          text-align: center;
         }
-        .follow-btn:hover { background: rgba(6,182,212,0.2); color: #fff; }
+        .empty-icon { font-size: 32px; }
+        .empty-text { font-size: 12px; font-weight: 600; line-height: 1.5; }
 
         .rightbar-footer {
           padding: 12px 14px;
@@ -226,46 +218,79 @@ function RightBar() {
           cursor: pointer;
           transition: background 0.2s, color 0.2s;
         }
-        .see-all-btn:hover { background: rgba(6,182,212,0.1); color: #06b6d4; border-color: rgba(6,182,212,0.2); }
+        .see-all-btn:hover {
+          background: rgba(6,182,212,0.1);
+          color: #06b6d4;
+          border-color: rgba(6,182,212,0.2);
+        }
       `}</style>
 
       <div className="rightbar-root">
+        {/* ── Header ── */}
         <div className="rightbar-header">
-          <div className="rightbar-title">People you may know</div>
-          <div className="rightbar-count">{users.length} Followers</div>
+          <div className="rightbar-title">Your Followers</div>
+          <div className="rightbar-count">
+            {loading ? "—" : `${followers.length} Followers`}
+          </div>
         </div>
 
-        <div className="rightbar-list">
-          {users.map((user, idx) => (
-            <div
-              key={user.id}
-              className="follower-card"
-              onClick={() => navigate(`/profile/${user.id}`)}
-            >
-              <div className="follower-avatar-wrap">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="follower-avatar"
-                />
-                {idx % 3 === 0 && <div className="follower-online" />}
+        {/* ── List ── */}
+        {loading ? (
+          // Skeleton
+          <div className="rightbar-list">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="skeleton-card">
+                <div className="skeleton-avatar" />
+                <div className="skeleton-lines">
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line short" />
+                </div>
               </div>
-              <div className="follower-info">
-                <div className="follower-username">@{user.username}</div>
-                <div className="follower-name">{user.name}</div>
-              </div>
-              <button
-                className="follow-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
+            ))}
+          </div>
+        ) : followers.length === 0 ? (
+          // Empty state
+          <div className="empty-state">
+            <div className="empty-icon">👥</div>
+            <div className="empty-text">No followers yet</div>
+          </div>
+        ) : (
+          // Real data
+          <div className="rightbar-list">
+            {followers.map((user, idx) => (
+              <div
+                key={user._id}
+                className="follower-card"
+                onClick={() => navigate(`/profile/${user._id}`)}
               >
-                Follow
-              </button>
-            </div>
-          ))}
-        </div>
+                <div className="follower-avatar-wrap">
+                  <img
+                    src={
+                      user.avatar ||
+                      `https://ui-avatars.com/api/?name=${user.username}&background=0f172a&color=06b6d4`
+                    }
+                    alt={user.username}
+                    className="follower-avatar"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${user.username}&background=0f172a&color=06b6d4`;
+                    }}
+                  />
+                  {/* প্রতি ৩ জনে একজন online দেখাবে — পরে socket দিয়ে real করা যাবে */}
+                  {idx % 3 === 0 && <div className="follower-online" />}
+                </div>
 
+                <div className="follower-info">
+                  <div className="follower-username">@{user.username}</div>
+                  <div className="follower-name">
+                    {user.fullName || user.name || ""}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Footer ── */}
         <div className="rightbar-footer">
           <button className="see-all-btn" onClick={() => navigate("/profile")}>
             SEE ALL FOLLOWERS

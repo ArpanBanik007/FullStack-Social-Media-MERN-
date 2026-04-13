@@ -16,7 +16,6 @@ const NAV_ITEMS = [
   { path: "/history", icon: FaHistory, label: "History" },
 ];
 
-// Settings আলাদা রাখা হলো
 const SETTINGS_ITEM = {
   path: "/settings",
   icon: IoMdSettings,
@@ -47,7 +46,6 @@ function LeftBar() {
           top: 80px;
           left: 12px;
           width: 240px;
-          /* ✅ viewport থেকে top + bottom gap বাদ দিয়ে height */
           height: calc(100vh - 96px);
           display: flex;
           flex-direction: column;
@@ -58,6 +56,11 @@ function LeftBar() {
           box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
           overflow: hidden;
           z-index: 100;
+        }
+
+        /* ✅ Mobile-এ সম্পূর্ণ লুকিয়ে যাবে */
+        @media (max-width: 768px) {
+          .leftbar-root { display: none; }
         }
 
         .leftbar-root::before {
@@ -97,12 +100,11 @@ function LeftBar() {
           color: rgba(255,255,255,0.35);
         }
 
-        /* ✅ এই অংশটাই scroll হবে */
         .leftbar-scroll-area {
           flex: 1;
           overflow-y: auto;
           overflow-x: hidden;
-          min-height: 0; /* flex child এর জন্য গুরুত্বপূর্ণ */
+          min-height: 0;
         }
         .leftbar-scroll-area::-webkit-scrollbar { width: 4px; }
         .leftbar-scroll-area::-webkit-scrollbar-track { background: transparent; }
@@ -111,7 +113,6 @@ function LeftBar() {
           border-radius: 4px;
         }
 
-        /* ✅ Settings সবসময় দৃশ্যমান — scroll area এর বাইরে */
         .leftbar-pinned-footer {
           flex-shrink: 0;
           padding-top: 10px;
@@ -214,7 +215,7 @@ function LeftBar() {
       `}</style>
 
       <div className="leftbar-root">
-        {/* Brand — সবসময় উপরে */}
+        {/* Brand */}
         <div className="leftbar-brand">
           <div className="leftbar-brand-dot" />
           <span className="leftbar-brand-text">Navigate</span>
@@ -265,7 +266,7 @@ function LeftBar() {
           })}
         </div>
 
-        {/* ✅ Settings — সবসময় নিচে pin করা, scroll এ লুকাবে না */}
+        {/* Settings — pinned at bottom */}
         <div className="leftbar-pinned-footer">
           {(() => {
             const { path, icon: Icon, label } = SETTINGS_ITEM;
