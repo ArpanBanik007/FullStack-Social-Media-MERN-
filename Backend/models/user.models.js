@@ -5,9 +5,7 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
-    // ─────────────────────────────
     // 🔹 Basic Identity
-    // ─────────────────────────────
     userId: {
       type: String,
       required: true,
