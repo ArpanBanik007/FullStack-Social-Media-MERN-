@@ -13,7 +13,7 @@ import Dislike from "../models/dislikes.models.js";
 import { Follow } from "../models/folllow.models.js";
 import Comment from "../models/comments.models.js"
 import mongoose from "mongoose";
-import { io } from "../socket.js";
+import { getIO } from "../socket.js";
 
 /**
  * Create Post (text + optional image)
@@ -310,6 +310,8 @@ const getSinglePost = asyncHandler(async (req, res) => {
     const post = await Post.findById(postId).select("likes dislikes");
 
     // 🔥 SOCKET EMIT – update all users in the room
+const io = getIO()
+
     if (io) {
       io.to(`post:${postId}`).emit("post-reaction-updated", {
         postId,
@@ -378,13 +380,15 @@ const togglePostDislike = async (req, res) => {
     const post = await Post.findById(postId).select("likes dislikes");
 
     // 🔥 SOCKET EMIT – update all users in the room
-    if (io) {
-      io.to(`post:${postId}`).emit("post-reaction-updated", {
-        postId,
-        likes: post.likes,
-        dislikes: post.dislikes,
-      });
-    }
+  const io = getIO(); 
+
+if (io) {
+  io.to(`post:${postId}`).emit("post-reaction-updated", {
+    postId,
+    likes: post.likes,
+    dislikes: post.dislikes,
+  });
+}
 
     return res.json({ success: true, disliked });
   } catch (err) {

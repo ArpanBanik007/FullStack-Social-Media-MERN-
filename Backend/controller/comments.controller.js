@@ -3,10 +3,14 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Comment from "../models/comments.models.js"
 import Video from "../models/video.model.js";
-import {io} from "../socket.js"
+import {getIO} from "../socket.js"
 import mongoose from "mongoose";
 
+
+
+
 const createComment = asyncHandler(async (req, res) => {
+  const io = getIO();
   const userId = req.user?._id;
   const { content, parentComment } = req.body;
   const { videoId } = req.params;

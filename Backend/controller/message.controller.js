@@ -7,12 +7,9 @@ import {
     editMessage,
     toggleReaction,
     searchUsers,
-} from "../services/message.services.js";
+} from "../services/message.service.js";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
-
-
-
 
 // ✅ Send Message
 export const sendMessage = async (req, res, next) => {
@@ -29,6 +26,15 @@ export const sendMessage = async (req, res, next) => {
             filePublicId,
             replyTo,
         } = req.body;
+
+        // ✅ Validation
+        if (!receiverId) {
+            return res.status(400).json({ success: false, error: "receiverId required" });
+        }
+
+        if (type === "text" && !content?.trim()) {
+            return res.status(400).json({ success: false, error: "Message content required" });
+        }
 
         // Step 1: Conversation নাও বা বানাও
         const conversation = await getOrCreateConversation(senderId, receiverId);
@@ -61,14 +67,11 @@ export const sendMessage = async (req, res, next) => {
         // Step 4: Socket emit
         const io = req.app.get("io");
         if (io) {
-            // Conversation room এ সবাইকে নতুন message পাঠাও
             io.to(conversation._id.toString()).emit("newMessage", {
                 message,
                 conversationId: conversation._id,
             });
 
-            // Receiver এর personal room এ notification পাঠাও
-            // (receiver যদি অন্য conversation এ থাকে তখনও notification পাবে)
             io.to(receiverId.toString()).emit("newMessageNotification", {
                 conversationId: conversation._id,
                 senderId,
@@ -79,6 +82,8 @@ export const sendMessage = async (req, res, next) => {
                         ? content?.slice(0, 60)
                         : `Sent a ${type}`,
             });
+        } else {
+            console.warn("⚠️ Socket io not available in sendMessage");
         }
 
         res.status(201).json({ success: true, message });
@@ -95,7 +100,10 @@ export const getMessages = async (req, res, next) => {
         const userId = req.user._id;
 
         // Conversation member কিনা check
-        const conversation = await Conversation.findById(chatId).select("members");
+        const conversation = await Conversation.findById(chatId).select(
+            "members deletedFor"
+        );
+
         if (!conversation || !conversation.isMember(userId)) {
             return res.status(403).json({
                 success: false,
@@ -109,7 +117,6 @@ export const getMessages = async (req, res, next) => {
             deletedFor: { $ne: userId },
         };
 
-        // Cursor: এই time এর আগের messages দাও
         if (before) {
             query.createdAt = { $lt: new Date(before) };
         }
@@ -129,9 +136,11 @@ export const getMessages = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            messages: messages.reverse(), // পুরনো আগে
+            messages: messages.reverse(),
             hasMore,
-            nextCursor: hasMore ? messages[0]?.createdAt : null,
+            nextCursor: hasMore
+                ? messages[messages.length - 1]?.createdAt
+                : null,
         });
     } catch (err) {
         next(err);
@@ -164,9 +173,12 @@ export const markSeen = async (req, res, next) => {
         const userId = req.user._id;
         const { chatId } = req.params;
 
+        if (!chatId) {
+            return res.status(400).json({ success: false, error: "chatId required" });
+        }
+
         const seenCount = await markMessagesAsSeen(chatId, userId);
 
-        // Socket দিয়ে sender কে জানাও
         const io = req.app.get("io");
         if (io && seenCount > 0) {
             io.to(chatId).emit("messageSeen", {
@@ -174,6 +186,8 @@ export const markSeen = async (req, res, next) => {
                 seenBy: userId,
                 seenAt: new Date(),
             });
+        } else if (!io) {
+            console.warn("⚠️ Socket io not available in markSeen");
         }
 
         res.status(200).json({ success: true, seenCount });
@@ -189,12 +203,15 @@ export const deleteMessage = async (req, res, next) => {
         const { deleteFor } = req.query; // "all" or "me"
         const userId = req.user._id;
 
+        if (!messageId) {
+            return res.status(400).json({ success: false, error: "messageId required" });
+        }
+
         let message;
 
         if (deleteFor === "all") {
             message = await deleteMessageForAll(messageId, userId);
 
-            // Socket দিয়ে সবাইকে জানাও
             const io = req.app.get("io");
             if (io) {
                 io.to(message.chatId.toString()).emit("messageDeleted", {
@@ -202,6 +219,8 @@ export const deleteMessage = async (req, res, next) => {
                     chatId: message.chatId,
                     deletedFor: "all",
                 });
+            } else {
+                console.warn("⚠️ Socket io not available in deleteMessage");
             }
         } else {
             // শুধু নিজের জন্য delete
@@ -210,6 +229,10 @@ export const deleteMessage = async (req, res, next) => {
                 { $addToSet: { deletedFor: userId } },
                 { new: true }
             );
+
+            if (!message) {
+                return res.status(404).json({ success: false, error: "Message not found" });
+            }
         }
 
         res.status(200).json({ success: true, message: "Message deleted" });
@@ -228,6 +251,10 @@ export const editMessageController = async (req, res, next) => {
         const { content } = req.body;
         const userId = req.user._id;
 
+        if (!messageId) {
+            return res.status(400).json({ success: false, error: "messageId required" });
+        }
+
         if (!content?.trim()) {
             return res.status(400).json({ success: false, error: "Content required" });
         }
@@ -242,6 +269,8 @@ export const editMessageController = async (req, res, next) => {
                 content: message.content,
                 editedAt: message.editedAt,
             });
+        } else {
+            console.warn("⚠️ Socket io not available in editMessage");
         }
 
         res.status(200).json({ success: true, message });
@@ -260,6 +289,10 @@ export const reactToMessage = async (req, res, next) => {
         const { emoji } = req.body;
         const userId = req.user._id;
 
+        if (!messageId) {
+            return res.status(400).json({ success: false, error: "messageId required" });
+        }
+
         if (!emoji) {
             return res.status(400).json({ success: false, error: "Emoji required" });
         }
@@ -273,6 +306,8 @@ export const reactToMessage = async (req, res, next) => {
                 chatId: message.chatId,
                 reactions: Object.fromEntries(message.reactions),
             });
+        } else {
+            console.warn("⚠️ Socket io not available in reactToMessage");
         }
 
         res.status(200).json({ success: true, reactions: message.reactions });
@@ -288,7 +323,15 @@ export const reactToMessage = async (req, res, next) => {
 export const searchUsersController = async (req, res, next) => {
     try {
         const { q } = req.query;
-        const users = await searchUsers(q, req.user._id);
+
+        if (!q || q.trim().length < 2) {
+            return res.status(400).json({
+                success: false,
+                error: "Search query must be at least 2 characters",
+            });
+        }
+
+        const users = await searchUsers(q.trim(), req.user._id);
         res.status(200).json({ success: true, users });
     } catch (err) {
         if (err.status) {

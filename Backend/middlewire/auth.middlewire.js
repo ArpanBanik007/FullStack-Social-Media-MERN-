@@ -30,6 +30,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         next();
     } catch (error) {
         console.error("JWT ERROR:", error.message); // Log actual error
-        throw new ApiError (401, error?.message || 'Invalid access token');
+        throw new ApiError(401, error?.message || 'Invalid access token');
     }
 });

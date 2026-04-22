@@ -11,9 +11,13 @@ import { getVideoDurationInSeconds } from "get-video-duration"
 import escapeStringRegexp from 'escape-string-regexp';
 import fs from "fs"
 import Like from "../models/likes.models.js"
-import { io } from "../socket.js";
+import { getIO} from "../socket.js";
 import mongoose from "mongoose";
 import Comment from "../models/comments.models.js";
+
+
+const io= getIO();
+
 
 const createVideo = asyncHandler(async (req, res) => {
   const { title, description, tags = [], category, isPublished } = req.body;

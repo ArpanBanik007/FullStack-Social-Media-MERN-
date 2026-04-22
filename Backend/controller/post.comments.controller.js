@@ -3,13 +3,13 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import Comment from "../models/comments.models.js"
 import Post from "../models/createpost.models.js";
-import { io } from "../socket.js";
+import { getIO } from "../socket.js";
 import mongoose from "mongoose";
 
 
 
-
 const createPostComment = asyncHandler(async (req, res) => {
+   const io = req.app.get("io")
   const userId = req.user._id;
   const { content } = req.body;
   const { postId } = req.params;
