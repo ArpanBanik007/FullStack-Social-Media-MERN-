@@ -36,15 +36,22 @@ export const initSocket = (server, app) => {
   // ════════════════════════════════
   io.use(async (socket, next) => {
     try {
-      const token =
+      let token =
         socket.handshake.auth?.token ||
         socket.handshake.query?.token;
+
+      if (!token && socket.handshake.headers.cookie) {
+        const match = socket.handshake.headers.cookie.match(/accessToken=([^;]+)/);
+        if (match) {
+          token = match[1];
+        }
+      }
 
       if (!token) {
         return next(new Error("Authentication error: No token provided"));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
       const user = await User.findById(decoded._id).select(
         "name avatar isActive"

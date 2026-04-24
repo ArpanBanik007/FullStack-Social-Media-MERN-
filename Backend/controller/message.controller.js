@@ -7,9 +7,10 @@ import {
     editMessage,
     toggleReaction,
     searchUsers,
-} from "../services/message.service.js";
+} from "../services/message.services.js";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 // ✅ Send Message
 export const sendMessage = async (req, res, next) => {
@@ -36,6 +37,18 @@ export const sendMessage = async (req, res, next) => {
             return res.status(400).json({ success: false, error: "Message content required" });
         }
 
+        let finalFileUrl = fileUrl || null;
+        let finalFilePublicId = filePublicId || null;
+
+        // If an image was uploaded, upload to Cloudinary
+        if (req.file) {
+            const uploadResult = await uploadOnCloudinary(req.file.path);
+            if (uploadResult) {
+                finalFileUrl = uploadResult.url;
+                finalFilePublicId = uploadResult.public_id;
+            }
+        }
+
         // Step 1: Conversation নাও বা বানাও
         const conversation = await getOrCreateConversation(senderId, receiverId);
 
@@ -46,11 +59,11 @@ export const sendMessage = async (req, res, next) => {
             receiverId,
             content: content?.trim() || "",
             type,
-            fileUrl: fileUrl || null,
+            fileUrl: finalFileUrl,
             fileName: fileName || null,
             fileSize: fileSize || null,
             mimeType: mimeType || null,
-            filePublicId: filePublicId || null,
+            filePublicId: finalFilePublicId,
             status: "sent",
             seenBy: [senderId],
             replyTo: replyTo || null,
@@ -157,8 +170,8 @@ export const getConversations = async (req, res, next) => {
             deletedFor: { $ne: userId },
         })
             .sort({ lastMessageAt: -1 })
-            .populate("members", "name avatar isOnline lastSeen")
-            .populate("lastSender", "name")
+            .populate("members", "name fullName username avatar isOnline lastSeen")
+            .populate("lastSender", "name fullName username")
             .lean();
 
         res.status(200).json({ success: true, conversations });

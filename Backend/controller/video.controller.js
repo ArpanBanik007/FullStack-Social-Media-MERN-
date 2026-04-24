@@ -16,10 +16,11 @@ import mongoose from "mongoose";
 import Comment from "../models/comments.models.js";
 
 
-const io= getIO();
 
 
 const createVideo = asyncHandler(async (req, res) => {
+  const io= getIO();
+
   const { title, description, tags = [], category, isPublished } = req.body;
   const userId = req.user?._id;
 
@@ -365,6 +366,8 @@ const getSingleVideo = asyncHandler(async (req, res) => {
 
 
 const toggleLikes = asyncHandler(async (req, res) => {
+  const io= getIO();
+
   const userId = req.user?._id;
   const { videoId } = req.params;
 
@@ -405,6 +408,8 @@ const toggleLikes = asyncHandler(async (req, res) => {
 
 
 const toggleDislike = asyncHandler(async (req, res) => {
+  const io= getIO();
+
   const { videoId } = req.params;
   const userId = req.user?._id;
 

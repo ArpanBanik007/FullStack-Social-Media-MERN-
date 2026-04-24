@@ -10,7 +10,7 @@ import {
   selectIsVideoLiked,
   syncVideoLike
 } from "../slices/video.like.slice";
-import { socket } from "../socket";
+import { connectSocket } from "../socket";
 
 const timeAgo = (d) => {
   const diff = Date.now() - new Date(d).getTime();
@@ -69,6 +69,7 @@ function SingleVideoViewPage() {
 
   // ── Socket ─────────────────────────────────────────────────────────
   useEffect(() => {
+    const socket = connectSocket();
     socket.emit("join-video", `video:${videoId}`);
 
     socket.on("video-reaction-updated", (data) => {

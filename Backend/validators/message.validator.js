@@ -24,8 +24,7 @@ export const sendMessageSchema = Joi.object({
 
   fileUrl: Joi.when("type", {
     is: Joi.valid("image", "file", "audio", "video"),
-    then: Joi.string().uri().required().messages({
-      "any.required": "File URL is required for media messages",
+    then: Joi.string().uri().optional().messages({
       "string.uri": "Invalid file URL",
     }),
     otherwise: Joi.string().allow(null, "").optional(),

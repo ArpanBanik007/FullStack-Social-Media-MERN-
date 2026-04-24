@@ -4,7 +4,7 @@ import { FaComment, FaShareNodes, FaRegBookmark, FaEye } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
 import { useNavigate } from "react-router-dom";
-import { socket } from "../socket";
+import { connectSocket } from "../socket";
 import { useDispatch } from "react-redux";
 import { syncPostLike } from "../slices/like.slice";
 
@@ -43,10 +43,12 @@ function UserAllPost({ userId }) {
 
   useEffect(() => {
     if (!posts.length) return;
+    const socket = connectSocket();
     posts.forEach((post) => socket.emit("join-post", post._id));
   }, [posts.length]);
 
   useEffect(() => {
+    const socket = connectSocket();
     const handleReactionUpdate = (data) => {
       setPosts((prev) =>
         prev.map((post) =>

@@ -16,7 +16,7 @@ import {
   addPostView,
   updatePostViews,
 } from "../slices/postView.slice"; // ✅ নতুন
-import { socket } from "../socket";
+import { connectSocket } from "../socket";
 
 const timeAgo = (d) => {
   const diff = Date.now() - new Date(d).getTime();
@@ -83,6 +83,7 @@ function SinglePostViewPage() {
 
   // ── Socket ─────────────────────────────────────────────
   useEffect(() => {
+    const socket = connectSocket();
     socket.emit("join-post", `post:${postId}`);
 
     const handleReaction = (data) => {

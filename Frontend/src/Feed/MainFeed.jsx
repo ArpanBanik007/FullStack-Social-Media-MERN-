@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { socket } from "../socket";
+import { connectSocket } from "../socket";
 
 import { FaComment, FaShareNodes } from "react-icons/fa6";
 import { FaEye } from "react-icons/fa";
@@ -68,10 +68,12 @@ function MainFeed() {
 
   useEffect(() => {
     if (!posts.length) return;
+    const socket = connectSocket();
     posts.forEach((post) => socket.emit("join-post", `post:${post._id}`));
   }, [posts.length]);
 
   useEffect(() => {
+    const socket = connectSocket();
     posts.forEach((post) => socket.emit("join-post", post._id));
     const handleReactionUpdate = (data) => {
       setPosts((prev) =>
@@ -99,6 +101,7 @@ function MainFeed() {
   }, []);
 
   useEffect(() => {
+    const socket = connectSocket();
     const handleCommentCountUpdate = ({ postId, comments }) => {
       setPosts((prev) =>
         prev.map((post) =>

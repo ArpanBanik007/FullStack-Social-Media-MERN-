@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import { socket } from "../socket";
+import { connectSocket } from "../socket";
 import { addVideoView, updateVideoViews } from "../slices/videoView.slice";
 import VideoLikeButton from "../componants/VideoLikeButton";
 import { syncVideoLike } from "../slices/video.like.slice";
@@ -64,11 +64,13 @@ function VideoPlayer() {
   // ── Socket room join ───────────────────────────────────
   useEffect(() => {
     if (!videos.length) return;
+    const socket = connectSocket();
     videos.forEach((video) => socket.emit("join-video", `video:${video._id}`));
   }, [videos.length]);
 
   // ── Socket: like update ────────────────────────────────
   useEffect(() => {
+    const socket = connectSocket();
     const handleReactionUpdate = (data) => {
       setVideos((prev) =>
         prev.map((v) =>
@@ -89,6 +91,7 @@ function VideoPlayer() {
 
   // ── Socket: comment count update ───────────────────────
   useEffect(() => {
+    const socket = connectSocket();
     const handleCommentCountUpdate = ({ videoId, comments }) => {
       setVideos((prev) =>
         prev.map((v) => (v._id === videoId ? { ...v, comments } : v)),
@@ -100,6 +103,7 @@ function VideoPlayer() {
 
   // ── Socket: view count update ✅ নতুন ─────────────────
   useEffect(() => {
+    const socket = connectSocket();
     const handleViewCount = (data) => {
       setVideos((prev) =>
         prev.map((v) =>

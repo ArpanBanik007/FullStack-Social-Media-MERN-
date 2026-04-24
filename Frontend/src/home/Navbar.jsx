@@ -12,28 +12,7 @@ import { persistor } from "../store/store";
 import { resetMyDetails } from "../slices/mydetails.slice";
 import { resetMyPosts } from "../slices/postSlice";
 import axios from "axios";
-import { useDispatch } from "react-redux";
-
-const ICONS = [
-  { id: 1, path: "/home", icon: <IoMdHome />, label: "Home" },
-  { id: 2, path: "/videos", icon: <MdOndemandVideo />, label: "Videos" },
-  { id: 3, path: "/upload", icon: <BiVideoPlus />, label: "Upload" },
-  {
-    id: 4,
-    path: "/notifications",
-    icon: <FaBell />,
-    label: "Notifications",
-    badge: 3,
-  },
-  // ✅ label fix — আগে "Notifications" ছিল
-  {
-    id: 5,
-    path: "/chats",
-    icon: <BsChatLeftTextFill />,
-    label: "Chats",
-    badge: 3,
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
 
 function Navbar() {
   const [showMenu, setShowMenu] = useState(false);
@@ -41,6 +20,33 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const currentUser = useSelector((state) => state.mydetails?.user);
+
+  const unreadCount = useSelector((state) => 
+    state.chat?.conversations?.reduce((total, conv) => {
+      return total + (conv.unreadCounts?.[currentUser?._id] || 0);
+    }, 0) || 0
+  );
+
+  const ICONS = [
+    { id: 1, path: "/home", icon: <IoMdHome />, label: "Home" },
+    { id: 2, path: "/videos", icon: <MdOndemandVideo />, label: "Videos" },
+    { id: 3, path: "/upload", icon: <BiVideoPlus />, label: "Upload" },
+    {
+      id: 4,
+      path: "/notifications",
+      icon: <FaBell />,
+      label: "Notifications",
+      badge: 3,
+    },
+    {
+      id: 5,
+      path: "/chat",
+      icon: <BsChatLeftTextFill />,
+      label: "Chats",
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
+  ];
 
   const handleNav = (path) => {
     if (location.pathname === path) window.location.reload();
@@ -49,8 +55,7 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // ✅ relative URL — hardcoded localhost সরানো হয়েছে
-      await axios.post("/api/v1/users/logout", {}, { withCredentials: true });
+      await axios.post("http://localhost:8000/api/v1/users/logout", {}, { withCredentials: true });
       dispatch(resetMyDetails());
       dispatch(resetMyPosts());
       await persistor.purge();
@@ -440,11 +445,11 @@ function Navbar() {
         <div className="mobile-right">
           {/* ✅ Chat Button */}
           <button
-            className={`mobile-chat-btn ${location.pathname === "/chats" ? "active" : ""}`}
-            onClick={() => handleNav("/chats")}
+            className={`mobile-chat-btn ${location.pathname.startsWith("/chat") ? "active" : ""}`}
+            onClick={() => handleNav("/chat")}
           >
             <BsChatLeftTextFill />
-            <span className="mobile-chat-badge">3</span>
+            {unreadCount > 0 && <span className="mobile-chat-badge">{unreadCount}</span>}
           </button>
 
           {/* Menu Button */}

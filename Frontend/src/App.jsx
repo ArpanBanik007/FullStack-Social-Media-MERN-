@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchMyLikes } from "./slices/like.slice";
 import { fetchMydetils, selectCurrentUser } from "./slices/mydetails.slice";
+import { connectSocket, disconnectSocket } from "./socket";
 import CommentPage from "./Pages/CommentPage";
 import { fetchMyVideoLikes } from "./slices/video.like.slice";
 import VideoCommentPage from "./Pages/VideoCommentPage";
@@ -22,8 +23,8 @@ import CommentCountpage from "./Pages/CommentCountpage";
 import LikeCountpage from "./Pages/LikeCountpage";
 import SinglePostViewPage from "./Pages/SinglePostViewPage";
 import SingleVideoViewPage from "./Pages/SinglevideoViewpage";
-// ✅ PascalCase দিয়ে import করো — lowercase হলে React HTML tag মনে করে, render হয় না
 import ChatMainPage from "./Chat/chatmainpage";
+import { setOnlineUsers } from "./slices/chat.slice";
 
 function App() {
   const dispatch = useDispatch();
@@ -37,8 +38,19 @@ function App() {
     if (currentUser?._id) {
       dispatch(fetchMyLikes());
       dispatch(fetchMyVideoLikes());
+      const socket = connectSocket();
+
+      socket.on("onlineUsers", (users) => {
+        dispatch(setOnlineUsers(users));
+      });
+
+      return () => {
+        socket.off("onlineUsers");
+      };
+    } else {
+      disconnectSocket();
     }
-  }, [currentUser]);
+  }, [currentUser, dispatch]);
 
   return (
     <Routes>
@@ -50,7 +62,8 @@ function App() {
       <Route path="/videos/:videoId" element={<VideoPlayer />} />
       <Route path="/saved" element={<SavePage />} />
       {/* ✅ ChatMainPage — PascalCase */}
-      <Route path="/chats" element={<ChatMainPage />} />
+      <Route path="/chat" element={<ChatMainPage />} />
+      <Route path="/chat/:conversationId" element={<ChatMainPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/settings" element={<SettingPage />} />
       <Route path="/settings/profile" element={<ProfileSettting />} />

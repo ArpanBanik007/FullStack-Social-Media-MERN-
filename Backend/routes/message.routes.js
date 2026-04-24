@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import { verifyJWT } from "../middlewire/auth.middlewire.js";
-import {messageLimiter,searchLimiter} from "../services/message.service.js";
+import { upload } from "../middlewire/multer.middlewire.js";
+import {messageLimiter,searchLimiter} from "../middlewire/rateLimiter.js";
 import { checkNotBlocked, checkGroupPermission } from "../middlewire/chat.middleware.js";
 import { validate, sendMessageSchema, editMessageSchema, reactSchema} from "../validators/message.validator.js";
 import{
@@ -26,6 +27,7 @@ router.put("/seen/:chatId", markSeen);
 router.post(
   "/send",
   messageLimiter,
+  upload.single("image"),
   validate(sendMessageSchema),
   checkNotBlocked,
   checkGroupPermission,

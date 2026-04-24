@@ -7,7 +7,7 @@ import { FaPlay, FaVolumeXmark, FaVolumeHigh } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { MdDelete } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { socket } from "../socket";
+import { connectSocket } from "../socket";
 
 function VideoCommentPage() {
   const { videoId } = useParams();
@@ -60,6 +60,7 @@ function VideoCommentPage() {
   }, [videoId]);
 
   useEffect(() => {
+    const socket = connectSocket();
     socket.emit("join-video", `video:${videoId}`);
     const handleNewComment = (comment) => {
       setComments((prev) => {

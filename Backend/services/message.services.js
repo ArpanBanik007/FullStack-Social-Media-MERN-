@@ -4,23 +4,22 @@ import { User } from "../models/user.models.js"
 
 
 export const getOrCreateConversation = async (senderId, receiverId) => {
-    const conversation = await Conversation.findOneAndUpdate(
-        {
+    let conversation = await Conversation.findOne({
+        isGroup: false,
+        members: { $all: [senderId, receiverId], $size: 2 },
+    });
+
+    if (!conversation) {
+        conversation = await Conversation.create({
             isGroup: false,
-            members: { $all: [senderId, receiverId], $size: 2 },
-        },
-        {
-            $setOnInsert: {
-                members: [senderId, receiverId],
-                isGroup: false,
-                unreadCounts: {
-                    [senderId.toString()]: 0,
-                    [receiverId.toString()]: 0,
-                },
+            members: [senderId, receiverId],
+            unreadCounts: {
+                [senderId.toString()]: 0,
+                [receiverId.toString()]: 0,
             },
-        },
-        { upsert: true, new: true }
-    );
+        });
+    }
+
     return conversation;
 };
 
@@ -165,13 +164,15 @@ export const searchUsers = async (query, currentUserId) => {
 
     const users = await User.find({
         _id: { $ne: currentUserId },
-        isActive: true,
+        isActive: { $ne: false }, // Backward compatibility if isActive is missing
         $or: [
             { name: { $regex: query.trim(), $options: "i" } },
+            { fullName: { $regex: query.trim(), $options: "i" } },
             { email: { $regex: query.trim(), $options: "i" } },
+            { username: { $regex: query.trim(), $options: "i" } },
         ],
     })
-        .select("name email avatar isOnline lastSeen")
+        .select("name fullName email username avatar isOnline lastSeen")
         .limit(20)
         .lean();
 

@@ -1,5 +1,5 @@
-import { User } from "../models/user.models";
-import Conversation from "../models/conversation.model";
+import { User } from "../models/user.models.js";
+import Conversation from "../models/conversation.model.js";
 
 
 export const checkNotBlocked = async (req, res, next) => {

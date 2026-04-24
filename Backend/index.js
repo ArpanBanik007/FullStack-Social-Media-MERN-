@@ -11,7 +11,7 @@ dotenv.config({
 
 const httpServer= http.createServer(app)
 
-initSocket(httpServer)
+initSocket(httpServer, app)
 
 
 connectDB()
