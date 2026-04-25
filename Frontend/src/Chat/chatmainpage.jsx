@@ -38,7 +38,7 @@ function ChatMainPage() {
   const isOnline = (userId) => {
     if (!userId) return false;
     const idStr = String(userId);
-    return onlineUsers.includes(idStr);
+    return onlineUsers.some((u) => String(u._id || u) === idStr);
   };
 
   // ── Socket connect + global events

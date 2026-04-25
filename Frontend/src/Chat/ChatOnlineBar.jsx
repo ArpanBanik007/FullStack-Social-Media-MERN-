@@ -3,22 +3,11 @@ import { useSelector } from "react-redux";
 
 function ChatOnlineBar() {
   const { onlineUsers } = useSelector((state) => state.chat);
-  const { conversations } = useSelector((state) => state.chat);
   const currentUser = useSelector((state) => state.mydetails?.user);
 
-  // Online conversations থেকে online member বের করো
-  const onlineMembers = conversations
-    .map((conv) => {
-      const other = conv.members?.find(
-        (m) => String(m._id) !== String(currentUser?._id),
-      );
-      return other;
-    })
-    .filter((m) => m && onlineUsers.includes(String(m._id)));
-
-  // Duplicate সরাও
-  const unique = onlineMembers.filter(
-    (m, i, arr) => arr.findIndex((x) => x._id === m._id) === i,
+  // Filter out current user from the socket's online users list
+  const unique = onlineUsers.filter(
+    (user) => String(user._id || user) !== String(currentUser?._id)
   );
 
   if (unique.length === 0) return null;
@@ -44,17 +33,19 @@ function ChatOnlineBar() {
         <div className="online-bar-label">Active Now</div>
         <div className="online-scroll">
           {unique.map((user) => (
-            <div key={user._id} className="online-user">
+            <div key={user._id || user} className="online-user">
               <div className="online-avatar-ring">
                 <div className="online-avatar-inner">
                   <img
                     src={user.avatar || "/default-avatar.png"}
-                    alt={user.name}
+                    alt={user.fullName || user.name || user.username || "User"}
                   />
                   <div className="online-dot" />
                 </div>
               </div>
-              <span className="online-name">{user.name?.split(" ")[0]}</span>
+              <span className="online-name">
+                {(user.fullName || user.name || user.username || "User").split(" ")[0]}
+              </span>
             </div>
           ))}
         </div>

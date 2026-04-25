@@ -208,7 +208,6 @@ const userSchema = new Schema(
 // 🔥 INDEXES
 // =====================
 userSchema.index({ username: "text", name: "text" });
-userSchema.index({ email: 1 });
 userSchema.index({ isOnline: 1 });
 
 // =====================

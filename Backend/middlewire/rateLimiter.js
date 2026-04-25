@@ -1,11 +1,11 @@
 // middleware/rateLimiter.js
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 // Message send — per user 60/minute
 export const messageLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 60,
-    keyGenerator: (req) => req.user?._id?.toString() || req.ip,
+    keyGenerator: (req, res) => req.user?._id?.toString() || ipKeyGenerator(req, res),
     handler: (req, res) => {
         res.status(429).json({
             success: false,
@@ -21,7 +21,6 @@ export const messageLimiter = rateLimit({
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10,
-    keyGenerator: (req) => req.ip,
     handler: (req, res) => {
         res.status(429).json({
             success: false,
@@ -36,7 +35,7 @@ export const authLimiter = rateLimit({
 export const searchLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 30,
-    keyGenerator: (req) => req.user?._id?.toString() || req.ip,
+    keyGenerator: (req, res) => req.user?._id?.toString() || ipKeyGenerator(req, res),
     handler: (req, res) => {
         res.status(429).json({
             success: false,

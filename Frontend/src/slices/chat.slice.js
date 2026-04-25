@@ -63,6 +63,23 @@ export const searchUsers = createAsyncThunk(
   }
 );
 
+// React to message
+export const reactToMessageAction = createAsyncThunk(
+  "chat/reactToMessage",
+  async ({ messageId, emoji }, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.patch(
+        `http://localhost:8000/api/v1/messages/${messageId}/react`,
+        { emoji },
+        { withCredentials: true }
+      );
+      return { messageId, reactions: data.reactions };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.error);
+    }
+  }
+);
+
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
@@ -203,6 +220,12 @@ const chatSlice = createSlice({
       })
       .addCase(searchUsers.fulfilled, (state, action) => {
         state.searchResults = action.payload;
+      })
+      .addCase(reactToMessageAction.fulfilled, (state, action) => {
+        const { messageId, reactions } = action.payload;
+        state.messages = state.messages.map((m) =>
+          m._id === messageId ? { ...m, reactions } : m
+        );
       });
   },
 });

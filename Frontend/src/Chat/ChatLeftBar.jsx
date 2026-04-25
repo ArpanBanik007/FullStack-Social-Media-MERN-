@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { searchUsers, clearSearchResults } from "../slices/chat.slice";
 import ChatOnlineBar from "./ChatOnlineBar";
 
@@ -7,9 +8,10 @@ function ChatLeftBar({ conversations = [], onSelectChat, selectedId }) {
   const [search, setSearch] = useState("");
   const searchTimeout = useRef(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { searchResults, onlineUsers } = useSelector((state) => state.chat);
 
-  const isOnline = (userId) => onlineUsers.includes(String(userId));
+  const isOnline = (userId) => onlineUsers.some((u) => String(u._id || u) === String(userId));
 
   // Debounced search
   const handleSearch = (e) => {
@@ -148,6 +150,11 @@ function ChatLeftBar({ conversations = [], onSelectChat, selectedId }) {
                     className="conv-avatar"
                     src={conv.avatar}
                     alt={conv.name}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const userId = conv._other?._id || conv.receiverId;
+                      if(userId) navigate(`/profile/${userId}`);
+                    }}
                   />
                   {conv.online && <div className="conv-online-dot" />}
                 </div>
@@ -184,17 +191,24 @@ function ChatLeftBar({ conversations = [], onSelectChat, selectedId }) {
                   key={user._id}
                   className="conv-item"
                   onClick={() => {
-                    // নতুন conversation শুরু করবে — receiverId হিসেবে pass
-                    onSelectChat({
-                      _id: null,
-                      receiverId: user._id,
-                      id: user._id,
-                      name: user.fullName || user.name || user.username || "Unknown",
-                      avatar: user.avatar || "/default-avatar.png",
-                      online: isOnline(user._id),
-                      _other: user,
-                      isNew: true,
-                    });
+                    // Check if conversation already exists
+                    const existingConv = conversations.find(c => String(c._other?._id) === String(user._id));
+
+                    if (existingConv) {
+                      onSelectChat(existingConv);
+                    } else {
+                      // নতুন conversation শুরু করবে — receiverId হিসেবে pass
+                      onSelectChat({
+                        _id: null,
+                        id: null,
+                        receiverId: user._id,
+                        name: user.fullName || user.name || user.username || "Unknown",
+                        avatar: user.avatar || "/default-avatar.png",
+                        online: isOnline(user._id),
+                        _other: user,
+                        isNew: true,
+                      });
+                    }
                     setSearch("");
                     dispatch(clearSearchResults());
                   }}
@@ -204,6 +218,10 @@ function ChatLeftBar({ conversations = [], onSelectChat, selectedId }) {
                       className="conv-avatar"
                       src={user.avatar || "/default-avatar.png"}
                       alt={user.fullName || user.name || user.username}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/profile/${user._id}`);
+                      }}
                     />
                     {isOnline(user._id) && <div className="conv-online-dot" />}
                   </div>

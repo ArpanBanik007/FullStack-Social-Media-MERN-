@@ -12,9 +12,10 @@ const isUserOnline = (userId) => {
   return sockets && sockets.size > 0;
 };
 
-const broadcastOnlineUsers = (io) => {
-  const onlineList = Array.from(onlineUsers.keys());
-  io.emit("onlineUsers", onlineList);
+const broadcastOnlineUsers = async (io) => {
+  const userIds = Array.from(onlineUsers.keys());
+  const users = await User.find({ _id: { $in: userIds } }).select("_id name fullName username avatar isOnline");
+  io.emit("onlineUsers", users);
 };
 
 export const initSocket = (server, app) => {

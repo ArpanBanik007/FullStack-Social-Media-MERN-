@@ -1,5 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { FiUser, FiImage, FiLink, FiBell, FiBellOff } from "react-icons/fi";
 import { MdBlock } from "react-icons/md";
 import { selectCurrentUser } from "../slices/mydetails.slice";
@@ -7,10 +8,11 @@ import { selectCurrentUser } from "../slices/mydetails.slice";
 function ChatRightbar({ conversation, onClose }) {
   const { onlineUsers, messages } = useSelector((state) => state.chat);
   const currentUser = useSelector(selectCurrentUser);
+  const navigate = useNavigate();
 
   if (!conversation) return null;
 
-  const other = conversation._other;
+  const other = conversation._other || { _id: conversation.receiverId };
   const isOnline = onlineUsers.includes(String(other?._id));
 
   // Shared images — current conversation থেকে
@@ -75,7 +77,7 @@ function ChatRightbar({ conversation, onClose }) {
         </div>
 
         <div className="crb-actions">
-          <div className="crb-action-btn">
+          <div className="crb-action-btn" onClick={() => navigate(`/profile/${other?._id}`)}>
             <FiUser />
             <span className="crb-action-label">Profile</span>
           </div>

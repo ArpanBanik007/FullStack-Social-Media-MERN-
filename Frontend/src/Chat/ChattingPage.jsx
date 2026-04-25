@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchMessages, sendMessage } from "../slices/chat.slice";
+import { fetchMessages, sendMessage, reactToMessageAction } from "../slices/chat.slice";
 import { selectCurrentUser } from "../slices/mydetails.slice";
+import { useNavigate } from "react-router-dom";
 import {
   FiSend,
   FiSmile,
@@ -9,6 +10,7 @@ import {
   FiPhone,
   FiVideo,
   FiMoreVertical,
+  FiCornerUpLeft,
 } from "react-icons/fi";
 import { IoCheckmark, IoCheckmarkDone } from "react-icons/io5";
 import axios from "axios";
@@ -18,10 +20,13 @@ function ChattingPage({ conversation, onOpenProfile }) {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const reduxMessages = useSelector((state) => state.chat.messages);
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [activeMessageId, setActiveMessageId] = useState(null);
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const emojiPickerRef = useRef(null);
@@ -93,12 +98,14 @@ function ChattingPage({ conversation, onOpenProfile }) {
       formData.append("receiverId", conversation.receiverId || conversation._other?._id);
       formData.append("type", "image");
       if (input.trim()) formData.append("content", input.trim());
+      if (replyingTo) formData.append("replyTo", replyingTo.id);
       formData.append("image", selectedImage);
       
       dispatch(sendMessage(formData));
       setSelectedImage(null);
       setImagePreview(null);
       setInput("");
+      setReplyingTo(null);
       return;
     }
 
@@ -106,12 +113,21 @@ function ChattingPage({ conversation, onOpenProfile }) {
     const payload = {
       receiverId: conversation.receiverId || conversation._other?._id,
       content: input.trim(),
-      type: "text"
+      type: "text",
+      replyTo: replyingTo ? replyingTo.id : null,
     };
 
     dispatch(sendMessage(payload));
     setInput("");
+    setReplyingTo(null);
   };
+
+  const handleReact = (msgId, emoji) => {
+    dispatch(reactToMessageAction({ messageId: msgId, emoji }));
+    setActiveMessageId(null);
+  };
+
+  const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -130,7 +146,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
     time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     status: msg.status || "sent",
     type: msg.type || "text",
-    fileUrl: msg.fileUrl || null
+    fileUrl: msg.fileUrl || null,
+    reactions: msg.reactions || {},
+    replyTo: msg.replyTo || null,
   }));
 
   return (
@@ -304,6 +322,53 @@ function ChattingPage({ conversation, onOpenProfile }) {
         .msg-status-icon { display: flex; align-items: center; font-size: 15px; }
         .msg-seen { color: #3b82f6; }
 
+        .msg-row-inner { position: relative; display: flex; align-items: center; gap: 8px; }
+        .msg-options {
+          display: none;
+          background: rgba(15, 23, 42, 0.95);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 20px;
+          padding: 4px;
+          gap: 4px;
+          align-items: center;
+          position: absolute;
+          top: -15px;
+          z-index: 10;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .msg-row-inner:hover .msg-options, .msg-options.active { display: flex; }
+        .msg-row.me .msg-options { right: 0; }
+        .msg-row.them .msg-options { left: 40px; }
+        
+        .msg-option-btn {
+          background: transparent; border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 12px; font-size: 16px; transition: background 0.2s;
+        }
+        .msg-option-btn:hover { background: rgba(255,255,255,0.1); }
+        
+        .msg-reactions-bar {
+          display: flex; gap: 4px; margin-top: -8px; z-index: 2; position: relative;
+        }
+        .msg-row.me .msg-reactions-bar { justify-content: flex-end; right: 10px; }
+        .msg-row.them .msg-reactions-bar { justify-content: flex-start; left: 10px; }
+        
+        .msg-reaction-pill {
+          background: rgba(30, 41, 59, 0.95);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px; padding: 2px 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; color: #fff;
+        }
+        .msg-reaction-pill.reacted { background: rgba(6, 182, 212, 0.2); border-color: rgba(6, 182, 212, 0.5); }
+        
+        .reply-preview-bar {
+          background: rgba(15, 23, 42, 0.95); border-left: 3px solid #06b6d4; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; border-top: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05); margin-bottom: -1px; z-index: 10;
+        }
+        .reply-preview-content { font-size: 13px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+        .reply-preview-close { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 16px; }
+        
+        .replied-msg-box {
+          background: rgba(0,0,0,0.25); border-left: 3px solid rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 4px; font-size: 13px; margin-bottom: 6px; cursor: pointer; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.2s;
+        }
+        .replied-msg-box:hover { background: rgba(0,0,0,0.4); }
+
         /* ── Input ── */
         .chatting-input-bar {
           padding: 12px 16px;
@@ -416,7 +481,11 @@ function ChattingPage({ conversation, onOpenProfile }) {
       <div className="chatting-root">
         {/* Header */}
         <div className="chatting-header">
-          <div className="chatting-avatar-wrap" onClick={onOpenProfile} style={{ cursor: "pointer" }}>
+          <div 
+            className="chatting-avatar-wrap" 
+            onClick={onOpenProfile} 
+            style={{ cursor: "pointer" }}
+          >
             <img
               className="chatting-avatar"
               src={conversation.avatar}
@@ -424,7 +493,11 @@ function ChattingPage({ conversation, onOpenProfile }) {
             />
             {conversation.online && <div className="chatting-online" />}
           </div>
-          <div className="chatting-info" onClick={onOpenProfile} style={{ cursor: "pointer" }}>
+          <div 
+            className="chatting-info" 
+            onClick={onOpenProfile} 
+            style={{ cursor: "pointer" }}
+          >
             <div className="chatting-name">{conversation.name}</div>
             <div className="chatting-status">
               {conversation.online ? "Active now" : "Offline"}
@@ -437,7 +510,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
             <button className="chatting-action-btn">
               <FiVideo />
             </button>
-            <button className="chatting-action-btn">
+            <button className="chatting-action-btn" onClick={onOpenProfile}>
               <FiMoreVertical />
             </button>
           </div>
@@ -445,33 +518,92 @@ function ChattingPage({ conversation, onOpenProfile }) {
 
         {/* Messages */}
         <div className="chatting-messages">
-          {displayMessages.map((msg) => (
-            <div key={msg.id} className={`msg-row ${msg.from}`}>
-              {msg.from === "them" && (
-                <img className="msg-avatar" src={conversation.avatar} alt="" />
-              )}
-              <div className="msg-content">
-                <div className="msg-bubble">
-                  {msg.type === "image" && msg.fileUrl && (
-                    <img src={msg.fileUrl} alt="attachment" className="msg-image" />
+          {displayMessages.map((msg) => {
+            const reactionCounts = {};
+            const myReaction = msg.reactions?.[currentUser?._id] || null;
+            
+            Object.values(msg.reactions || {}).forEach(emoji => {
+              reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+            });
+            const reactionEntries = Object.entries(reactionCounts);
+
+            return (
+              <div key={msg.id} id={`msg-${msg.id}`} className={`msg-row ${msg.from}`}>
+                {msg.from === "them" && (
+                  <img className="msg-avatar" src={conversation.avatar} alt="" />
+                )}
+                <div className="msg-content">
+                  <div className="msg-row-inner" onMouseLeave={() => setActiveMessageId(null)}>
+                    <div 
+                      className="msg-bubble"
+                      onClick={() => setActiveMessageId(activeMessageId === msg.id ? null : msg.id)}
+                    >
+                      {msg.replyTo && (
+                        <div 
+                          className="replied-msg-box"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            document.getElementById(`msg-${msg.replyTo._id || msg.replyTo}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                        >
+                          <strong>{msg.replyTo.senderId?.name || (msg.from === 'me' ? conversation.name : 'You')}</strong><br/>
+                          {msg.replyTo.type === 'image' ? '📷 Image' : msg.replyTo.content}
+                        </div>
+                      )}
+                      {msg.type === "image" && msg.fileUrl && (
+                        <img src={msg.fileUrl} alt="attachment" className="msg-image" />
+                      )}
+                      {msg.text && <span>{msg.text}</span>}
+                    </div>
+
+                    <div className={`msg-options ${activeMessageId === msg.id ? 'active' : ''}`}>
+                      {reactionEmojis.map(emoji => (
+                        <button key={emoji} className="msg-option-btn" onClick={() => handleReact(msg.id, emoji)}>{emoji}</button>
+                      ))}
+                      <button className="msg-option-btn" onClick={() => { setReplyingTo(msg); setActiveMessageId(null); }}><FiCornerUpLeft /></button>
+                    </div>
+                  </div>
+
+                  {reactionEntries.length > 0 && (
+                    <div className="msg-reactions-bar">
+                      {reactionEntries.map(([emoji, count]) => (
+                        <div 
+                          key={emoji} 
+                          className={`msg-reaction-pill ${myReaction === emoji ? 'reacted' : ''}`}
+                          onClick={() => handleReact(msg.id, emoji)}
+                        >
+                          {emoji} {count > 1 && count}
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  {msg.text && <span>{msg.text}</span>}
-                </div>
-                <div className="msg-meta">
-                  {msg.time}
-                  {msg.from === "me" && (
-                    <span className="msg-status-icon">
-                      {msg.status === "sent" && <IoCheckmark />}
-                      {msg.status === "delivered" && <IoCheckmarkDone />}
-                      {msg.status === "seen" && <IoCheckmarkDone className="msg-seen" />}
-                    </span>
-                  )}
+
+                  <div className="msg-meta">
+                    {msg.time}
+                    {msg.from === "me" && (
+                      <span className="msg-status-icon">
+                        {msg.status === "sent" && <IoCheckmark />}
+                        {msg.status === "delivered" && <IoCheckmarkDone />}
+                        {msg.status === "seen" && <IoCheckmarkDone className="msg-seen" />}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={bottomRef} />
         </div>
+
+        {/* Reply Preview */}
+        {replyingTo && (
+          <div className="reply-preview-bar">
+            <div className="reply-preview-content">
+              <strong>Replying to {replyingTo.from === 'me' ? 'You' : conversation.name}:</strong> {replyingTo.type === 'image' ? '📷 Image' : replyingTo.text}
+            </div>
+            <button className="reply-preview-close" onClick={() => setReplyingTo(null)}>✕</button>
+          </div>
+        )}
 
         {/* Input */}
         <div className="chatting-input-bar">
