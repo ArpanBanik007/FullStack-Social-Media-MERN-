@@ -3,14 +3,13 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
 const userOTPSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
   email: {
     type: String,
     required: true,
+  },
+  isVerified: {
+    type: Boolean,
+    default: false,
   },
   otp: {
     type: String,

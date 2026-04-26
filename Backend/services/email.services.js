@@ -4,11 +4,11 @@ import asyncHandler from "../utils/asyncHandler.js"
 
 
 
-export const generateOTP= asyncHandler(async () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-})
+export const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
-export const sendOTPEmail = asyncHandler(async (email, otp) => {
+export const sendOTPEmail = async (email, otp) => {
   // 1. Setup transporter
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -22,7 +22,7 @@ export const sendOTPEmail = asyncHandler(async (email, otp) => {
 
   // 2. Email content
   const mailOptions = {
-    from: `"Vidflare 🔐" <${process.env.EMAIL_USER}>`,
+    from: `"Pluto 🔐" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Your One-Time Password (OTP)",
     html: `
@@ -41,4 +41,4 @@ export const sendOTPEmail = asyncHandler(async (email, otp) => {
   // 3. Send email
   await transporter.sendMail(mailOptions);
 
-});
+};

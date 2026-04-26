@@ -2,6 +2,8 @@ import asyncHandler from "../utils/asyncHandler.js"
 import { v2 as cloudinary } from "cloudinary";
 import { User } from "../models/user.models.js"
 import UserOTP from "../models/otp.models.js"
+import EmailVerification from "../models/emailVerification.model.js"
+import bcrypt from "bcrypt"
 import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import { generateOTP, sendOTPEmail } from "../services/email.services.js"
@@ -48,12 +50,31 @@ const deleteFromCloudinary = async (imageUrl) => {
 
 
  const registerUser = asyncHandler(async (req, res) => {
-    const { fullName, email, phone, password ,username } = req.body;
+    const { fullName, email, phone, password, username, otp } = req.body;
 
     if (
-        [fullName, email, phone, password,username].some((field) => field?.trim() === "")
+        [fullName, email, phone, password, username, otp].some((field) => field?.trim() === "")
     ) {
-        throw new ApiError(400, "All fields are required");
+        throw new ApiError(400, "All fields, including OTP, are required");
+    }
+
+    if (password.trim().length < 6) {
+        throw new ApiError(400, "Password must be at least 6 characters");
+    }
+
+    // Check OTP in EmailVerification collection
+    const otpRecord = await EmailVerification.findOne({ email });
+    if (!otpRecord) {
+        throw new ApiError(403, "OTP not found or expired. Please request a new one.");
+    }
+
+    const isMatch = await bcrypt.compare(otp, otpRecord.otpHash);
+    if (!isMatch) {
+        throw new ApiError(400, "Invalid OTP");
+    }
+
+    if (new Date() > otpRecord.expiresAt) {
+        throw new ApiError(400, "OTP has expired");
     }
 
     const existedUser = await User.findOne({
@@ -75,18 +96,23 @@ const deleteFromCloudinary = async (imageUrl) => {
     const coverImage = coverImageLocalPath ? await uploadOnCloudinary(coverImageLocalPath) : null;
 
     const user = await User.create({
+        userId: username, // satisfying the required userId schema constraint
+        name: fullName,   // mapping fullName to name to satisfy minlength: 2
         fullName,
         avatar: avatar?.url || "",
         coverImage: coverImage?.url || "",
         email,
         username,
         password,
-       phone
+        phone,
+        isVerified: true // Set verified to true automatically
     });
 
+    // Cleanup temporary OTP record
+    await EmailVerification.deleteMany({ email });
+
     // Generate access and refresh tokens
-    
-    const { accessToken, refreshToken } =await generateAccessAndRefereshTokens(user._id);
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
 
     // Save refresh token in database
     user.refreshToken = refreshToken;
@@ -101,15 +127,8 @@ const deleteFromCloudinary = async (imageUrl) => {
 
     return res
         .status(201)
-        .cookie("accessToken", accessToken,
-             { httpOnly: true, 
-                secure: false,
-                  sameSite: "lax", 
-            })
-        .cookie("refreshToken", refreshToken, 
-            { httpOnly: true,
-    secure: false,
-    sameSite: "lax",})
+        .cookie("accessToken", accessToken, { httpOnly: true, secure: false, sameSite: "lax" })
+        .cookie("refreshToken", refreshToken, { httpOnly: true, secure: false, sameSite: "lax" })
         .json(
             new ApiResponse(201, 
                 { user: createdUser, accessToken, refreshToken },
@@ -119,31 +138,44 @@ const deleteFromCloudinary = async (imageUrl) => {
 });
 
 
+const otpRateLimit = new Map();
+
 const sendOTP = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   if (!email) throw new ApiError(400, "Email is required");
 
-  const user = await User.findOne({ email });
-  if (!user) throw new ApiError(404, "User not found");
+  // Rate Limiting
+  const now = Date.now();
+  if (otpRateLimit.has(email) && now - otpRateLimit.get(email) < 60000) {
+      throw new ApiError(429, "Please wait 60 seconds before requesting another OTP");
+  }
+  otpRateLimit.set(email, now);
 
-  if (user.isVerified) throw new ApiError(400, "Email already verified");
+  const user = await User.findOne({ email });
+  if (user) throw new ApiError(409, "User with this email already exists");
 
   const otp = generateOTP(); // 6-digit string
   console.log(otp)
 
-  // Save OTP in UserOTP collection
-  await UserOTP.create({
-    userId: user._id,
+  // Delete any existing OTP first!
+  await EmailVerification.deleteMany({ email });
+
+  const otpHash = await bcrypt.hash(otp, 10);
+  const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
+
+  // Save OTP in EmailVerification collection
+  await EmailVerification.create({
     email,
-    otp,
+    otpHash,
+    expiresAt,
   });
 
   await sendOTPEmail(email, otp); // nodemailer
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "OTP sent successfully to your email"));
+    .json(new ApiResponse(200, null, "OTP sent successfully to your email"));
 });
 
 
@@ -154,31 +186,19 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
   if (!email || !otp) throw new ApiError(400, "Email & OTP are required");
 
-  const user = await User.findOne({ email });
-  if (!user) throw new ApiError(404, "User not found");
-
-  const userOTPRecord = await UserOTP.findOne({ email });
+  const userOTPRecord = await EmailVerification.findOne({ email });
   if (!userOTPRecord) throw new ApiError(400, "OTP not found or expired");
 
-  const isMatch = await bcrypt.compare(otp, userOTPRecord.otp);
+  const isMatch = await bcrypt.compare(otp, userOTPRecord.otpHash);
   if (!isMatch) throw new ApiError(400, "Invalid OTP");
 
-  // Get IP and location
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "127.0.0.1";
-  const location = await getLocationFromIP(ip);
-  if (!location) throw new ApiError(401, "Location not found");
-
-  // Save location and mark verified
-  user.location = location;
-  user.isVerified = true;
-  await user.save();
-
-  // Delete used OTP
-  await UserOTP.deleteOne({ email });
+  // Note: EmailVerification schema doesn't have an isVerified flag.
+  // The OTP is verified here so the frontend can unlock the form.
+  // Final verification & deletion happens in registerUser.
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Email verified successfully"));
+    .json(new ApiResponse(200, null, "Email verified successfully. You can now register."));
 });
 
 
@@ -209,6 +229,11 @@ const loginUser = asyncHandler(async (req, res) => {
 
     if (!isPasswordValid) {
         throw new ApiError(401, "Invalid user credentials");
+    }
+
+    // Check if email is verified
+    if (!user.isVerified) {
+        throw new ApiError(403, "Please verify your email first");
     }
 
     // Generate Tokens

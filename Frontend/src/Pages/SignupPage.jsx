@@ -4,7 +4,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import axios from "axios";
 
-const STEPS = ["Basic Info", "Photos", "Password"];
+const STEPS = ["Email", "Verify", "Profile"];
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -17,6 +17,7 @@ export default function SignUp() {
     password: "",
     avatar: "",
     coverImage: "",
+    otp: "",
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
@@ -25,6 +26,12 @@ export default function SignUp() {
   const [success, setSuccess] = useState("");
   const [showPass, setShowPass] = useState(false);
 
+  const [sendingOTP, setSendingOTP] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
+
   const avatarRef = useRef(null);
   const coverRef = useRef(null);
 
@@ -32,6 +39,68 @@ export default function SignUp() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  React.useEffect(() => {
+    let timer;
+    if (otpCooldown > 0) {
+      timer = setInterval(() => setOtpCooldown((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [otpCooldown]);
+
+  const handleSendOTP = async () => {
+    if (!formData.email) {
+      setError("Please enter an email address first.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setSendingOTP(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await axios.post(
+        "http://localhost:8000/api/v1/users/sendOTP",
+        { email: formData.email },
+        { withCredentials: true }
+      );
+      setSuccess(res.data.message || "OTP sent to your email");
+      setOtpSent(true);
+      setOtpCooldown(60);
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setSendingOTP(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (formData.otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setVerifyingOTP(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await axios.post(
+        "http://localhost:8000/api/v1/users/verifyOTP",
+        { email: formData.email, otp: formData.otp },
+        { withCredentials: true }
+      );
+      setSuccess(res.data.message || "Email verified successfully!");
+      setOtpVerified(true);
+      setStep(3);
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setVerifyingOTP(false);
+    }
+  };
 
   const handleFileChange = (e, type) => {
     const file = e.target.files[0];
@@ -288,38 +357,122 @@ export default function SignUp() {
             {/* STEP 1 */}
             {step === 1 && (
               <>
-                {[
-                  {
-                    label: "Full Name",
-                    name: "fullName",
-                    type: "text",
-                    placeholder: "Your full name",
-                  },
-                  {
-                    label: "Email",
-                    name: "email",
-                    type: "email",
-                    placeholder: "you@example.com",
-                  },
-                  {
-                    label: "Username",
-                    name: "username",
-                    type: "text",
-                    placeholder: "@username",
-                  },
-                ].map((f) => (
-                  <div className="auth-input-wrap" key={f.name}>
-                    <label className="auth-label">{f.label}</label>
-                    <input
-                      className="auth-input"
-                      type={f.type}
-                      name={f.name}
-                      placeholder={f.placeholder}
-                      value={formData[f.name]}
-                      onChange={handleChange}
-                    />
-                  </div>
-                ))}
+                <div className="auth-input-wrap">
+                  <label className="auth-label">Email</label>
+                  <input
+                    className="auth-input"
+                    type="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="auth-btn-row">
+                  <button
+                    type="button"
+                    className="auth-btn primary"
+                    onClick={handleSendOTP}
+                    disabled={!formData.email || sendingOTP}
+                  >
+                    {sendingOTP ? (
+                      <span className="auth-spinner" style={{ width: "14px", height: "14px" }} />
+                    ) : (
+                      "Send OTP"
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 2 */}
+            {step === 2 && (
+              <>
+                <div className="auth-input-wrap">
+                  <label className="auth-label">Enter OTP sent to {formData.email}</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    name="otp"
+                    placeholder="6-digit OTP"
+                    value={formData.otp}
+                    onChange={handleChange}
+                    maxLength={6}
+                    style={{ letterSpacing: "4px", textAlign: "center", fontSize: "18px" }}
+                  />
+                </div>
+                <div className="auth-btn-row">
+                  <button
+                    type="button"
+                    className="auth-btn secondary"
+                    onClick={() => {
+                      setStep(1);
+                      setOtpSent(false);
+                      setOtpVerified(false);
+                    }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-btn secondary"
+                    onClick={handleSendOTP}
+                    disabled={otpCooldown > 0 || sendingOTP}
+                  >
+                    {sendingOTP ? "Sending..." : otpCooldown > 0 ? `Resend ${otpCooldown}s` : "Resend OTP"}
+                  </button>
+                </div>
+                <div className="auth-btn-row" style={{ marginTop: "10px" }}>
+                  <button
+                    type="button"
+                    className="auth-btn primary"
+                    onClick={handleVerifyOTP}
+                    disabled={formData.otp.length !== 6 || verifyingOTP}
+                  >
+                    {verifyingOTP ? "Verifying..." : "Verify OTP"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3 */}
+            {step === 3 && (
+              <>
+                <div className="auth-input-wrap">
+                  <label className="auth-label">Email (Verified)</label>
+                  <input
+                    className="auth-input"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    disabled={true}
+                    style={{ opacity: 0.6 }}
+                  />
+                </div>
+
+                <div className="auth-input-wrap">
+                  <label className="auth-label">Full Name</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    name="fullName"
+                    placeholder="Your full name"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="auth-input-wrap">
+                  <label className="auth-label">Username</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    name="username"
+                    placeholder="@username"
+                    value={formData.username}
+                    onChange={handleChange}
+                  />
+                </div>
 
                 <div style={{ marginBottom: 16 }}>
                   <label className="auth-label">Phone Number</label>
@@ -333,21 +486,6 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="auth-btn-row">
-                  <button
-                    type="button"
-                    className="auth-btn primary"
-                    onClick={() => setStep(2)}
-                  >
-                    Continue →
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* STEP 2 */}
-            {step === 2 && (
-              <>
                 <label className="auth-label">Cover Image</label>
                 <div
                   className="photo-upload-cover"
@@ -395,28 +533,6 @@ export default function SignUp() {
                   style={{ display: "none" }}
                 />
 
-                <div className="auth-btn-row">
-                  <button
-                    type="button"
-                    className="auth-btn secondary"
-                    onClick={() => setStep(1)}
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    type="button"
-                    className="auth-btn primary"
-                    onClick={() => setStep(3)}
-                  >
-                    Continue →
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* STEP 3 */}
-            {step === 3 && (
-              <>
                 <div className="auth-input-wrap">
                   <label className="auth-label">Password</label>
                   <input
@@ -439,13 +555,6 @@ export default function SignUp() {
 
                 <div className="auth-btn-row">
                   <button
-                    type="button"
-                    className="auth-btn secondary"
-                    onClick={() => setStep(2)}
-                  >
-                    ← Back
-                  </button>
-                  <button
                     type="submit"
                     className="auth-btn primary"
                     disabled={loading}
@@ -459,6 +568,7 @@ export default function SignUp() {
                 </div>
               </>
             )}
+
           </form>
 
           <div className="auth-footer">
