@@ -61,7 +61,7 @@ function VideoCommentPage() {
 
   useEffect(() => {
     const socket = connectSocket();
-    socket.emit("join-video", `video:${videoId}`);
+    socket.emit("joinRoom", `video:${videoId}`);
     const handleNewComment = (comment) => {
       setComments((prev) => {
         if (prev.some((c) => c._id === comment._id)) return prev;

@@ -84,7 +84,7 @@ function SinglePostViewPage() {
   // ── Socket ─────────────────────────────────────────────
   useEffect(() => {
     const socket = connectSocket();
-    socket.emit("join-post", `post:${postId}`);
+    socket.emit("joinRoom", `post:${postId}`);
 
     const handleReaction = (data) => {
       if (data.postId === postId) setLikeCount(data.likes);
@@ -102,14 +102,25 @@ function SinglePostViewPage() {
       }
     };
 
+    const handleNewComment = (data) => {
+      if (data.postId === postId) {
+        setComments((prev) => {
+          if (prev.some(c => c._id === data.comment._id)) return prev;
+          return [data.comment, ...prev];
+        });
+      }
+    };
+
     socket.on("post-reaction-updated", handleReaction);
     socket.on("comment-count-updated", handleCommentCount);
     socket.on("viewCountUpdate", handleViewCount); // ✅
+    socket.on("new-comment", handleNewComment);
 
     return () => {
       socket.off("post-reaction-updated", handleReaction);
       socket.off("comment-count-updated", handleCommentCount);
       socket.off("viewCountUpdate", handleViewCount); // ✅
+      socket.off("new-comment", handleNewComment);
     };
   }, [postId, dispatch]);
 
@@ -119,10 +130,12 @@ function SinglePostViewPage() {
     setLikeLoading(true);
     const wasLiked = isLiked;
     setLikeCount((prev) => (wasLiked ? prev - 1 : prev + 1));
+    dispatch(syncPostLike({ postId, isLiked: !wasLiked }));
     try {
       await dispatch(toggleLike(postId)).unwrap();
     } catch {
       setLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
+      dispatch(syncPostLike({ postId, isLiked: wasLiked }));
     } finally {
       setLikeLoading(false);
     }
@@ -134,11 +147,14 @@ function SinglePostViewPage() {
     try {
       setSending(true);
       const res = await axios.post(
-        `http://localhost:8000/api/v1/comments/post/${postId}`,
+        `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
         { content },
         { withCredentials: true },
       );
-      setComments((prev) => [res.data.data, ...prev]);
+      setComments((prev) => {
+        if (prev.some(c => c._id === res.data.data._id)) return prev;
+        return [res.data.data, ...prev];
+      });
       setContent("");
       commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (err) {

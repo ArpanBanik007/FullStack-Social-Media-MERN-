@@ -15,9 +15,10 @@ import {
   removeTypingUser,
   markMessagesSeenLocally,
   deleteMessageLocally,
-  editMessageLocally,
   updateReactions,
+  updateUserPresence,
 } from "../slices/chat.slice";
+import { formatLastSeen } from "../utils/timeUtils";
 import {
   connectSocket,
   disconnectSocket,
@@ -57,13 +58,18 @@ function ChatMainPage() {
       );
     });
 
+    socket.on("userOffline", ({ userId, lastSeen }) => {
+      dispatch(updateUserPresence({ userId, lastSeen }));
+    });
+
     // Conversations load করো
     dispatch(fetchConversations());
 
     return () => {
       socket.off("newMessageNotification");
+      socket.off("userOffline");
     };
-  }, [currentUser?._id]);
+  }, [currentUser?._id, dispatch]);
 
   // ── Conversation select হলে socket room join + chat events listen
   useEffect(() => {
@@ -197,6 +203,7 @@ function ChatMainPage() {
         : "",
       unread: conv.unreadCounts?.[String(currentUser?._id)] || 0,
       online: isOnline(other?._id),
+      lastSeen: other?.lastSeen,
       _other: other,
     };
   });

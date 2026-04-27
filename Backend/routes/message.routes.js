@@ -27,7 +27,7 @@ router.put("/seen/:chatId", markSeen);
 router.post(
   "/send",
   messageLimiter,
-  upload.single("image"),
+  upload.single("file"),
   validate(sendMessageSchema),
   checkNotBlocked,
   checkGroupPermission,

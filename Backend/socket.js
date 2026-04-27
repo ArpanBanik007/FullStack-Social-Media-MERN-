@@ -14,7 +14,7 @@ const isUserOnline = (userId) => {
 
 const broadcastOnlineUsers = async (io) => {
   const userIds = Array.from(onlineUsers.keys());
-  const users = await User.find({ _id: { $in: userIds } }).select("_id name fullName username avatar isOnline");
+  const users = await User.find({ _id: { $in: userIds } }).select("_id name fullName username avatar isOnline lastSeen");
   io.emit("onlineUsers", users);
 };
 
@@ -196,11 +196,12 @@ export const initSocket = (server, app) => {
         if (userSockets.size === 0) {
           onlineUsers.delete(userId);
 
-          await User.findByIdAndUpdate(userId, {
+          const updatedUser = await User.findByIdAndUpdate(userId, {
             isOnline: false,
             lastSeen: new Date(),
-          });
+          }, { new: true });
 
+          io.emit("userOffline", { userId, lastSeen: updatedUser.lastSeen });
           broadcastOnlineUsers(io);
         }
       }

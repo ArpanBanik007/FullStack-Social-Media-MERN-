@@ -45,6 +45,28 @@ function CommentPage() {
     fetchComments();
   }, [postId]);
 
+  useEffect(() => {
+    import("../socket").then(({ connectSocket }) => {
+      const socket = connectSocket();
+      socket.emit("joinRoom", `post:${postId}`);
+
+      const handleNewComment = (data) => {
+        if (data.postId === postId) {
+          setComments((prev) => {
+            if (prev.some(c => c._id === data.comment._id)) return prev;
+            return [data.comment, ...prev];
+          });
+        }
+      };
+
+      socket.on("new-comment", handleNewComment);
+
+      return () => {
+        socket.off("new-comment", handleNewComment);
+      };
+    });
+  }, [postId]);
+
   const handleAddComment = async () => {
     if (!content.trim() || sending) return;
     try {
@@ -52,9 +74,14 @@ function CommentPage() {
       const res = await axios.post(
         `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
         { content },
+        { withCredentials: true }
       );
-      setComments((prev) => [res.data.data, ...prev]);
+      setComments((prev) => {
+        if (prev.some(c => c._id === res.data.data._id)) return prev;
+        return [res.data.data, ...prev];
+      });
       setContent("");
+      commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (err) {
       console.error(err);
     } finally {

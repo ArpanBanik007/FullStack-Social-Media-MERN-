@@ -43,10 +43,15 @@ const createPostComment = asyncHandler(async (req, res) => {
   console.log("UPDATED POST COUNT:", updatedPost.comments);
   console.log("Emitting to room:", `post:${postId}`);
 
-  // 3️⃣ Emit updated count
+  // 3️⃣ Emit updated count and new comment
   io.to(`post:${postId}`).emit("comment-count-updated", {
     postId,
     comments: updatedPost.comments,
+  });
+
+  io.to(`post:${postId}`).emit("new-comment", {
+    postId,
+    comment,
   });
 
   res.status(201).json(

@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchMyPosts } from "../slices/postSlice";
+import ImagePreviewModal from "../componants/ImagePreviewModal";
 
 /* ─────────────── FOLLOW MODAL ─────────────── */
 function FollowModal({ type, userId, onClose }) {
@@ -265,6 +266,7 @@ export default function MyProfile() {
   const [activeTab, setActiveTab] = useState("posts");
   const [user, setUser] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const dispatch = useDispatch();
   const { posts } = useSelector((state) => state.posts);
 
@@ -574,7 +576,7 @@ export default function MyProfile() {
         )}
 
         {/* Cover */}
-        <div className="profile-cover">
+        <div className="profile-cover" onClick={() => user.coverImage && setPreviewImage(user.coverImage)} style={{ cursor: user.coverImage ? "zoom-in" : "default" }}>
           {user.coverImage ? (
             <img src={user.coverImage} alt="cover" />
           ) : (
@@ -592,7 +594,7 @@ export default function MyProfile() {
         {/* Profile Card */}
         <div className="profile-card">
           <div className="profile-top-row">
-            <div className="profile-avatar-wrap">
+            <div className="profile-avatar-wrap" onClick={() => user.avatar && setPreviewImage(user.avatar)} style={{ cursor: user.avatar ? "zoom-in" : "default" }}>
               <img src={user.avatar} alt="avatar" className="profile-avatar" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -650,6 +652,12 @@ export default function MyProfile() {
 
         {/* Content */}
         <div className="profile-content">{renderContent()}</div>
+
+        <ImagePreviewModal
+          isOpen={!!previewImage}
+          imageUrl={previewImage}
+          onClose={() => setPreviewImage(null)}
+        />
       </div>
     </>
   );

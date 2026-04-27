@@ -70,23 +70,34 @@ function SingleVideoViewPage() {
   // ── Socket ─────────────────────────────────────────────────────────
   useEffect(() => {
     const socket = connectSocket();
-    socket.emit("join-video", `video:${videoId}`);
+    socket.emit("joinRoom", `video:${videoId}`);
 
     socket.on("video-reaction-updated", (data) => {
       if (data.videoId === videoId) setLikeCount(data.likes);
     });
 
     socket.on(
-      "video-comment-count-updated",
+      "comment-count-updated",
       ({ videoId: vid, comments: count }) => {
         if (vid === videoId)
           setVideo((prev) => (prev ? { ...prev, commentCount: count } : prev));
       },
     );
 
+    const handleNewComment = (comment) => {
+      if (comment.video === videoId) {
+        setComments((prev) => {
+          if (prev.some((c) => c._id === comment._id)) return prev;
+          return [comment, ...prev];
+        });
+      }
+    };
+    socket.on("new-comment", handleNewComment);
+
     return () => {
       socket.off("video-reaction-updated");
-      socket.off("video-comment-count-updated");
+      socket.off("comment-count-updated");
+      socket.off("new-comment", handleNewComment);
     };
   }, [videoId]);
 
@@ -95,10 +106,13 @@ function SingleVideoViewPage() {
     if (likeLoading) return;
     setLikeLoading(true);
     setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
+    const wasLiked = isLiked;
+    dispatch(syncVideoLike({ videoId, isLiked: !wasLiked }));
     try {
       await dispatch(toggleVideoLike(videoId)).unwrap();
     } catch {
-      setLikeCount((prev) => (isLiked ? prev + 1 : prev - 1));
+      setLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
+      dispatch(syncVideoLike({ videoId, isLiked: wasLiked }));
     } finally {
       setLikeLoading(false);
     }
@@ -114,7 +128,10 @@ function SingleVideoViewPage() {
         { content },
         { withCredentials: true },
       );
-      setComments((prev) => [res.data.data, ...prev]);
+      setComments((prev) => {
+        if (prev.some(c => c._id === res.data.data._id)) return prev;
+        return [res.data.data, ...prev];
+      });
       setContent("");
       commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (err) {

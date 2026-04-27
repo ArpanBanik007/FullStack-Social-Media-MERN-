@@ -15,6 +15,7 @@ import {
 import { IoCheckmark, IoCheckmarkDone } from "react-icons/io5";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
+import { formatLastSeen } from "../utils/timeUtils";
 
 function ChattingPage({ conversation, onOpenProfile }) {
   const dispatch = useDispatch();
@@ -23,8 +24,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
   const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [fileType, setFileType] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [activeMessageId, setActiveMessageId] = useState(null);
   const fileInputRef = useRef(null);
@@ -78,34 +80,51 @@ function ChattingPage({ conversation, onOpenProfile }) {
     }
   }, [conversation?._id, reduxMessages, currentUser?._id]);
 
-  const handleImageSelect = (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image must be less than 5MB");
-        return;
+      const type = file.type;
+      let detectedType = "file";
+      
+      if (type.startsWith("image/")) {
+        detectedType = "image";
+        if (file.size > 5 * 1024 * 1024) return alert("Image must be less than 5MB");
+        setFilePreview(URL.createObjectURL(file));
+      } else if (type.startsWith("video/")) {
+        detectedType = "video";
+        if (file.size > 10 * 1024 * 1024) return alert("Video must be less than 10MB");
+        setFilePreview(URL.createObjectURL(file));
+      } else if (type === "application/pdf") {
+        detectedType = "file";
+        if (file.size > 5 * 1024 * 1024) return alert("PDF must be less than 5MB");
+        setFilePreview("/pdf-icon.png"); // A generic icon or just a text fallback
+      } else {
+        return alert("Unsupported file type");
       }
-      setSelectedImage(file);
-      setImagePreview(URL.createObjectURL(file));
+
+      setFileType(detectedType);
+      setSelectedFile(file);
     }
   };
 
   const handleSend = () => {
-    if ((!input.trim() && !selectedImage) || !conversation) return;
+    if ((!input.trim() && !selectedFile) || !conversation) return;
     
-    if (selectedImage) {
+    if (selectedFile) {
       const formData = new FormData();
       formData.append("receiverId", conversation.receiverId || conversation._other?._id);
-      formData.append("type", "image");
+      formData.append("type", fileType);
       if (input.trim()) formData.append("content", input.trim());
       if (replyingTo) formData.append("replyTo", replyingTo.id);
-      formData.append("image", selectedImage);
+      formData.append("file", selectedFile);
       
       dispatch(sendMessage(formData));
-      setSelectedImage(null);
-      setImagePreview(null);
+      setSelectedFile(null);
+      setFilePreview(null);
+      setFileType(null);
       setInput("");
       setReplyingTo(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -147,6 +166,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
     status: msg.status || "sent",
     type: msg.type || "text",
     fileUrl: msg.fileUrl || null,
+    fileName: msg.fileName || null,
     reactions: msg.reactions || {},
     replyTo: msg.replyTo || null,
   }));
@@ -298,6 +318,24 @@ function ChattingPage({ conversation, onOpenProfile }) {
           margin-bottom: 4px;
           display: block;
         }
+        .msg-video {
+          max-width: 250px;
+          border-radius: 12px;
+          margin-bottom: 4px;
+          display: block;
+        }
+        .msg-file {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px;
+          background: rgba(0,0,0,0.15);
+          border-radius: 8px;
+          margin-bottom: 4px;
+          text-decoration: none;
+          color: inherit;
+        }
+        .msg-file:hover { background: rgba(0,0,0,0.25); }
         .msg-row.them .msg-bubble {
           background: rgba(255,255,255,0.07);
           color: #e2e8f0;
@@ -464,6 +502,14 @@ function ChattingPage({ conversation, onOpenProfile }) {
           border-radius: 8px;
           object-fit: cover;
         }
+        .file-preview-text {
+          font-size: 13px;
+          color: #fff;
+          max-width: 150px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
         .image-preview-close {
           background: rgba(255,255,255,0.1);
           border: none;
@@ -500,7 +546,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
           >
             <div className="chatting-name">{conversation.name}</div>
             <div className="chatting-status">
-              {conversation.online ? "Active now" : "Offline"}
+              {conversation.online ? "Active now" : conversation.lastSeen ? `Active ${formatLastSeen(conversation.lastSeen)}` : "Offline"}
             </div>
           </div>
           <div className="chatting-actions">
@@ -552,6 +598,18 @@ function ChattingPage({ conversation, onOpenProfile }) {
                       )}
                       {msg.type === "image" && msg.fileUrl && (
                         <img src={msg.fileUrl} alt="attachment" className="msg-image" />
+                      )}
+                      {msg.type === "video" && msg.fileUrl && (
+                        <video src={msg.fileUrl} controls className="msg-video" />
+                      )}
+                      {msg.type === "file" && msg.fileUrl && (
+                        <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="msg-file">
+                          <FiPaperclip size={24} />
+                          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            <span style={{ fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{msg.fileName || "Document.pdf"}</span>
+                            <span style={{ fontSize: '11px', opacity: 0.7 }}>Click to view</span>
+                          </div>
+                        </a>
                       )}
                       {msg.text && <span>{msg.text}</span>}
                     </div>
@@ -616,14 +674,17 @@ function ChattingPage({ conversation, onOpenProfile }) {
             </div>
           )}
 
-          {imagePreview && (
+          {filePreview && (
             <div className="image-preview-container">
-              <img src={imagePreview} alt="Preview" className="image-preview" />
+              {fileType === "image" && <img src={filePreview} alt="Preview" className="image-preview" />}
+              {fileType === "video" && <video src={filePreview} className="image-preview" muted />}
+              {fileType === "file" && <div className="file-preview-text">📄 {selectedFile?.name}</div>}
               <button 
                 className="image-preview-close"
                 onClick={() => {
-                  setSelectedImage(null);
-                  setImagePreview(null);
+                  setSelectedFile(null);
+                  setFilePreview(null);
+                  setFileType(null);
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
               >
@@ -637,8 +698,8 @@ function ChattingPage({ conversation, onOpenProfile }) {
               type="file" 
               ref={fileInputRef} 
               hidden 
-              accept="image/*"
-              onChange={handleImageSelect}
+              accept="image/*, application/pdf, video/*"
+              onChange={handleFileSelect}
             />
             <FiPaperclip 
               className="chatting-input-icon" 
@@ -661,7 +722,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
           <button
             className="send-btn"
             onClick={handleSend}
-            disabled={!input.trim() && !selectedImage}
+            disabled={!input.trim() && !selectedFile}
           >
             <FiSend />
           </button>

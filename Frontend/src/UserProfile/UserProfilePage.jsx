@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import FollowButton from "../componants/FollowButton";
 import { fetchMyFollowings } from "../slices/follow.slice";
+import ImagePreviewModal from "../componants/ImagePreviewModal";
 
 /* ─────────────── FOLLOW MODAL ─────────────── */
 function FollowModal({ type, userId, onClose }) {
@@ -251,6 +252,7 @@ function UserProfilePage() {
   const [activeTab, setActiveTab] = useState("posts");
   const [loading, setLoading] = useState(true);
   const [modalType, setModalType] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const followings = useSelector((state) => state.follow.followings);
   const { mydetails } = useSelector((state) => state.mydetails);
@@ -437,7 +439,7 @@ function UserProfilePage() {
         )}
 
         {/* Cover */}
-        <div className="up-cover">
+        <div className="up-cover" onClick={() => user?.coverImage && setPreviewImage(user.coverImage)} style={{ cursor: user?.coverImage ? "zoom-in" : "default" }}>
           <img
             src={user?.coverImage || "https://via.placeholder.com/800x300"}
             alt="cover"
@@ -452,6 +454,8 @@ function UserProfilePage() {
               src={user?.avatar || "https://via.placeholder.com/100"}
               alt="avatar"
               className="up-avatar"
+              onClick={() => user?.avatar && setPreviewImage(user.avatar)}
+              style={{ cursor: user?.avatar ? "zoom-in" : "default" }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="up-name">@{user?.username}</div>
@@ -506,6 +510,12 @@ function UserProfilePage() {
             <UserAllPost userId={userId} />
           )}
         </div>
+
+        <ImagePreviewModal
+          isOpen={!!previewImage}
+          imageUrl={previewImage}
+          onClose={() => setPreviewImage(null)}
+        />
       </div>
     </>
   );

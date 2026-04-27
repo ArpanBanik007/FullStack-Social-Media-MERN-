@@ -179,6 +179,19 @@ const chatSlice = createSlice({
     clearSearchResults: (state) => {
       state.searchResults = [];
     },
+    updateUserPresence: (state, action) => {
+      const { userId, lastSeen } = action.payload;
+      state.conversations.forEach((conv) => {
+        const other = conv.members?.find((m) => String(m._id) === String(userId));
+        if (other) {
+          other.lastSeen = lastSeen;
+        }
+      });
+      // Update selectedConversation if it's the active one
+      if (state.selectedConversation?._other && String(state.selectedConversation._other._id) === String(userId)) {
+        state.selectedConversation._other.lastSeen = lastSeen;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -242,6 +255,7 @@ export const {
   editMessageLocally,
   updateReactions,
   clearSearchResults,
+  updateUserPresence,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

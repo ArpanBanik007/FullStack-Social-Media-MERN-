@@ -69,12 +69,8 @@ function MainFeed() {
   useEffect(() => {
     if (!posts.length) return;
     const socket = connectSocket();
-    posts.forEach((post) => socket.emit("join-post", `post:${post._id}`));
-  }, [posts.length]);
+    posts.forEach((post) => socket.emit("joinRoom", `post:${post._id}`));
 
-  useEffect(() => {
-    const socket = connectSocket();
-    posts.forEach((post) => socket.emit("join-post", post._id));
     const handleReactionUpdate = (data) => {
       setPosts((prev) =>
         prev.map((post) =>
@@ -98,7 +94,7 @@ function MainFeed() {
     };
     socket.on("post-reaction-updated", handleReactionUpdate);
     return () => socket.off("post-reaction-updated", handleReactionUpdate);
-  }, []);
+  }, [posts.length]);
 
   useEffect(() => {
     const socket = connectSocket();

@@ -40,12 +40,17 @@ export const sendMessage = async (req, res, next) => {
         let finalFileUrl = fileUrl || null;
         let finalFilePublicId = filePublicId || null;
 
-        // If an image was uploaded, upload to Cloudinary
+        // If an image/file was uploaded, upload to Cloudinary
         if (req.file) {
             const uploadResult = await uploadOnCloudinary(req.file.path);
             if (uploadResult) {
                 finalFileUrl = uploadResult.url;
                 finalFilePublicId = uploadResult.public_id;
+                
+                // Only override if not already provided in body
+                if (!fileName) req.body.fileName = req.file.originalname;
+                if (!fileSize) req.body.fileSize = req.file.size;
+                if (!mimeType) req.body.mimeType = req.file.mimetype;
             }
         }
 
@@ -60,9 +65,9 @@ export const sendMessage = async (req, res, next) => {
             content: content?.trim() || "",
             type,
             fileUrl: finalFileUrl,
-            fileName: fileName || null,
-            fileSize: fileSize || null,
-            mimeType: mimeType || null,
+            fileName: fileName || req.body.fileName || null,
+            fileSize: fileSize || req.body.fileSize || null,
+            mimeType: mimeType || req.body.mimeType || null,
             filePublicId: finalFilePublicId,
             status: "sent",
             seenBy: [senderId],
