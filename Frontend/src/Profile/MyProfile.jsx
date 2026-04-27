@@ -10,7 +10,7 @@ import AllPosts from "./AllPosts";
 import AllVideos from "./AllVideos";
 import AllSaved from "./AllSaved";
 import { useNavigate } from "react-router-dom";
-import axios from "../utils/axios";
+
 import { useSelector, useDispatch } from "react-redux";
 import { fetchMyPosts } from "../slices/postSlice";
 import ImagePreviewModal from "../componants/ImagePreviewModal";

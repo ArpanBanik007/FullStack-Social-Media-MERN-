@@ -1,7 +1,7 @@
 import API from "../utils/API.js";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import axios from "../utils/axios";
+
 import { RiAccountCircleFill } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
 
