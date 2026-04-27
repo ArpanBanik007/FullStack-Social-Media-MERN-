@@ -5,8 +5,9 @@ let socket = null;
 export const connectSocket = () => {
   if (socket) return socket;
 
-  socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:8000", {
+  socket = io(import.meta.env.VITE_BACKEND_URL || "https://fullstack-social-media-mern.onrender.com", {
     withCredentials: true,
+    transports: ["websocket"],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 2000,

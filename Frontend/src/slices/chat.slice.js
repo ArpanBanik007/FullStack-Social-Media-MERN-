@@ -181,15 +181,24 @@ const chatSlice = createSlice({
       state.searchResults = [];
     },
     updateUserPresence: (state, action) => {
-      const { userId, lastSeen } = action.payload;
+      const { userId, lastSeen, isOnline } = action.payload;
+      
+      if (isOnline !== undefined) {
+        if (isOnline) {
+          if (!state.onlineUsers.includes(userId)) state.onlineUsers.push(userId);
+        } else {
+          state.onlineUsers = state.onlineUsers.filter(id => String(id) !== String(userId));
+        }
+      }
+
       state.conversations.forEach((conv) => {
         const other = conv.members?.find((m) => String(m._id) === String(userId));
-        if (other) {
+        if (other && lastSeen) {
           other.lastSeen = lastSeen;
         }
       });
       // Update selectedConversation if it's the active one
-      if (state.selectedConversation?._other && String(state.selectedConversation._other._id) === String(userId)) {
+      if (state.selectedConversation?._other && String(state.selectedConversation._other._id) === String(userId) && lastSeen) {
         state.selectedConversation._other.lastSeen = lastSeen;
       }
     },

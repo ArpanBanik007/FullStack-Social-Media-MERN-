@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchMessages, sendMessage, reactToMessageAction } from "../slices/chat.slice";
 import { selectCurrentUser } from "../slices/mydetails.slice";
 import { useNavigate } from "react-router-dom";
+import { getSocket } from "../socket.js";
 import {
   FiSend,
   FiSmile,
@@ -75,9 +76,10 @@ function ChattingPage({ conversation, onOpenProfile }) {
     );
 
     if (hasUnseen) {
-      API.put(`/messages/seen/${conversation._id}`, {}, {
-        withCredentials: true
-      }).catch(err => console.error("Failed to mark messages as seen:", err));
+      const socket = getSocket();
+      if (socket) {
+        socket.emit("messageSeen", { chatId: conversation._id });
+      }
     }
   }, [conversation?._id, reduxMessages, currentUser?._id]);
 

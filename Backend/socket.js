@@ -12,16 +12,14 @@ const isUserOnline = (userId) => {
   return sockets && sockets.size > 0;
 };
 
-const broadcastOnlineUsers = async (io) => {
-  const userIds = Array.from(onlineUsers.keys());
-  const users = await User.find({ _id: { $in: userIds } }).select("_id name fullName username avatar isOnline lastSeen");
-  io.emit("onlineUsers", users);
+const broadcastOnlineUsers = (io) => {
+  io.emit("onlineUsers", Array.from(onlineUsers.keys()));
 };
 
 export const initSocket = (server, app) => {
   const io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://pluto-alpha-ochre.vercel.app",
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -90,17 +88,20 @@ export const initSocket = (server, app) => {
 
     if (!onlineUsers.has(userId)) {
       onlineUsers.set(userId, new Set());
+      // Broadcast that this user came online
+      io.emit("user-status", { userId, isOnline: true, lastSeen: new Date() });
     }
     onlineUsers.get(userId).add(socket.id);
 
-    socket.join(userId);
-
-    await User.findByIdAndUpdate(userId, {
+    User.findByIdAndUpdate(userId, {
       isOnline: true,
       lastSeen: new Date(),
-    });
+    }).catch(console.error);
 
-    broadcastOnlineUsers(io);
+    // Send full list to the newly connected user
+    socket.emit("onlineUsers", Array.from(onlineUsers.keys()));
+
+    socket.join(userId);
 
     // ──────────────────────────────────
     // joinRoom
@@ -196,12 +197,13 @@ export const initSocket = (server, app) => {
         if (userSockets.size === 0) {
           onlineUsers.delete(userId);
 
-          const updatedUser = await User.findByIdAndUpdate(userId, {
+          const lastSeen = new Date();
+          User.findByIdAndUpdate(userId, {
             isOnline: false,
-            lastSeen: new Date(),
-          }, { new: true });
+            lastSeen,
+          }).catch(console.error);
 
-          io.emit("userOffline", { userId, lastSeen: updatedUser.lastSeen });
+          io.emit("user-status", { userId, isOnline: false, lastSeen });
           broadcastOnlineUsers(io);
         }
       }

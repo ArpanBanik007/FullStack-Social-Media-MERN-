@@ -58,8 +58,12 @@ function ChatMainPage() {
       );
     });
 
-    socket.on("userOffline", ({ userId, lastSeen }) => {
-      dispatch(updateUserPresence({ userId, lastSeen }));
+    socket.on("user-status", ({ userId, isOnline, lastSeen }) => {
+      dispatch(updateUserPresence({ userId, isOnline, lastSeen }));
+    });
+
+    socket.on("onlineUsers", (userIds) => {
+      dispatch(setOnlineUsers(userIds));
     });
 
     // Conversations load করো
@@ -67,7 +71,8 @@ function ChatMainPage() {
 
     return () => {
       socket.off("newMessageNotification");
-      socket.off("userOffline");
+      socket.off("user-status");
+      socket.off("onlineUsers");
     };
   }, [currentUser?._id, dispatch]);
 
