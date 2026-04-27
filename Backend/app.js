@@ -4,12 +4,15 @@ import cors from "cors"
 
 const app = express();
 
+app.set("trust proxy", 1); // Trust reverse proxy (Render) for secure cookies
 
 // cors frontend
-const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://pluto-alpha-ochre.vercel.app";
 
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: function (origin, callback) {
+    callback(null, true); // Reflects the incoming origin
+  },
   credentials: true,
 }));
 
