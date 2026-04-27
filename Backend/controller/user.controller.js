@@ -127,8 +127,8 @@ const deleteFromCloudinary = async (imageUrl) => {
 
     return res
         .status(201)
-        .cookie("accessToken", accessToken, { httpOnly: true, secure: false, sameSite: "lax" })
-        .cookie("refreshToken", refreshToken, { httpOnly: true, secure: false, sameSite: "lax" })
+        .cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "None" })
+        .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "None" })
         .json(
             new ApiResponse(201, 
                 { user: createdUser, accessToken, refreshToken },
@@ -249,8 +249,8 @@ const loginUser = asyncHandler(async (req, res) => {
     // Cookie options
     const options = {
         httpOnly: true,
-        secure: true, // Set to `true` in production with HTTPS
-        sameSite: "Strict",
+        secure: true, 
+        sameSite: "None",
     };
 
     // Send response with cookies
@@ -285,7 +285,8 @@ const logoutUser = asyncHandler(async(req, res) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: "None"
     }
 
     return res
@@ -321,7 +322,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: "None"
         }
     
         const {accessToken, newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
