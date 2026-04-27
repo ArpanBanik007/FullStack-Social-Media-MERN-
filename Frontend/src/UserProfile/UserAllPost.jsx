@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+
 import { FaComment, FaShareNodes, FaRegBookmark, FaEye } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
@@ -19,8 +20,8 @@ function UserAllPost({ userId }) {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/posts/user/${userId}`,
+        const res = await API.get(
+          `/posts/user/${userId}`,
           { withCredentials: true },
         );
         const fetchedPosts = res.data.data || [];
@@ -81,8 +82,8 @@ function UserAllPost({ userId }) {
 
   const handleAddToWatchLater = async (postId) => {
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/watch/watchlater",
+      await API.post(
+        "/watch/watchlater",
         { postId },
         { withCredentials: true },
       );

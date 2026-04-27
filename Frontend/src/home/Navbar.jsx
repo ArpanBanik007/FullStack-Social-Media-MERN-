@@ -1,3 +1,4 @@
+import API from "../utils/API.js";
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { IoMdHome } from "react-icons/io";
@@ -11,7 +12,7 @@ import SearchBar from "../componants/SearchBar";
 import { persistor } from "../store/store";
 import { resetMyDetails } from "../slices/mydetails.slice";
 import { resetMyPosts } from "../slices/postSlice";
-import axios from "axios";
+
 import { useDispatch, useSelector } from "react-redux";
 
 function Navbar() {
@@ -55,7 +56,7 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:8000/api/v1/users/logout", {}, { withCredentials: true });
+      await API.post("/users/logout", {}, { withCredentials: true });
       dispatch(resetMyDetails());
       dispatch(resetMyPosts());
       await persistor.purge();

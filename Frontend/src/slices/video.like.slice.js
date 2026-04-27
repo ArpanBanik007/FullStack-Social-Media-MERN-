@@ -1,13 +1,14 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 // ── Fetch My Liked Videos ──
 export const fetchMyVideoLikes = createAsyncThunk(
   "videoLikes/fetchMyVideoLikes",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(
-        "http://localhost:8000/api/v1/likes/my-liked-videos",
+      const res = await API.get(
+        "/likes/my-liked-videos",
         { withCredentials: true }
       );
       return res.data.data;
@@ -22,8 +23,8 @@ export const toggleVideoLike = createAsyncThunk(
   "videoLikes/toggleVideoLike",
   async (videoId, { rejectWithValue }) => {
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/videos/like/${videoId}`,
+      const res = await API.post(
+        `/videos/like/${videoId}`,
         {},
         { withCredentials: true }
       );

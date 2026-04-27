@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
+
 import Navbar from "../home/Navbar";
 import {
   fetchMydetils,
@@ -48,7 +49,7 @@ function ProfileSetting() {
     formData.append("avatar", file);
     try {
       setAvatarLoading(true);
-      await axios.patch("http://localhost:8000/api/v1/users/avatar", formData, {
+      await API.patch("/users/avatar", formData, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -74,8 +75,8 @@ function ProfileSetting() {
     formData.append("coverImage", file);
     try {
       setCoverLoading(true);
-      await axios.patch(
-        "http://localhost:8000/api/v1/users/cover-Image",
+      await API.patch(
+        "/users/cover-Image",
         formData,
         {
           withCredentials: true,
@@ -116,8 +117,8 @@ function ProfileSetting() {
 
     try {
       setLoading(true);
-      await axios.patch(
-        "http://localhost:8000/api/v1/users/update-account",
+      await API.patch(
+        "/users/update-account",
         payload,
         { withCredentials: true },
       );

@@ -1,3 +1,4 @@
+import API from "../utils/API.js";
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchMessages, sendMessage, reactToMessageAction } from "../slices/chat.slice";
@@ -13,7 +14,7 @@ import {
   FiCornerUpLeft,
 } from "react-icons/fi";
 import { IoCheckmark, IoCheckmarkDone } from "react-icons/io5";
-import axios from "axios";
+
 import EmojiPicker from "emoji-picker-react";
 import { formatLastSeen } from "../utils/timeUtils";
 
@@ -74,7 +75,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
     );
 
     if (hasUnseen) {
-      axios.put(`http://localhost:8000/api/v1/messages/seen/${conversation._id}`, {}, {
+      API.put(`/messages/seen/${conversation._id}`, {}, {
         withCredentials: true
       }).catch(err => console.error("Failed to mark messages as seen:", err));
     }

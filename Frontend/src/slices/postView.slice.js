@@ -1,12 +1,13 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 export const getPostViews = createAsyncThunk(
   "postView/getPostViews",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(
-        `http://localhost:8000/api/v1/views/post/${postId}`,
+      const res = await API.get(
+        `/views/post/${postId}`,
         { withCredentials: true } // ✅
       );
       return res.data.data.views;
@@ -20,8 +21,8 @@ export const addPostView = createAsyncThunk(
   "postView/addPostView",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/views/post/${postId}`,
+      const res = await API.post(
+        `/views/post/${postId}`,
         {}, // ✅ body empty
         { withCredentials: true } // ✅
       );

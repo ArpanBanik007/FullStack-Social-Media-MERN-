@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import axios from "axios";
+
 import { useNavigate } from "react-router-dom";
 
 import { addFollowing, removeFollowing } from "../slices/follow.slice";
@@ -22,8 +23,8 @@ const FollowButton = ({ userId, isFollowedByBackend }) => {
         setIsFollowed(false); // optimistic UI
         dispatch(removeFollowing(userId));
 
-        await axios.post(
-          `http://localhost:8000/api/v1/users/interactions/${userId}/unfollow`,
+        await API.post(
+          `/users/interactions/${userId}/unfollow`,
           {},
           {
             withCredentials: true,
@@ -33,8 +34,8 @@ const FollowButton = ({ userId, isFollowedByBackend }) => {
         setIsFollowed(true);
         dispatch(addFollowing(userId));
 
-        await axios.post(
-          `http://localhost:8000/api/v1/users/interactions/${userId}/follow`,
+        await API.post(
+          `/users/interactions/${userId}/follow`,
           {},
           { withCredentials: true },
         );

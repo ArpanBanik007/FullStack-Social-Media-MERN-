@@ -1,12 +1,13 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 export const getVideoViews = createAsyncThunk(
   "videoView/getVideoViews",
   async (videoId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(
-        `http://localhost:8000/api/v1/views/video/${videoId}`,
+      const res = await API.get(
+        `/views/video/${videoId}`,
         { withCredentials: true }
       );
       return res.data.data.views;
@@ -20,8 +21,8 @@ export const addVideoView = createAsyncThunk(
   "videoView/addVideoView",
   async (videoId, { rejectWithValue }) => {
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/views/video/${videoId}`,
+      const res = await API.post(
+        `/views/video/${videoId}`,
         {},                          // body empty
         { withCredentials: true }    // ✅ 3rd argument এ config
       );

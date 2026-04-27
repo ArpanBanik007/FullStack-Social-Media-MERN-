@@ -1,10 +1,11 @@
+import API from "../utils/API.js";
 import { IoMdPhotos } from "react-icons/io";
 import { RiVideoUploadFill } from "react-icons/ri";
 import { IoClose } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
 import { fetchMydetils } from "../slices/mydetails.slice";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
 
@@ -63,7 +64,7 @@ function UpperFeedpage() {
     if (selectedFile) formData.append("postFile", selectedFile);
     try {
       setLoading(true);
-      await axios.post("http://localhost:8000/api/v1/posts/", formData, {
+      await API.post("/posts/", formData, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -91,7 +92,7 @@ function UpperFeedpage() {
     formData.append("videoUrl", selectedVideo);
     try {
       setLoading(true);
-      await axios.post("http://localhost:8000/api/v1/videos/create", formData, {
+      await API.post("/videos/create", formData, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });

@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
 import Navbar from "../home/Navbar";
 
 // ── Time formatter ────────────────────────────────────────────────────
@@ -125,16 +126,16 @@ function CommentCountpage() {
         setError(null);
 
         if (activeTab === "post") {
-          const res = await axios.get(
-            "http://localhost:8000/api/v1/posts/comments/getAllpostCommnents",
+          const res = await API.get(
+            "/posts/comments/getAllpostCommnents",
             {
               withCredentials: true,
             },
           );
           setPostComments(res.data?.data || []);
         } else {
-          const res = await axios.get(
-            "http://localhost:8000/api/v1/videos/comments/getAllvideoComments",
+          const res = await API.get(
+            "/videos/comments/getAllvideoComments",
             {
               withCredentials: true,
             },

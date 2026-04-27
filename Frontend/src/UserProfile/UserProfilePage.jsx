@@ -1,3 +1,4 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState } from "react";
 import { FaCamera } from "react-icons/fa";
 import { MdOndemandVideo } from "react-icons/md";
@@ -7,7 +8,7 @@ import UserAllPost from "./UserAllPost";
 import UserAllVideos from "./UserAllVideos";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+
 import FollowButton from "../componants/FollowButton";
 import { fetchMyFollowings } from "../slices/follow.slice";
 import ImagePreviewModal from "../componants/ImagePreviewModal";
@@ -23,9 +24,9 @@ function FollowModal({ type, userId, onClose }) {
       try {
         const url =
           type === "followers"
-            ? `http://localhost:8000/api/v1/users/${userId}/followers`
-            : `http://localhost:8000/api/v1/users/${userId}/followings`;
-        const res = await axios.get(url, { withCredentials: true });
+            ? `/users/${userId}/followers`
+            : `/users/${userId}/followings`;
+        const res = await API.get(url, { withCredentials: true });
         const data =
           type === "followers"
             ? res.data?.data?.followers
@@ -267,8 +268,8 @@ function UserProfilePage() {
     const fetchUser = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/users/user/${userId}`,
+        const res = await API.get(
+          `/users/user/${userId}`,
           { withCredentials: true },
         );
         setUser(res?.data?.data);

@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+
 import { useDispatch, useSelector } from "react-redux";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
@@ -51,11 +52,11 @@ function SinglePostViewPage() {
     const fetchAll = async () => {
       try {
         const [postRes, commentsRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/v1/posts/single/${postId}`, {
+          API.get(`/posts/single/${postId}`, {
             withCredentials: true,
           }),
-          axios.get(
-            `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
+          API.get(
+            `/posts/comments/post/${postId}`,
             { withCredentials: true },
           ),
         ]);
@@ -146,8 +147,8 @@ function SinglePostViewPage() {
     if (!content.trim() || sending) return;
     try {
       setSending(true);
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
+      const res = await API.post(
+        `/posts/comments/post/${postId}`,
         { content },
         { withCredentials: true },
       );

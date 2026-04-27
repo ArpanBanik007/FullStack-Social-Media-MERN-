@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+
 import { useDispatch, useSelector } from "react-redux";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
@@ -45,10 +46,10 @@ function SingleVideoViewPage() {
     const fetchAll = async () => {
       try {
         const [videoRes, commentsRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/v1/videos/${videoId}`, {
+          API.get(`/videos/${videoId}`, {
             withCredentials: true,
           }),
-          axios.get(`http://localhost:8000/api/v1/videos/comments/${videoId}`, {
+          API.get(`/videos/comments/${videoId}`, {
             withCredentials: true,
           }),
         ]);
@@ -123,8 +124,8 @@ function SingleVideoViewPage() {
     if (!content.trim() || sending) return;
     try {
       setSending(true);
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/videos/comments/${videoId}`,
+      const res = await API.post(
+        `/videos/comments/${videoId}`,
         { content },
         { withCredentials: true },
       );

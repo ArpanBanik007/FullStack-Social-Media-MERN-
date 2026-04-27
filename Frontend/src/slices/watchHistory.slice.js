@@ -1,15 +1,15 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
 
 // ✅ Relative URL — works in both dev and production
-const API_URL = "http://localhost:8000/api/v1/watch/history";
+const API_URL = "/watch/history";
 
 // ✅ Fetch watch history (paginated)
 export const fetchWatchHistory = createAsyncThunk(
   "watchHistory/fetchWatchHistory",
   async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
+      const response = await API.get(
         `${API_URL}?page=${page}&limit=${limit}`,
         { withCredentials: true }
       );
@@ -27,7 +27,7 @@ export const deleteAllWatchHistory = createAsyncThunk(
   "watchHistory/deleteAllWatchHistory",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_URL}/all`, {
+      const response = await API.delete(`${API_URL}/all`, {
         withCredentials: true,
       });
       return response.data;
@@ -44,7 +44,7 @@ export const deleteWatchHistoryById = createAsyncThunk(
   "watchHistory/deleteWatchHistoryById",
   async (historyId, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/${historyId}`, {
+      await API.delete(`${API_URL}/${historyId}`, {
         withCredentials: true,
       });
       return historyId;

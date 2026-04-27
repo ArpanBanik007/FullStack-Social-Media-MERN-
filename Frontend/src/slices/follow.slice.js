@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 // fetch all followings once
 export const fetchMyFollowings = createAsyncThunk(
@@ -7,8 +8,8 @@ export const fetchMyFollowings = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
 
-      const res = await axios.get(
-        "http://localhost:8000/api/v1/users/interactions/myfollowing",
+      const res = await API.get(
+        "/users/interactions/myfollowing",
         { withCredentials: true }
       );
 

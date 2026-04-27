@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+
 import { FaComment, FaShareNodes, FaRegBookmark, FaEye } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { MdEdit, MdDelete } from "react-icons/md";
@@ -100,8 +101,8 @@ const AllPosts = () => {
   useEffect(() => {
     const fetchMyPosts = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/posts/my-posts",
+        const res = await API.get(
+          "/posts/my-posts",
           { withCredentials: true },
         );
         const fetchedPosts = res.data?.data || [];
@@ -153,7 +154,7 @@ const AllPosts = () => {
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
-      await axios.delete(`http://localhost:8000/api/v1/posts/${postId}`, {
+      await API.delete(`/posts/${postId}`, {
         withCredentials: true,
       });
       setPosts(posts.filter((p) => p._id !== postId));
@@ -164,8 +165,8 @@ const AllPosts = () => {
 
   const handleAddToWatchLater = async (postId) => {
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/watch/watchlater",
+      await API.post(
+        "/watch/watchlater",
         { postId },
         { withCredentials: true },
       );

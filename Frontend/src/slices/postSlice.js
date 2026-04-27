@@ -1,13 +1,14 @@
+import API from "../utils/API.js";
 // src/slices/postSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 // ✅ Fetch user's own posts
 export const fetchMyPosts = createAsyncThunk(
   "posts/fetchMyPosts",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/posts/my-posts", {
+      const res = await API.get("/posts/my-posts", {
         withCredentials: true,
       });
       return res.data?.data; 

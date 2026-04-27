@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 // ── Helper ──────────────────────────────────────────────────────────
 const normalize = (id) => String(id ?? "");
@@ -9,7 +10,7 @@ export const fetchMyLikes = createAsyncThunk(
   "likes/fetchMyLikes",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/likes/my-liked-posts", {
+      const res = await API.get("/likes/my-liked-posts", {
         withCredentials: true,
       });
       return res.data.data;
@@ -24,8 +25,8 @@ export const toggleLike = createAsyncThunk(
   "likes/toggleLike",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/posts/${postId}/like`,
+      const res = await API.post(
+        `/posts/${postId}/like`,
         {},
         { withCredentials: true }
       );

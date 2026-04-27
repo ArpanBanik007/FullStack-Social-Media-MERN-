@@ -1,3 +1,4 @@
+import API from "../utils/API.js";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import axios from "../utils/axios";
@@ -18,8 +19,8 @@ function CommentPage() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/posts/single/${postId}`,
+        const res = await API.get(
+          `/posts/single/${postId}`,
         );
         setPost(res.data?.data);
       } catch (err) {
@@ -32,8 +33,8 @@ function CommentPage() {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
+        const res = await API.get(
+          `/posts/comments/post/${postId}`,
         );
         setComments(res.data?.data || []);
       } catch (err) {
@@ -71,8 +72,8 @@ function CommentPage() {
     if (!content.trim() || sending) return;
     try {
       setSending(true);
-      const res = await axios.post(
-        `http://localhost:8000/api/v1/posts/comments/post/${postId}`,
+      const res = await API.post(
+        `/posts/comments/post/${postId}`,
         { content },
         { withCredentials: true }
       );

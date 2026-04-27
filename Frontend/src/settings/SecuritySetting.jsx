@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import React, { useState } from "react";
-import axios from "axios";
+
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { resetMyDetails, selectCurrentUser } from "../slices/mydetails.slice";
@@ -36,8 +37,8 @@ function SecuritySetting() {
       setPasswordLoading(true);
       setMessage(null);
 
-      await axios.post(
-        "http://localhost:8000/api/v1/users/change-password",
+      await API.post(
+        "/users/change-password",
         { oldPassword, newPassword },
         { withCredentials: true },
       );
@@ -64,8 +65,8 @@ function SecuritySetting() {
     try {
       setLogoutLoading(true);
 
-      await axios.post(
-        "http://localhost:8000/api/v1/users/logout",
+      await API.post(
+        "/users/logout",
         {},
         { withCredentials: true },
       );

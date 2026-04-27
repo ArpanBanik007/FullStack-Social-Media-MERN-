@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import { useEffect, useState } from "react";
-import axios from "axios";
+
 import { useNavigate } from "react-router-dom";
 import { FaHeart, FaPlay } from "react-icons/fa";
 import { useDispatch } from "react-redux";
@@ -14,8 +15,8 @@ function AllVideos() {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/videos/myvideos",
+        const res = await API.get(
+          "/videos/myvideos",
           { withCredentials: true },
         );
         const fetchedVideos = res.data?.data?.videos || [];

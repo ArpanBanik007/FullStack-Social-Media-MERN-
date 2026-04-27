@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import { useEffect, useState } from "react";
-import axios from "axios";
+
 import { connectSocket } from "../socket";
 
 import { FaComment, FaShareNodes } from "react-icons/fa6";
@@ -32,7 +33,7 @@ function MainFeed() {
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/v1/posts/feed", {
+        const res = await API.get("/posts/feed", {
           withCredentials: true,
         });
         const fetchedPosts = res.data?.posts || [];
@@ -55,8 +56,8 @@ function MainFeed() {
 
   const handleSavePost = async (postId) => {
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/watch/watchlater",
+      await API.post(
+        "/watch/watchlater",
         { postId },
         { withCredentials: true },
       );

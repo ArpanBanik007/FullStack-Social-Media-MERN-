@@ -1,8 +1,9 @@
+import API from "../utils/API.js";
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import axios from "axios";
+
 
 const STEPS = ["Email", "Verify", "Profile"];
 
@@ -62,8 +63,8 @@ export default function SignUp() {
     setError("");
     setSuccess("");
     try {
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/users/sendOTP",
+      const res = await API.post(
+        "/users/sendOTP",
         { email: formData.email },
         { withCredentials: true }
       );
@@ -87,8 +88,8 @@ export default function SignUp() {
     setError("");
     setSuccess("");
     try {
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/users/verifyOTP",
+      const res = await API.post(
+        "/users/verifyOTP",
         { email: formData.email, otp: formData.otp },
         { withCredentials: true }
       );
@@ -125,8 +126,8 @@ export default function SignUp() {
       Object.entries(formData).forEach(([k, v]) => {
         if (v) fd.append(k, v);
       });
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/users/register",
+      const res = await API.post(
+        "/users/register",
         fd,
         {
           withCredentials: true,

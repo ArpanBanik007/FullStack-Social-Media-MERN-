@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+
 import { RiAccountCircleFill } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
 import { FaPlay, FaVolumeXmark, FaVolumeHigh } from "react-icons/fa6";
@@ -29,8 +30,8 @@ function VideoCommentPage() {
   useEffect(() => {
     const fetchVideo = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/videos/${videoId}`,
+        const res = await API.get(
+          `/videos/${videoId}`,
           { withCredentials: true },
         );
         setVideo(res.data?.data);
@@ -45,8 +46,8 @@ function VideoCommentPage() {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/api/v1/videos/comments/${videoId}`,
+        const res = await API.get(
+          `/videos/comments/${videoId}`,
           { withCredentials: true },
         );
         setComments(res.data?.data || []);
@@ -108,8 +109,8 @@ function VideoCommentPage() {
     if (!content.trim() || sending) return;
     try {
       setSending(true);
-      await axios.post(
-        `http://localhost:8000/api/v1/videos/comments/${videoId}`,
+      await API.post(
+        `/videos/comments/${videoId}`,
         { content },
         { withCredentials: true },
       );

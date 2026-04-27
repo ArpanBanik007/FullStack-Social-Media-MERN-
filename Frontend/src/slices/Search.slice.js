@@ -1,13 +1,14 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 
 export const fetchSearchResults= createAsyncThunk(
       "search/fetchSearchResults",
   async (query, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `http://localhost:8000/api/v1/search?q=${encodeURIComponent(query)}`,
+      const response = await API.get(
+        `/search?q=${encodeURIComponent(query)}`,
         { withCredentials: true }
       );
       return response.data;

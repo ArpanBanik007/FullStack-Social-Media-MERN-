@@ -1,3 +1,4 @@
+import API from "../utils/API.js";
 import React, { useState, useEffect } from "react";
 import { FaCamera } from "react-icons/fa";
 import { MdOndemandVideo } from "react-icons/md";
@@ -25,9 +26,9 @@ function FollowModal({ type, userId, onClose }) {
       try {
         const url =
           type === "followers"
-            ? "http://localhost:8000/api/v1/users/my-followers"
-            : "http://localhost:8000/api/v1/users/my-followings";
-        const res = await axios.get(url, { withCredentials: true });
+            ? "/users/my-followers"
+            : "/users/my-followings";
+        const res = await API.get(url, { withCredentials: true });
         const data =
           type === "followers"
             ? res.data?.data?.followers
@@ -273,7 +274,7 @@ export default function MyProfile() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get("/users/current-user");
+        const res = await API.get("/users/current-user");
         setUser(res.data.data);
       } catch {
         navigate("/login");

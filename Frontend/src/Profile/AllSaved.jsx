@@ -1,5 +1,6 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+
 import { PiDotsThreeBold } from "react-icons/pi";
 import { MdDelete } from "react-icons/md";
 import { FaPlay } from "react-icons/fa";
@@ -15,8 +16,8 @@ const AllSaved = () => {
   useEffect(() => {
     const fetchSaved = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/watch/watchlater",
+        const res = await API.get(
+          "/watch/watchlater",
           { withCredentials: true },
         );
         setSavedItems(res.data?.data || []);
@@ -40,7 +41,7 @@ const AllSaved = () => {
 
   const handleRemoveWatchLater = async (savedItemId) => {
     try {
-      await axios.delete("http://localhost:8000/api/v1/watch/watchlater", {
+      await API.delete("/watch/watchlater", {
         data: { savedItemId },
         withCredentials: true,
       });

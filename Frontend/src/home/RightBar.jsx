@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
 
 function RightBar() {
   const navigate = useNavigate();
@@ -11,8 +12,8 @@ function RightBar() {
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/users/my-followers",
+        const res = await API.get(
+          "/users/my-followers",
           {
             withCredentials: true,
           },

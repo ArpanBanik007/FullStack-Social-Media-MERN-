@@ -1,12 +1,13 @@
+import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 
 // Conversations fetch
 export const fetchConversations = createAsyncThunk(
   "chat/fetchConversations",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get("http://localhost:8000/api/v1/messages/conversations", {
+      const { data } = await API.get("/messages/conversations", {
         withCredentials: true,
       });
       return data.conversations;
@@ -22,9 +23,9 @@ export const fetchMessages = createAsyncThunk(
   async ({ conversationId, cursor }, { rejectWithValue }) => {
     try {
       const url = cursor
-        ? `http://localhost:8000/api/v1/messages/${conversationId}?before=${cursor}&limit=30`
-        : `http://localhost:8000/api/v1/messages/${conversationId}?limit=30`;
-      const { data } = await axios.get(url, { withCredentials: true });
+        ? `/messages/${conversationId}?before=${cursor}&limit=30`
+        : `/messages/${conversationId}?limit=30`;
+      const { data } = await API.get(url, { withCredentials: true });
       return { ...data, cursor };
     } catch (err) {
       return rejectWithValue(err.response?.data?.error);
@@ -37,7 +38,7 @@ export const sendMessage = createAsyncThunk(
   "chat/sendMessage",
   async (payload, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post("http://localhost:8000/api/v1/messages/send", payload, {
+      const { data } = await API.post("/messages/send", payload, {
         withCredentials: true,
       });
       return data.message;
@@ -52,8 +53,8 @@ export const searchUsers = createAsyncThunk(
   "chat/searchUsers",
   async (query, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(
-        `http://localhost:8000/api/v1/messages/search-users?q=${query}`,
+      const { data } = await API.get(
+        `/messages/search-users?q=${query}`,
         { withCredentials: true }
       );
       return data.users;
@@ -68,8 +69,8 @@ export const reactToMessageAction = createAsyncThunk(
   "chat/reactToMessage",
   async ({ messageId, emoji }, { rejectWithValue }) => {
     try {
-      const { data } = await axios.patch(
-        `http://localhost:8000/api/v1/messages/${messageId}/react`,
+      const { data } = await API.patch(
+        `/messages/${messageId}/react`,
         { emoji },
         { withCredentials: true }
       );

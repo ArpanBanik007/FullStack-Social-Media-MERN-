@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
 
 // Inline styled inputs — no dependency on InputField/Button for auth pages
 function LoginPage() {
@@ -20,8 +21,8 @@ function LoginPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/users/login",
+      const res = await API.post(
+        "/users/login",
         formData,
         { withCredentials: true },
       );

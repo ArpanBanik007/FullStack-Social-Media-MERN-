@@ -1,6 +1,7 @@
+import API from "../utils/API.js";
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux"; // ✅ একবারই
-import axios from "axios";
+
 import { FaBookmark, FaPlay } from "react-icons/fa";
 import { FaEye } from "react-icons/fa"; // ✅ নতুন
 import {
@@ -39,8 +40,8 @@ function VideoPlayer() {
   useEffect(() => {
     const fetchFeedVideos = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:8000/api/v1/videos/feed",
+        const res = await API.get(
+          "/videos/feed",
           { withCredentials: true },
         );
         const fetchedVideos = res.data?.data?.videos || [];
@@ -118,8 +119,8 @@ function VideoPlayer() {
   // ── Save video ─────────────────────────────────────────
   const handleSaveVideo = async (videoId) => {
     try {
-      await axios.post(
-        "http://localhost:8000/api/v1/watch/watchlater",
+      await API.post(
+        "/watch/watchlater",
         { videoId },
         { withCredentials: true },
       );
