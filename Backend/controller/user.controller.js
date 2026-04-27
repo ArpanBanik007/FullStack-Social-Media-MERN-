@@ -127,8 +127,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "None" })
-    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "None" })
+    .cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "None", path: "/" })
+    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "None", path: "/" })
     .json(
       new ApiResponse(201,
         { user: createdUser, accessToken, refreshToken },
@@ -287,7 +287,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "None"
+    sameSite: "None",
+    path: "/"
   }
 
   return res
@@ -324,7 +325,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: true,
-      sameSite: "None"
+      sameSite: "None",
+      path: "/"
     }
 
     const { accessToken, newRefreshToken } = await generateAccessAndRefereshTokens(user._id)
