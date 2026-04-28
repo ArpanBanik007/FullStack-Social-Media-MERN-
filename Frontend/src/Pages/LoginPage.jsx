@@ -27,6 +27,12 @@ function LoginPage() {
         { withCredentials: true },
       );
       setSuccess(res?.data?.message || "Login successful!");
+
+      // Store token in localStorage as fallback for Socket.IO
+      if (res.data?.data?.accessToken) {
+        localStorage.setItem("token", res.data.data.accessToken);
+      }
+
       setTimeout(() => navigate("/home"), 1000);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");

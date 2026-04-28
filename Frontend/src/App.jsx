@@ -38,14 +38,16 @@ function App() {
     if (currentUser?._id) {
       dispatch(fetchMyLikes());
       dispatch(fetchMyVideoLikes());
-      const socket = connectSocket();
+      
+      const socket = connectSocket(currentUser._id);
 
-      socket.on("onlineUsers", (users) => {
+      socket.on("online-users", (users) => {
+        console.log("Online users:", users);
         dispatch(setOnlineUsers(users));
       });
 
       return () => {
-        socket.off("onlineUsers");
+        socket.off("online-users");
       };
     } else {
       disconnectSocket();

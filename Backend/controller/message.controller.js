@@ -85,10 +85,13 @@ export const sendMessage = async (req, res, next) => {
         // Step 4: Socket emit
         const io = req.app.get("io");
         if (io) {
-            io.to(conversation._id.toString()).emit("newMessage", {
-                message,
-                conversationId: conversation._id,
-            });
+            console.log("Sending to:", receiverId);
+            
+            // Emit to receiver's specific room
+            io.to(receiverId.toString()).emit("receive-message", message);
+            
+            // Emit back to sender
+            io.to(senderId.toString()).emit("message-sent", message);
 
             io.to(receiverId.toString()).emit("newMessageNotification", {
                 conversationId: conversation._id,

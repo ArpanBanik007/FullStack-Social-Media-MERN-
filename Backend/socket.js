@@ -13,14 +13,13 @@ const isUserOnline = (userId) => {
 };
 
 const broadcastOnlineUsers = (io) => {
-  io.emit("onlineUsers", Array.from(onlineUsers.keys()));
+  io.emit("online-users", Array.from(onlineUsers.keys()));
 };
 
 export const initSocket = (server, app) => {
   const io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://pluto-alpha-ochre.vercel.app",
-      methods: ["GET", "POST"],
+      origin: (origin, callback) => callback(null, true),
       credentials: true,
     },
     pingTimeout: 60000,
@@ -35,18 +34,11 @@ export const initSocket = (server, app) => {
   // ════════════════════════════════
   io.use(async (socket, next) => {
     try {
-      let token =
-        socket.handshake.auth?.token ||
-        socket.handshake.query?.token;
-
-      if (!token && socket.handshake.headers.cookie) {
-        const match = socket.handshake.headers.cookie.match(/accessToken=([^;]+)/);
-        if (match) {
-          token = match[1];
-        }
-      }
+      // 🔓 STRIKT TOKEN-BASED AUTH (No Cookies)
+      const token = socket.handshake.auth?.token;
 
       if (!token) {
+        console.log("❌ Socket Auth Failed: No token provided");
         return next(new Error("Authentication error: No token provided"));
       }
 
@@ -69,6 +61,7 @@ export const initSocket = (server, app) => {
 
       next();
     } catch (err) {
+      console.error("❌ Socket Auth Error:", err.message);
       if (err.name === "JsonWebTokenError") {
         return next(new Error("Authentication error: Invalid token"));
       }
@@ -83,23 +76,38 @@ export const initSocket = (server, app) => {
   // CONNECTION
   // ════════════════════════
   io.on("connection", async (socket) => {
-    const userId = socket.userId;
+    // ALWAYS extract userId from query first, fallback to middleware userId just in case
+    const userId = socket.handshake.query.userId || socket.userId;
+    
+    if (!userId) {
+      console.log(`⚠️ Socket connected without userId: ${socket.id}`);
+      return;
+    }
+
     console.log(`✅ Socket connected: ${userId} (${socket.id})`);
 
+    // Add to in-memory tracking
     if (!onlineUsers.has(userId)) {
       onlineUsers.set(userId, new Set());
-      // Broadcast that this user came online
-      io.emit("user-status", { userId, isOnline: true, lastSeen: new Date() });
     }
+
     onlineUsers.get(userId).add(socket.id);
 
-    User.findByIdAndUpdate(userId, {
-      isOnline: true,
-      lastSeen: new Date(),
-    }).catch(console.error);
+    console.log("User connected:", userId);
+    console.log("Online Users:", onlineUsers);
 
-    // Send full list to the newly connected user
-    socket.emit("onlineUsers", Array.from(onlineUsers.keys()));
+    // Broadcast updated list to everyone
+    io.emit("online-users", Array.from(onlineUsers.keys()));
+
+    socket.on("user-online", (incomingUserId) => {
+      // Keep for backwards compatibility if needed, but the main logic is now on connection
+      const uid = incomingUserId || userId;
+      if (!onlineUsers.has(uid)) {
+        onlineUsers.set(uid, new Set());
+      }
+      onlineUsers.get(uid).add(socket.id);
+      io.emit("online-users", Array.from(onlineUsers.keys()));
+    });
 
     socket.join(userId);
 
@@ -198,15 +206,16 @@ export const initSocket = (server, app) => {
           onlineUsers.delete(userId);
 
           const lastSeen = new Date();
+          // Update lastSeen in DB
           User.findByIdAndUpdate(userId, {
             isOnline: false,
             lastSeen,
           }).catch(console.error);
-
-          io.emit("user-status", { userId, isOnline: false, lastSeen });
-          broadcastOnlineUsers(io);
         }
       }
+      
+      // Broadcast updated online users list
+      io.emit("online-users", Array.from(onlineUsers.keys()));
     });
   });
 

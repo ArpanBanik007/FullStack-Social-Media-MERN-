@@ -202,6 +202,32 @@ const chatSlice = createSlice({
         state.selectedConversation._other.lastSeen = lastSeen;
       }
     },
+    receiveMessageGlobally: (state, action) => {
+      const { msg, currentUserId } = action.payload;
+      const exists = state.messages.find((m) => m._id === msg._id);
+      
+      const conv = state.conversations.find((c) => String(c._id) === String(msg.chatId));
+      if (conv) {
+        conv.lastMessage = msg.type === "text" ? msg.content : `Sent a ${msg.type}`;
+        conv.lastMessageAt = msg.createdAt;
+      }
+
+      // If open chat is this message's chat
+      if (state.selectedConversation && String(state.selectedConversation._id) === String(msg.chatId)) {
+        if (!exists) {
+          state.messages.push(msg);
+        }
+      } else {
+        // If chat is NOT open, increase unread count if we are not the sender
+        const msgSenderId = msg.senderId?._id || msg.senderId;
+        if (conv && String(msgSenderId) !== String(currentUserId)) {
+          if (!conv.unreadCounts) conv.unreadCounts = {};
+          conv.unreadCounts[currentUserId] = (conv.unreadCounts[currentUserId] || 0) + 1;
+        }
+      }
+      
+      state.conversations.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -266,6 +292,7 @@ export const {
   updateReactions,
   clearSearchResults,
   updateUserPresence,
+  receiveMessageGlobally,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import ChatLeftBar from "../Chat/ChatLeftBar";
@@ -17,13 +17,10 @@ import {
   deleteMessageLocally,
   updateReactions,
   updateUserPresence,
+  receiveMessageGlobally,
 } from "../slices/chat.slice";
 import { formatLastSeen } from "../utils/timeUtils";
-import {
-  connectSocket,
-  disconnectSocket,
-  getSocket,
-} from "../socket.js";
+import { connectSocket, disconnectSocket, getSocket } from "../socket.js";
 import { selectCurrentUser } from "../slices/mydetails.slice";
 
 function ChatMainPage() {
@@ -42,13 +39,20 @@ function ChatMainPage() {
     return onlineUsers.some((u) => String(u._id || u) === idStr);
   };
 
-  // ── Socket connect + global events
+  // ── Socket connect করো একবার, currentUser._id পেলেই
+  useEffect(() => {
+    if (!currentUser?._id) return;
+    connectSocket(currentUser._id);
+  }, [currentUser?._id]);
+
+  // ── Global socket events — শুধু currentUser._id এ depend করে
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    const socket = connectSocket();
+    const socket = getSocket();
+    if (!socket) return;
 
-    socket.on("newMessageNotification", ({ conversationId, preview }) => {
+    const handleNewMessageNotification = ({ conversationId, preview }) => {
       dispatch(
         updateLastMessage({
           conversationId,
@@ -56,102 +60,60 @@ function ChatMainPage() {
           lastMessageAt: new Date().toISOString(),
         }),
       );
-    });
+    };
 
-    socket.on("user-status", ({ userId, isOnline, lastSeen }) => {
+    const handleReceiveMessage = (msg) => {
+      console.log("📩 receive-message:", msg);
+      dispatch(receiveMessageGlobally({ msg, currentUserId: currentUser._id }));
+    };
+
+    const handleMessageSent = (msg) => {
+      console.log("✉️ message-sent:", msg);
+      dispatch(receiveMessageGlobally({ msg, currentUserId: currentUser._id }));
+    };
+
+    const handleUserStatusUpdate = ({ userId, isOnline, lastSeen }) => {
       dispatch(updateUserPresence({ userId, isOnline, lastSeen }));
-    });
+    };
 
-    socket.on("onlineUsers", (userIds) => {
+    const handleOnlineUsers = (userIds) => {
       dispatch(setOnlineUsers(userIds));
-    });
+    };
+
+    socket.on("newMessageNotification", handleNewMessageNotification);
+    socket.on("receive-message", handleReceiveMessage);
+    socket.on("message-sent", handleMessageSent);
+    socket.on("user-status-update", handleUserStatusUpdate);
+    socket.on("online-users", handleOnlineUsers);
 
     // Conversations load করো
     dispatch(fetchConversations());
 
     return () => {
-      socket.off("newMessageNotification");
-      socket.off("user-status");
-      socket.off("onlineUsers");
+      socket.off("newMessageNotification", handleNewMessageNotification);
+      socket.off("receive-message", handleReceiveMessage);
+      socket.off("message-sent", handleMessageSent);
+      socket.off("user-status-update", handleUserStatusUpdate);
+      socket.off("online-users", handleOnlineUsers);
     };
-  }, [currentUser?._id, dispatch]);
+  }, [currentUser?._id, dispatch]); // ← selectedConversation নেই এখানে
 
-  // ── Conversation select হলে socket room join + chat events listen
-  useEffect(() => {
-    if (!selectedConversation?._id) return;
-
-    const socket = getSocket();
-    if (!socket) return;
-
-    const convId = selectedConversation._id;
-    socket.emit("joinRoom", convId);
-
-    const onNewMessage = ({ message }) => {
-      dispatch(addMessage(message));
-    };
-
-    const onTyping = ({ userId, userName }) => {
-      if (String(userId) !== String(currentUser?._id)) {
-        dispatch(setTypingUser({ userName }));
-      }
-    };
-
-    const onStopTyping = ({ userId }) => {
-      dispatch(removeTypingUser({ userId }));
-    };
-
-    const onMessageSeen = ({ chatId, seenBy }) => {
-      dispatch(
-        markMessagesSeenLocally({
-          seenBy,
-          currentUserId: currentUser?._id,
-          chatId,
-        }),
-      );
-    };
-
-    const onMessageDeleted = ({ messageId }) => {
-      dispatch(deleteMessageLocally({ messageId, deleteFor: "all" }));
-    };
-
-    const onMessageEdited = ({ messageId, content }) => {
-      dispatch(editMessageLocally({ messageId, content }));
-    };
-
-    const onReactionUpdated = ({ messageId, reactions }) => {
-      dispatch(updateReactions({ messageId, reactions }));
-    };
-
-    socket.on("newMessage", onNewMessage);
-    socket.on("typing", onTyping);
-    socket.on("stopTyping", onStopTyping);
-    socket.on("messageSeen", onMessageSeen);
-    socket.on("messageDeleted", onMessageDeleted);
-    socket.on("messageEdited", onMessageEdited);
-    socket.on("reactionUpdated", onReactionUpdated);
-
-    return () => {
-      socket.emit("leaveRoom", convId);
-      socket.off("newMessage", onNewMessage);
-      socket.off("typing", onTyping);
-      socket.off("stopTyping", onStopTyping);
-      socket.off("messageSeen", onMessageSeen);
-      socket.off("messageDeleted", onMessageDeleted);
-      socket.off("messageEdited", onMessageEdited);
-      socket.off("reactionUpdated", onReactionUpdated);
-    };
-  }, [selectedConversation?._id]);
-
-  // Sync route param with Redux state
+  // ── Route param থেকে conversation sync করো
   useEffect(() => {
     if (conversationId && conversations.length > 0) {
-      const rawConv = conversations.find(c => String(c._id) === conversationId || String(c.id) === conversationId);
+      const rawConv = conversations.find(
+        (c) =>
+          String(c._id) === conversationId || String(c.id) === conversationId,
+      );
       if (rawConv) {
-        const other = rawConv.members?.find(m => String(m._id) !== String(currentUser?._id));
+        const other = rawConv.members?.find(
+          (m) => String(m._id) !== String(currentUser?._id),
+        );
         const shaped = {
           ...rawConv,
           id: rawConv._id,
-          name: other?.fullName || other?.name || other?.username || "Unknown",
+          name:
+            other?.fullName || other?.name || other?.username || "Unknown",
           avatar: other?.avatar || "/default-avatar.png",
           _other: other,
         };
@@ -165,14 +127,18 @@ function ChatMainPage() {
         dispatch(setSelectedConversation(null));
       }
     }
-  }, [conversationId, conversations.length, dispatch, navigate, currentUser?._id]); // carefully tuned dependencies
+  }, [conversationId, conversations.length, dispatch, navigate, currentUser?._id]);
 
-  // Handle new conversation transitioning to active conversation
-  const isNewRef = React.useRef(false);
+  // ── নতুন conversation → active হলে URL update করো
+  const isNewRef = useRef(false);
   useEffect(() => {
     if (selectedConversation?.isNew) {
       isNewRef.current = true;
-    } else if (selectedConversation?._id && isNewRef.current && !conversationId) {
+    } else if (
+      selectedConversation?._id &&
+      isNewRef.current &&
+      !conversationId
+    ) {
       navigate(`/chat/${selectedConversation._id}`, { replace: true });
       isNewRef.current = false;
     } else if (conversationId) {
@@ -182,14 +148,14 @@ function ChatMainPage() {
 
   const handleSelectChat = (conv) => {
     if (conv.id || conv._id) {
-       navigate(`/chat/${conv.id || conv._id}`);
+      navigate(`/chat/${conv.id || conv._id}`);
     } else {
-       dispatch(setSelectedConversation(conv));
+      dispatch(setSelectedConversation(conv));
     }
     setShowRightbar(false);
   };
 
-  // ChatLeftBar এর জন্য conversation shape — existing UI এর সাথে মিলিয়ে
+  // ── ChatLeftBar এর জন্য conversations shape করো
   const shapedConversations = conversations.map((conv) => {
     const other = conv.members?.find(
       (m) => String(m._id) !== String(currentUser?._id),
@@ -202,9 +168,9 @@ function ChatMainPage() {
       lastMsg: conv.lastMessage || "",
       time: conv.lastMessageAt
         ? new Date(conv.lastMessageAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "",
       unread: conv.unreadCounts?.[String(currentUser?._id)] || 0,
       online: isOnline(other?._id),
@@ -256,11 +222,14 @@ function ChatMainPage() {
 
           {/* Center */}
           {selectedConversation ? (
-            <ChattingPage 
+            <ChattingPage
               conversation={{
                 ...selectedConversation,
-                online: isOnline(selectedConversation._other?._id || selectedConversation.receiverId)
-              }} 
+                online: isOnline(
+                  selectedConversation._other?._id ||
+                  selectedConversation.receiverId,
+                ),
+              }}
               onOpenProfile={() => setShowRightbar(true)}
             />
           ) : (
@@ -274,12 +243,14 @@ function ChatMainPage() {
           )}
 
           {/* Right */}
-          {showRightbar && selectedConversation && !selectedConversation.isNew && (
-            <ChatRightbar 
-               conversation={selectedConversation} 
-               onClose={() => setShowRightbar(false)}
-            />
-          )}
+          {showRightbar &&
+            selectedConversation &&
+            !selectedConversation.isNew && (
+              <ChatRightbar
+                conversation={selectedConversation}
+                onClose={() => setShowRightbar(false)}
+              />
+            )}
         </div>
       </div>
     </>

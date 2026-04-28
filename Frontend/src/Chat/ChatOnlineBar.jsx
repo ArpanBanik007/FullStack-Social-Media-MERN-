@@ -2,13 +2,26 @@ import React from "react";
 import { useSelector } from "react-redux";
 
 function ChatOnlineBar() {
-  const { onlineUsers } = useSelector((state) => state.chat);
+  const { onlineUsers, conversations } = useSelector((state) => state.chat);
   const currentUser = useSelector((state) => state.mydetails?.user);
 
-  // Filter out current user from the socket's online users list
-  const unique = onlineUsers.filter(
-    (user) => String(user._id || user) !== String(currentUser?._id)
-  );
+  // Filter out current user and map string IDs to user objects from conversations
+  const unique = [];
+  onlineUsers.forEach((userId) => {
+    if (String(userId) === String(currentUser?._id)) return;
+    
+    // Check if we already added this user
+    if (unique.find((u) => String(u._id) === String(userId))) return;
+
+    // Search for this user in conversations
+    for (const conv of conversations) {
+      const member = conv.members?.find((m) => String(m._id) === String(userId));
+      if (member) {
+        unique.push(member);
+        break;
+      }
+    }
+  });
 
   if (unique.length === 0) return null;
 
