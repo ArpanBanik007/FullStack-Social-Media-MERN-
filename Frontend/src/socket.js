@@ -3,7 +3,7 @@ import { store } from "./store/store";
 
 let realSocket = null;
 
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export const connectSocket = (userId) => {
   if (realSocket?.connected) {
