@@ -70,6 +70,7 @@ function MainFeed() {
   useEffect(() => {
     if (!posts.length) return;
     const socket = connectSocket();
+    if (!socket) return;
     posts.forEach((post) => socket.emit("joinRoom", `post:${post._id}`));
 
     const handleReactionUpdate = (data) => {
@@ -99,6 +100,7 @@ function MainFeed() {
 
   useEffect(() => {
     const socket = connectSocket();
+    if (!socket) return;
     const handleCommentCountUpdate = ({ postId, comments }) => {
       setPosts((prev) =>
         prev.map((post) =>
