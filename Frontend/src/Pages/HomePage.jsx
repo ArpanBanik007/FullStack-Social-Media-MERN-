@@ -10,22 +10,27 @@ function HomePage() {
       <style>{`
         .homepage-root {
           min-height: 100vh;
-          background: radial-gradient(ellipse at 15% 40%, rgba(6,182,212,0.05) 0%, transparent 55%),
-                      radial-gradient(ellipse at 85% 10%, rgba(99,102,241,0.05) 0%, transparent 55%),
-                      #0f172a;
+          background-color: var(--bg-deep);
+          position: relative;
+          overflow: hidden;
         }
 
-        /* Feed center column — sits between the two fixed sidebars */
+        .blob-1 { top: -10%; left: -10%; animation: pulse-glow 8s infinite ease-in-out; }
+        .blob-2 { bottom: -10%; right: -10%; animation: pulse-glow 12s infinite ease-in-out; background: radial-gradient(circle, rgba(110, 231, 255, 0.05) 0%, transparent 70%); }
+        .blob-3 { top: 40%; right: 20%; animation: pulse-glow 10s infinite ease-in-out; width: 300px; height: 300px; opacity: 0.5; }
+
         .homepage-feed {
-          margin-left: 260px;
-          margin-right: 250px;
-          padding-top: 16px;
-          min-height: calc(100vh - 60px);
+          margin-left: 280px;
+          margin-right: 260px;
+          padding-top: 24px;
+          min-height: calc(100vh - 70px);
+          position: relative;
+          z-index: 1;
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 1100px) {
           .homepage-feed {
-            margin-left: 252px;
+            margin-left: 260px;
             margin-right: 0;
           }
         }
@@ -34,27 +39,36 @@ function HomePage() {
           .homepage-feed {
             margin-left: 0;
             margin-right: 0;
-            padding-top: 12px;
+            padding-top: 16px;
+            padding-left: 12px;
+            padding-right: 12px;
           }
         }
       `}</style>
 
       <div className="homepage-root">
+        {/* Animated Background Blobs */}
+        <div className="bg-blob blob-1" />
+        <div className="bg-blob blob-2" />
+        <div className="bg-blob blob-3" />
+
         <Navbar />
 
-        {/* Left sidebar — hidden on mobile */}
-        <div className="hidden md:block">
-          <LeftBar />
-        </div>
+        <div className="flex justify-center w-full">
+          {/* Left sidebar */}
+          <div className="hidden md:block">
+            <LeftBar />
+          </div>
 
-        {/* Main feed */}
-        <div className="homepage-feed">
-          <Feedpage />
-        </div>
+          {/* Main feed */}
+          <div className="homepage-feed w-full max-w-[640px]">
+            <Feedpage />
+          </div>
 
-        {/* Right sidebar — hidden on smaller screens */}
-        <div className="hidden lg:block">
-          <RightBar />
+          {/* Right sidebar */}
+          <div className="hidden lg:block">
+            <RightBar />
+          </div>
         </div>
       </div>
     </>

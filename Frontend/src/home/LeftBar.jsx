@@ -38,192 +38,120 @@ function LeftBar() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap');
-
         .leftbar-root {
-          font-family: 'Syne', sans-serif;
           position: fixed;
-          top: 80px;
-          left: 12px;
+          top: 90px;
+          left: 40px;
           width: 240px;
-          height: calc(100vh - 96px);
+          height: calc(100vh - 130px);
           display: flex;
           flex-direction: column;
-          background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 20px;
-          padding: 16px 12px;
-          box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-          overflow: hidden;
+          background: rgba(17, 28, 46, 0.4);
+          backdrop-filter: blur(16px);
+          border: 1px solid var(--glass-border);
+          border-radius: 24px;
+          padding: 24px 16px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.4);
           z-index: 100;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* ✅ Mobile-এ সম্পূর্ণ লুকিয়ে যাবে */
+        @media (max-width: 1100px) {
+          .leftbar-root { left: 20px; width: 220px; }
+        }
+
         @media (max-width: 768px) {
           .leftbar-root { display: none; }
         }
 
-        .leftbar-root::before {
-          content: '';
-          position: absolute;
-          top: -60px;
-          left: -40px;
-          width: 200px;
-          height: 200px;
-          background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .leftbar-brand {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 12px 18px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          margin-bottom: 10px;
-          flex-shrink: 0;
-        }
-
-        .leftbar-brand-dot {
-          width: 8px;
-          height: 8px;
-          background: #06b6d4;
-          border-radius: 50%;
-          box-shadow: 0 0 8px #06b6d4;
-        }
-
-        .leftbar-brand-text {
-          font-size: 13px;
+        .leftbar-section-label {
+          font-size: 11px;
           font-weight: 700;
-          letter-spacing: 0.15em;
+          letter-spacing: 2px;
           text-transform: uppercase;
-          color: rgba(255,255,255,0.35);
+          color: var(--text-secondary);
+          opacity: 0.5;
+          margin: 20px 0 12px 16px;
         }
 
-        .leftbar-scroll-area {
-          flex: 1;
-          overflow-y: auto;
-          overflow-x: hidden;
-          min-height: 0;
-        }
-        .leftbar-scroll-area::-webkit-scrollbar { width: 4px; }
-        .leftbar-scroll-area::-webkit-scrollbar-track { background: transparent; }
-        .leftbar-scroll-area::-webkit-scrollbar-thumb {
-          background: rgba(6,182,212,0.2);
-          border-radius: 4px;
-        }
-
-        .leftbar-pinned-footer {
-          flex-shrink: 0;
-          padding-top: 10px;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          margin-top: 6px;
-        }
+        .leftbar-section-label:first-child { margin-top: 0; }
 
         .nav-item {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 13px;
-          padding: 11px 14px;
-          border-radius: 14px;
+          gap: 14px;
+          padding: 12px 16px;
+          border-radius: 16px;
           cursor: pointer;
-          margin-bottom: 4px;
-          transition: background 0.2s ease, transform 0.15s ease;
-          overflow: hidden;
+          margin-bottom: 6px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          color: var(--text-secondary);
           border: 1px solid transparent;
         }
+
+        .nav-item:hover {
+          background: rgba(0, 217, 255, 0.05);
+          color: var(--text-primary);
+          transform: translateX(8px);
+        }
+
         .nav-item.active {
-          background: rgba(6, 182, 212, 0.15);
-          border-color: rgba(6, 182, 212, 0.3);
-        }
-        .nav-item:not(.active):hover {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(255,255,255,0.08);
-          transform: translateX(3px);
-        }
-        .nav-item.active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 20%;
-          height: 60%;
-          width: 3px;
-          background: linear-gradient(to bottom, #06b6d4, #3b82f6);
-          border-radius: 0 3px 3px 0;
+          background: rgba(0, 217, 255, 0.1);
+          border-color: rgba(0, 217, 255, 0.2);
+          color: var(--accent-primary);
+          box-shadow: 0 0 20px rgba(0, 217, 255, 0.1);
         }
 
         .nav-icon-wrap {
+          font-size: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          font-size: 18px;
-          transition: background 0.2s ease, color 0.2s ease;
-          flex-shrink: 0;
+          transition: transform 0.3s ease;
         }
-        .nav-item.active .nav-icon-wrap {
-          background: linear-gradient(135deg, #06b6d4, #3b82f6);
-          color: #fff;
-          box-shadow: 0 4px 14px rgba(6,182,212,0.35);
-        }
-        .nav-item:not(.active) .nav-icon-wrap {
-          background: rgba(255,255,255,0.05);
-          color: rgba(255,255,255,0.45);
-        }
-        .nav-item:not(.active):hover .nav-icon-wrap {
-          background: rgba(6,182,212,0.12);
-          color: #06b6d4;
+
+        .nav-item:hover .nav-icon-wrap {
+          transform: scale(1.1);
         }
 
         .nav-label {
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 600;
-          letter-spacing: 0.01em;
-          transition: color 0.2s ease;
         }
-        .nav-item.active .nav-label { color: #e2e8f0; }
-        .nav-item:not(.active) .nav-label { color: rgba(255,255,255,0.4); }
-        .nav-item:not(.active):hover .nav-label { color: rgba(255,255,255,0.75); }
 
         .nav-badge {
           margin-left: auto;
-          background: #ef4444;
-          color: #fff;
+          background: var(--accent-primary);
+          color: var(--bg-deep);
           font-size: 10px;
-          font-weight: 700;
-          min-width: 18px;
+          font-weight: 800;
+          width: 18px;
           height: 18px;
-          border-radius: 9px;
+          border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 0 5px;
-          box-shadow: 0 0 8px rgba(239,68,68,0.5);
+          box-shadow: 0 0 10px rgba(0, 217, 255, 0.4);
         }
 
-        .leftbar-section-label {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.2);
-          padding: 10px 14px 6px;
+        .leftbar-scroll-area {
+          flex: 1;
+          overflow-y: auto;
+          scrollbar-width: none;
+        }
+        .leftbar-scroll-area::-webkit-scrollbar { display: none; }
+
+        .leftbar-footer {
+          margin-top: auto;
+          padding-top: 16px;
+          border-top: 1px solid var(--glass-border);
         }
       `}</style>
 
       <div className="leftbar-root">
-        {/* Brand */}
-        <div className="leftbar-brand">
-          <div className="leftbar-brand-dot" />
-          <span className="leftbar-brand-text">Navigate</span>
-        </div>
-
-        {/* Scrollable nav items */}
         <div className="leftbar-scroll-area">
-          <div className="leftbar-section-label">Main</div>
+          <div className="leftbar-section-label">Explore</div>
           {NAV_ITEMS.slice(0, 3).map(({ path, icon: Icon, label, badge }) => {
             const isActive = location.pathname === path;
             return (
@@ -231,8 +159,6 @@ function LeftBar() {
                 key={path}
                 className={`nav-item ${isActive ? "active" : ""}`}
                 onClick={() => handleClick(path)}
-                onMouseEnter={() => setHovered(path)}
-                onMouseLeave={() => setHovered(null)}
               >
                 <div className="nav-icon-wrap">
                   <Icon />
@@ -243,9 +169,7 @@ function LeftBar() {
             );
           })}
 
-          <div className="leftbar-section-label" style={{ marginTop: 6 }}>
-            Library
-          </div>
+          <div className="leftbar-section-label">Library</div>
           {NAV_ITEMS.slice(3).map(({ path, icon: Icon, label, badge }) => {
             const isActive = location.pathname === path;
             return (
@@ -253,8 +177,6 @@ function LeftBar() {
                 key={path}
                 className={`nav-item ${isActive ? "active" : ""}`}
                 onClick={() => handleClick(path)}
-                onMouseEnter={() => setHovered(path)}
-                onMouseLeave={() => setHovered(null)}
               >
                 <div className="nav-icon-wrap">
                   <Icon />
@@ -266,25 +188,16 @@ function LeftBar() {
           })}
         </div>
 
-        {/* Settings — pinned at bottom */}
-        <div className="leftbar-pinned-footer">
-          {(() => {
-            const { path, icon: Icon, label } = SETTINGS_ITEM;
-            const isActive = location.pathname === path;
-            return (
-              <div
-                className={`nav-item ${isActive ? "active" : ""}`}
-                onClick={() => handleClick(path)}
-                onMouseEnter={() => setHovered(path)}
-                onMouseLeave={() => setHovered(null)}
-              >
-                <div className="nav-icon-wrap">
-                  <Icon />
-                </div>
-                <span className="nav-label">{label}</span>
-              </div>
-            );
-          })()}
+        <div className="leftbar-footer">
+          <div
+            className={`nav-item ${location.pathname === SETTINGS_ITEM.path ? "active" : ""}`}
+            onClick={() => handleClick(SETTINGS_ITEM.path)}
+          >
+            <div className="nav-icon-wrap">
+              <SETTINGS_ITEM.icon />
+            </div>
+            <span className="nav-label">{SETTINGS_ITEM.label}</span>
+          </div>
         </div>
       </div>
     </>
