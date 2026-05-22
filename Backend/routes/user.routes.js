@@ -1,33 +1,32 @@
-import {Router} from "express"
+import { Router } from "express"
 import { verifyJWT } from "../middlewire/auth.middlewire.js"
-import {upload} from "../middlewire/multer.middlewire.js"
-import { registerUser,
-         loginUser,
-         sendOTP,
-         verifyOTP,
-         logoutUser,
-         changeCurrentPassword,
-         updateAccountDetails,
-         updateUserAvatar,
-         updateUserCoverImage,
-         getCurrentUser,
-         refreshAccessToken,
-         getClickedUserDetails,
-         getMyFollowers,
-         getMyFollowings,
-         getClickedUserFollowers,
-         getClickedUserFollowings,
-         
+import { upload } from "../middlewire/multer.middlewire.js"
+import {
+    registerUser,
+    loginUser,
+    sendOTP,
+    verifyOTP,
+    logoutUser,
+    changeCurrentPassword,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage,
+    getCurrentUser,
+    getClickedUserDetails,
+    getMyFollowers,
+    getMyFollowings,
+    getClickedUserFollowers,
+    getClickedUserFollowings,
+    refreshAccessToken
+
+} from "../controller/user.controller.js"
 
 
- } from "../controller/user.controller.js"
-
-
- const router=Router();
+const router = Router();
 
 
 
- // Register route
+// Register route
 router.route("/register").post(
     upload.fields([
         {
@@ -42,18 +41,18 @@ router.route("/register").post(
     registerUser
 );
 
-router.route("/login").post( loginUser);
+router.route("/login").post(loginUser);
 
+router.post("/refresh-token", refreshAccessToken)
 
 // Logout route
-router.route("/logout").post(verifyJWT,logoutUser); 
+router.route("/logout").post(verifyJWT, logoutUser);
 
 
-router.route("/current-user").get(verifyJWT,getCurrentUser)
+router.route("/current-user").get(verifyJWT, getCurrentUser)
 router.route("/user/:userId")
-      .get(verifyJWT, getClickedUserDetails);
+    .get(verifyJWT, getClickedUserDetails);
 
-router.route("/refresh-token").post(refreshAccessToken)
 
 router.route("/sendOTP").post(sendOTP)
 router.route("/verifyOTP").post(verifyOTP)
@@ -69,10 +68,10 @@ router.get("/:userId/followers", verifyJWT, getClickedUserFollowers);
 router.get("/:userId/followings", verifyJWT, getClickedUserFollowings);
 
 
-router.route("/change-password").post(verifyJWT,changeCurrentPassword)
-router.route("/update-account").patch(verifyJWT,updateAccountDetails) 
-router.route("/avatar").patch(verifyJWT,upload.single("avatar"),updateUserAvatar)
-router.route("/cover-Image").patch(verifyJWT,upload.single("coverImage"),updateUserCoverImage)
+router.route("/change-password").post(verifyJWT, changeCurrentPassword)
+router.route("/update-account").patch(verifyJWT, updateAccountDetails)
+router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
+router.route("/cover-Image").patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
 
 
 export default router

@@ -1,4 +1,3 @@
-
 // src/redux/store.js
 import { configureStore } from "@reduxjs/toolkit";
 import storage from "redux-persist/lib/storage";
@@ -6,19 +5,18 @@ import { persistReducer, persistStore } from "redux-persist";
 
 import postReducer from "../slices/postSlice";
 import myDetailsReducer from "../slices/mydetails.slice";
-import followReducer from "../slices/follow.slice"; 
-import likedPostSlice from "../slices/like.slice"
-import videoLikeReducer from "../slices/video.like.slice"
-import postViewSlice from "../slices/postView.slice"
-import watchHistoryReducer from "../slices/watchHistory.slice"
-import searchSlice from "../slices/Search.slice"
-
+import followReducer from "../slices/follow.slice";
+import likedPostSlice from "../slices/like.slice";
+import videoLikeReducer from "../slices/video.like.slice";
+import postViewSlice from "../slices/postView.slice";
+import watchHistoryReducer from "../slices/watchHistory.slice";
+import searchSlice from "../slices/Search.slice";
 import chatReducer from "../slices/chat.slice";
 
-// persist config (only for user details)
 const persistDetailsConfig = {
   key: "mydetails",
   storage,
+  blacklist: ["accessToken", "loading", "error"], 
 };
 
 const persistedMyDetailsReducer = persistReducer(
@@ -32,7 +30,7 @@ export const store = configureStore({
     mydetails: persistedMyDetailsReducer,
     follow: followReducer,
     likedPosts: likedPostSlice,
-    videoLikes: videoLikeReducer,    
+    videoLikes: videoLikeReducer,
     postView: postViewSlice,
     watchHistory: watchHistoryReducer,
     search: searchSlice,
@@ -41,9 +39,5 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({ serializableCheck: false }),
 });
-
-
-
-
 
 export const persistor = persistStore(store);

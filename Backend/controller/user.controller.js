@@ -11,6 +11,7 @@ import getLocationFromIP from "../utils/getLocationFromIP.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import mongoose from "mongoose"
 import { Follow } from "../models/folllow.models.js"
+import jwt from "jsonwebtoken" // ✅ CHANGE 1: jwt import add করা হয়েছে
 
 
 
@@ -26,7 +27,6 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
     return { accessToken, refreshToken }
 
-
   } catch (error) {
     throw new ApiError(500, "Something went wrong while generating referesh and access token")
   }
@@ -36,14 +36,12 @@ const generateAccessAndRefereshTokens = async (userId) => {
 const deleteFromCloudinary = async (imageUrl) => {
   if (!imageUrl) return;
   try {
-    // URL থেকে public_id বের করো
     const urlParts = imageUrl.split("/");
     const fileWithExt = urlParts[urlParts.length - 1];
     const publicId = fileWithExt.split(".")[0];
     await cloudinary.uploader.destroy(publicId);
   } catch (error) {
     console.error("Cloudinary delete error:", error);
-
   }
 };
 
@@ -62,7 +60,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password must be at least 6 characters");
   }
 
-  // Check OTP in EmailVerification collection
   const otpRecord = await EmailVerification.findOne({ email });
   if (!otpRecord) {
     throw new ApiError(403, "OTP not found or expired. Please request a new one.");
@@ -77,9 +74,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "OTP has expired");
   }
 
-  const existedUser = await User.findOne({
-    email
-  });
+  const existedUser = await User.findOne({ email });
 
   if (existedUser) {
     throw new ApiError(409, "User with email already exists");
@@ -96,8 +91,8 @@ const registerUser = asyncHandler(async (req, res) => {
   const coverImage = coverImageLocalPath ? await uploadOnCloudinary(coverImageLocalPath) : null;
 
   const user = await User.create({
-    userId: username, // satisfying the required userId schema constraint
-    name: fullName,   // mapping fullName to name to satisfy minlength: 2
+    userId: username,
+    name: fullName,
     fullName,
     avatar: avatar?.url || "",
     coverImage: coverImage?.url || "",
@@ -105,30 +100,39 @@ const registerUser = asyncHandler(async (req, res) => {
     username,
     password,
     phone,
-    isVerified: true // Set verified to true automatically
+    isVerified: true
   });
 
-  // Cleanup temporary OTP record
   await EmailVerification.deleteMany({ email });
 
-  // Generate access and refresh tokens
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
 
-  // Save refresh token in database
   user.refreshToken = refreshToken;
   await user.save();
 
-  // Remove password & refreshToken from response
   const createdUser = await User.findById(user._id).select("-password -refreshToken");
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
+  // ✅ CHANGE 2: register এ maxAge add — browser close হলেও cookie থাকবে
   return res
     .status(201)
-    .cookie("accessToken", accessToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", path: "/" })
-    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", path: "/" })
+    .cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // ✅ CHANGE 2
+    })
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // ✅ CHANGE 2
+    })
     .json(
       new ApiResponse(201,
         { user: createdUser, accessToken, refreshToken },
@@ -145,7 +149,6 @@ const sendOTP = asyncHandler(async (req, res) => {
 
   if (!email) throw new ApiError(400, "Email is required");
 
-  // Rate Limiting
   const now = Date.now();
   if (otpRateLimit.has(email) && now - otpRateLimit.get(email) < 60000) {
     throw new ApiError(429, "Please wait 60 seconds before requesting another OTP");
@@ -155,23 +158,21 @@ const sendOTP = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
   if (user) throw new ApiError(409, "User with this email already exists");
 
-  const otp = generateOTP(); // 6-digit string
+  const otp = generateOTP();
   console.log(otp)
 
-  // Delete any existing OTP first!
   await EmailVerification.deleteMany({ email });
 
   const otpHash = await bcrypt.hash(otp, 10);
-  const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
+  const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
-  // Save OTP in EmailVerification collection
   await EmailVerification.create({
     email,
     otpHash,
     expiresAt,
   });
 
-  await sendOTPEmail(email, otp); // nodemailer
+  await sendOTPEmail(email, otp);
 
   return res
     .status(200)
@@ -192,15 +193,10 @@ const verifyOTP = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(otp, userOTPRecord.otpHash);
   if (!isMatch) throw new ApiError(400, "Invalid OTP");
 
-  // Note: EmailVerification schema doesn't have an isVerified flag.
-  // The OTP is verified here so the frontend can unlock the form.
-  // Final verification & deletion happens in registerUser.
-
   return res
     .status(200)
     .json(new ApiResponse(200, null, "Email verified successfully. You can now register."));
 });
-
 
 
 
@@ -216,45 +212,33 @@ const loginUser = asyncHandler(async (req, res) => {
     $or: [{ username: identifier }, { email: identifier }],
   });
 
-
-  //console.log("Searching for:", identifier);
-
-
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
 
-  // Validate password
   const isPasswordValid = await user.isPasswordCorrect(password);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
   }
 
-  // Check if email is verified
   if (!user.isVerified) {
     throw new ApiError(403, "Please verify your email first");
   }
 
-  // Generate Tokens
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
-
-  // console.log("Generated Tokens:", { accessToken, refreshToken });
-
-
-  // Exclude password and refreshToken from response
 
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
-  // Cookie options
+  // ✅ CHANGE 3: maxAge add করা হয়েছে — এটাই persistent login এর চাবিকাঠি
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-    path: "/"
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // ✅ CHANGE 3: 7 দিন browser এ cookie থাকবে
   };
 
-  // Send response with cookies
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
@@ -276,7 +260,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     req.user._id,
     {
       $unset: {
-        refreshToken: 1 // this removes the field from document
+        refreshToken: 1
       }
     },
     {
@@ -298,38 +282,48 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
+
+
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+  const incomingRefreshToken = req.cookies.refreshToken;
 
   if (!incomingRefreshToken) {
-    throw new ApiError(401, "unauthorized request")
+    throw new ApiError(401, "Unauthorized request");
   }
 
   try {
-    const decodedToken = jwt.verify(
+
+    const decoded = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
-    )
+    );
 
-    const user = await User.findById(decodedToken?._id)
 
-    if (!user) {
-      throw new ApiError(401, "Invalid refresh token")
+    const dbUser = await User.findById(decoded._id);
+
+    if (!dbUser) {
+      throw new ApiError(401, "Invalid refresh token");
     }
 
-    if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Refresh token is expired or used")
 
+    if (dbUser.refreshToken !== incomingRefreshToken) {
+      throw new ApiError(401, "Refresh token expired or used");
     }
+
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      await generateAccessAndRefereshTokens(dbUser._id);
+
+
+    const user = await User.findById(dbUser._id).select("-password -refreshToken");
 
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-      path: "/"
-    }
-
-    const { accessToken, newRefreshToken } = await generateAccessAndRefereshTokens(user._id)
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
 
     return res
       .status(200)
@@ -338,20 +332,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+
+          { user, accessToken },
           "Access token refreshed"
         )
-      )
+      );
   } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid refresh token")
+    throw new ApiError(401, error?.message || "Invalid refresh token");
   }
+});
 
-})
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body
-
-
 
   const user = await User.findById(req.user?._id)
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
@@ -372,7 +365,6 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-
   const user = await User.findById(req.user._id).select("-password");
 
   if (!user) {
@@ -387,30 +379,25 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 
-// ── Update Account Details ───────────────────────────────────────────
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, email } = req.body;
 
-  // কমপক্ষে একটা field থাকতে হবে
   if (!fullName?.trim() && !email?.trim()) {
     throw new ApiError(400, "Provide at least one field to update (fullName or email)");
   }
 
   const updateFields = {};
 
-  // ── Full Name update ──
   if (fullName?.trim()) {
     updateFields.fullName = fullName.trim();
   }
 
-  // ── Email update ──
   if (email?.trim()) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       throw new ApiError(400, "Invalid email format");
     }
 
-    // অন্য কেউ এই email ব্যবহার করছে কিনা check
     const emailExists = await User.findOne({
       email: email.toLowerCase().trim(),
       _id: { $ne: req.user._id },
@@ -434,7 +421,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
 
-// ── Update Avatar ────────────────────────────────────────────────────
+
 const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file?.path;
 
@@ -442,9 +429,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar file is missing");
   }
 
-
   const oldAvatarUrl = req.user?.avatar;
-
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
@@ -458,7 +443,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password -refreshToken");
 
-
   await deleteFromCloudinary(oldAvatarUrl);
 
   return res
@@ -466,7 +450,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
 
-// ── Update Cover Image ───────────────────────────────────────────────
+
 const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImageLocalPath = req.file?.path;
 
@@ -518,11 +502,7 @@ const getClickedUserDetails = asyncHandler(async (req, res) => {
   }
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      clickedUser,
-      "User fetched successfully"
-    )
+    new ApiResponse(200, clickedUser, "User fetched successfully")
   );
 });
 
@@ -549,22 +529,16 @@ const getMyFollowers = asyncHandler(async (req, res) => {
     Follow.countDocuments({ following: userId }),
   ]);
 
-  const followerList = followers
-    .map((f) => f.follower)
-    .filter(Boolean);
+  const followerList = followers.map((f) => f.follower).filter(Boolean);
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        followers: followerList,
-        total,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page * limit < total,
-      },
-      "Followers fetched successfully"
-    )
+    new ApiResponse(200, {
+      followers: followerList,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+    }, "Followers fetched successfully")
   );
 });
 
@@ -590,26 +564,18 @@ const getMyFollowings = asyncHandler(async (req, res) => {
     Follow.countDocuments({ follower: userId }),
   ]);
 
-  const followingList = followings
-    .map((f) => f.following)
-    .filter(Boolean);
+  const followingList = followings.map((f) => f.following).filter(Boolean);
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        followings: followingList,
-        total,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page * limit < total,
-      },
-      "Followings fetched successfully"
-    )
+    new ApiResponse(200, {
+      followings: followingList,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+    }, "Followings fetched successfully")
   );
 });
-
-
 
 
 const getClickedUserFollowers = asyncHandler(async (req, res) => {
@@ -636,22 +602,16 @@ const getClickedUserFollowers = asyncHandler(async (req, res) => {
     Follow.countDocuments({ following: userId }),
   ]);
 
-  const followerList = followers
-    .map((f) => f.follower)
-    .filter(Boolean);
+  const followerList = followers.map((f) => f.follower).filter(Boolean);
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        followers: followerList,
-        total,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page * limit < total,
-      },
-      "Followers fetched successfully"
-    )
+    new ApiResponse(200, {
+      followers: followerList,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+    }, "Followers fetched successfully")
   );
 });
 
@@ -680,28 +640,18 @@ const getClickedUserFollowings = asyncHandler(async (req, res) => {
     Follow.countDocuments({ follower: userId }),
   ]);
 
-  const followingList = followings
-    .map((f) => f.following)
-    .filter(Boolean);
+  const followingList = followings.map((f) => f.following).filter(Boolean);
 
   return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        followings: followingList,
-        total,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page * limit < total,
-      },
-      "Followings fetched successfully"
-    )
+    new ApiResponse(200, {
+      followings: followingList,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+    }, "Followings fetched successfully")
   );
 });
-
-
-
-
 
 
 export {
@@ -721,6 +671,4 @@ export {
   getMyFollowings,
   getClickedUserFollowers,
   getClickedUserFollowings,
-
-
 }

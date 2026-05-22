@@ -22,7 +22,7 @@
     "escape-string-regexp": "^5.0.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
-    "geoip-lite": "^1.4.10",
+    "geoip-lite": "^2.0.2",
     "get-video-duration": "^4.1.0",
     "joi": "^18.1.2",
     "jsonwebtoken": "^9.0.3",

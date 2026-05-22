@@ -1,9 +1,6 @@
 import API from "../utils/API.js";
-// src/slices/mydetails.slice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-
-// ✅ Fetch my details
 export const fetchMydetils = createAsyncThunk(
   "user/fetchMyDetails",
   async (_, { rejectWithValue }) => {
@@ -11,7 +8,7 @@ export const fetchMydetils = createAsyncThunk(
       const res = await API.get("/users/current-user", {
         withCredentials: true,
       });
-      return res.data?.data; 
+      return res.data?.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -22,15 +19,27 @@ const myDetailsSlice = createSlice({
   name: "mydetails",
   initialState: {
     mydetails: {},
+    accessToken: null,
     loading: false,
     error: null,
   },
   reducers: {
-    // 🧹 Reset when logout
     resetMyDetails: (state) => {
       state.mydetails = {};
+      state.accessToken = null;
       state.loading = false;
       state.error = null;
+    },
+
+    setCredentials: (state, action) => {
+      state.mydetails = action.payload.user;
+      state.accessToken = action.payload.accessToken;
+      state.loading = false;
+    },
+    clearCredentials: (state) => {
+      state.mydetails = {};
+      state.accessToken = null;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -50,7 +59,8 @@ const myDetailsSlice = createSlice({
   },
 });
 
-export const { resetMyDetails } = myDetailsSlice.actions;
+export const { resetMyDetails, setCredentials, clearCredentials } = myDetailsSlice.actions;
 export const selectCurrentUser = (state) => state.mydetails.mydetails;
+export const selectAccessToken = (state) => state.mydetails.accessToken;
 export const selectMyDetailsLoading = (state) => state.mydetails.loading;
 export default myDetailsSlice.reducer;

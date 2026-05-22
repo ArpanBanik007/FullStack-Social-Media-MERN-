@@ -14,7 +14,12 @@ import VideoPlayer from "./VideoFeed/VideoPlayer";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchMyLikes } from "./slices/like.slice";
-import { fetchMydetils, selectCurrentUser } from "./slices/mydetails.slice";
+import {
+  fetchMydetils,
+  selectCurrentUser,
+  setCredentials,
+  clearCredentials,
+} from "./slices/mydetails.slice"; // ✅ setCredentials, clearCredentials import
 import { connectSocket, disconnectSocket } from "./socket";
 import CommentPage from "./Pages/CommentPage";
 import { fetchMyVideoLikes } from "./slices/video.like.slice";
@@ -25,20 +30,40 @@ import SinglePostViewPage from "./Pages/SinglePostViewPage";
 import SingleVideoViewPage from "./Pages/SinglevideoViewpage";
 import ChatMainPage from "./Chat/chatmainpage";
 import { setOnlineUsers } from "./slices/chat.slice";
+import axios from "axios";
 
 function App() {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
 
   useEffect(() => {
-    dispatch(fetchMydetils());
+    const autoLogin = async () => {
+      try {
+        const res = await axios.post(
+          "/api/v1/users/refresh-token",
+          {},
+          { withCredentials: true },
+        );
+
+        const { user, accessToken } = res.data.data;
+
+        // Redux store এ user + token set
+        dispatch(setCredentials({ user, accessToken }));
+      } catch {
+        // Cookie নেই বা expire — login page এ যাবে
+        dispatch(clearCredentials());
+      }
+    };
+
+    autoLogin();
   }, [dispatch]);
 
+  // ✅ এই useEffect একদম same থাকবে — কোনো change নেই
   useEffect(() => {
     if (currentUser?._id) {
       dispatch(fetchMyLikes());
       dispatch(fetchMyVideoLikes());
-      
+
       const socket = connectSocket(currentUser._id);
 
       socket.on("online-users", (users) => {
@@ -63,7 +88,6 @@ function App() {
       <Route path="/videos" element={<VideoPlayer />} />
       <Route path="/videos/:videoId" element={<VideoPlayer />} />
       <Route path="/saved" element={<SavePage />} />
-      {/* ✅ ChatMainPage — PascalCase */}
       <Route path="/chat" element={<ChatMainPage />} />
       <Route path="/chat/:conversationId" element={<ChatMainPage />} />
       <Route path="/history" element={<HistoryPage />} />
@@ -71,16 +95,10 @@ function App() {
       <Route path="/settings/profile" element={<ProfileSettting />} />
       <Route path="/settings/security" element={<SecuritySetting />} />
       <Route path="/profile/:userId" element={<UserProfileTotalPage />} />
-
-      {/* ✅ Post routes — specific আগে, dynamic পরে */}
       <Route path="/post/single/:postId" element={<SinglePostViewPage />} />
       <Route path="/post/:postId" element={<CommentPage />} />
-
-      {/* ✅ Video routes */}
       <Route path="/video/single/:videoId" element={<SingleVideoViewPage />} />
       <Route path="/video/comments/:videoId" element={<VideoCommentPage />} />
-
-      {/* ✅ Other pages */}
       <Route path="/mycomments" element={<CommentCountpage />} />
       <Route path="/myallLikes" element={<LikeCountpage />} />
     </Routes>
