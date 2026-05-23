@@ -23,10 +23,11 @@ function Navbar() {
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.mydetails?.user);
 
-  const unreadCount = useSelector((state) => 
-    state.chat?.conversations?.reduce((total, conv) => {
-      return total + (conv.unreadCounts?.[currentUser?._id] || 0);
-    }, 0) || 0
+  const unreadCount = useSelector(
+    (state) =>
+      state.chat?.conversations?.reduce((total, conv) => {
+        return total + (conv.unreadCounts?.[currentUser?._id] || 0);
+      }, 0) || 0,
   );
 
   const ICONS = [

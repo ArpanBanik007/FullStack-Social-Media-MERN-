@@ -40,11 +40,12 @@ function App() {
     const autoLogin = async () => {
       try {
         const res = await axios.post(
-          "/api/v1/users/refresh-token",
+          "/users/refresh-token",
           {},
           { withCredentials: true },
         );
 
+        console.log("autologin res", res);
         const { user, accessToken } = res.data.data;
 
         // Redux store এ user + token set
