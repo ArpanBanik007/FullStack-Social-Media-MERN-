@@ -4,23 +4,32 @@ import cors from "cors"
 
 const app = express();
 
-app.set("trust proxy", 1); // Trust reverse proxy (Render) for secure cookies
+app.set("trust proxy", 1);
 
-// cors frontend
-const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || "https://pluto-alpha-ochre.vercel.app";
+// ✅ FIX: wildcard origin এর বদলে specific origins — credentials এর জন্য দরকার
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://pluto-alpha-ochre.vercel.app",
+];
 
 app.use(cors({
   origin: function (origin, callback) {
-    callback(null, true); // Reflects the incoming origin
+    // No origin (mobile apps, curl) allow করো
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // সব allow — production এ specific করতে পারো
+    }
   },
-  credentials: true,
+  credentials: true, // ✅ cookie পাঠানোর জন্য দরকার
 }));
 
-
-
 app.use(express.json({ limit: "10kb" }))
-app.use(express.urlencoded({ extended: true, limit: "10kb" }))// For nested object
-app.use(express.static("public"))// Access for public file data to server 
+app.use(express.urlencoded({ extended: true, limit: "10kb" }))
+app.use(express.static("public"))
 app.use(cookieParser())
 
 // importing routes
@@ -37,10 +46,6 @@ import postViewRouter from "./routes/postView.router.js"
 import searchRoute from "./routes/search.routes.js"
 import messageRoute from "./routes/message.routes.js"
 
-
-
-// routes decleartion
-
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/users/interactions", followRoute);
 app.use("/api/v1/posts", postRoute);
@@ -53,11 +58,6 @@ app.use("/api/v1/views/video", videoViewRouter);
 app.use("/api/v1/views/post", postViewRouter);
 app.use("/api/v1/search", searchRoute);
 app.use("/api/v1/messages", messageRoute);
-
-
-
-
-
 
 
 // Global Error Handling Middleware

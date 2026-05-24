@@ -3,10 +3,14 @@ import axios from "axios";
 import { store } from "../store/store.js";
 import { setCredentials, clearCredentials } from "../slices/mydetails.slice.js";
 
+// ✅ Local এ VITE_BACKEND_URL খালি → "/api/v1" → Vite proxy → localhost:8000
+// ✅ Production এ VITE_BACKEND_URL set → direct Render URL
+const BASE_URL = import.meta.env.VITE_BACKEND_URL
+  ? `${import.meta.env.VITE_BACKEND_URL}/api/v1`
+  : "/api/v1";
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL
-    ? `${import.meta.env.VITE_BACKEND_URL}/api/v1`
-    : (import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"),
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
@@ -30,22 +34,20 @@ API.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"}/api/v1/users/refresh-token`,
+          `${BASE_URL}/users/refresh-token`,
           {},
           { withCredentials: true }
         );
 
         const { user, accessToken } = res.data.data;
-
         store.dispatch(setCredentials({ user, accessToken }));
 
-        // original request এ নতুন token দিয়ে retry
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return API(originalRequest);
 
       } catch {
         store.dispatch(clearCredentials());
-        window.location.href = "/"; // login page এ পাঠাও
+        window.location.href = "/";
       }
     }
 
