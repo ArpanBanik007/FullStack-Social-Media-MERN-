@@ -16,10 +16,9 @@ const AllSaved = () => {
   useEffect(() => {
     const fetchSaved = async () => {
       try {
-        const res = await API.get(
-          "/watch/watchlater",
-          { withCredentials: true },
-        );
+        const res = await API.get("/watch/watchlater", {
+          withCredentials: true,
+        });
         setSavedItems(res.data?.data || []);
       } catch (error) {
         console.error("Failed to fetch saved items:", error);

@@ -20,10 +20,9 @@ function UserAllPost({ userId }) {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await API.get(
-          `/posts/user/${userId}`,
-          { withCredentials: true },
-        );
+        const res = await API.get(`/posts/user/${userId}`, {
+          withCredentials: true,
+        });
         const fetchedPosts = res.data.data || [];
         setPosts(fetchedPosts);
         fetchedPosts.forEach((post) => {

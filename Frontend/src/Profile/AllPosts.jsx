@@ -101,10 +101,7 @@ const AllPosts = () => {
   useEffect(() => {
     const fetchMyPosts = async () => {
       try {
-        const res = await API.get(
-          "/posts/my-posts",
-          { withCredentials: true },
-        );
+        const res = await API.get("/posts/my-posts", { withCredentials: true });
         const fetchedPosts = res.data?.data || [];
         setPosts(fetchedPosts);
         fetchedPosts.forEach((post) => {

@@ -43,76 +43,75 @@ function ChatLeftBar({ conversations = [], onSelectChat, selectedId }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         .chat-leftbar {
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Inter', sans-serif;
           width: 320px;
           height: 100%;
-          background: #111827;
-          border-right: 1px solid rgba(255,255,255,0.06);
+          background: var(--pluto-bg-navbar);
+          border-right: 1px solid var(--pluto-border);
           display: flex;
           flex-direction: column;
           flex-shrink: 0;
         }
         .chat-leftbar-header { padding: 20px 16px 12px; flex-shrink: 0; }
-        .chat-leftbar-title { font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 12px; }
+        .chat-leftbar-title { font-size: 20px; font-weight: 700; color: var(--pluto-text-primary); margin-bottom: 12px; }
         .chat-search {
           width: 100%;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          padding: 9px 14px;
+          background: var(--pluto-bg-input);
+          border: 1px solid var(--pluto-border);
+          border-radius: 9999px;
+          padding: 9px 16px;
           font-size: 13px;
-          font-family: 'DM Sans', sans-serif;
-          color: #e2e8f0;
+          font-family: 'Inter', sans-serif;
+          color: var(--pluto-text-primary);
           outline: none;
           transition: border-color 0.2s;
           box-sizing: border-box;
         }
-        .chat-search::placeholder { color: rgba(255,255,255,0.25); }
-        .chat-search:focus { border-color: rgba(6,182,212,0.4); }
+        .chat-search::placeholder { color: var(--pluto-text-hint); }
+        .chat-search:focus { border-color: rgba(34, 211, 238, 0.4); }
         .chat-list {
           flex: 1;
           overflow-y: auto;
           padding: 6px 8px;
           scrollbar-width: thin;
-          scrollbar-color: rgba(255,255,255,0.08) transparent;
+          scrollbar-color: var(--pluto-border) transparent;
         }
         .chat-list::-webkit-scrollbar { width: 4px; }
-        .chat-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+        .chat-list::-webkit-scrollbar-thumb { background: var(--pluto-border); border-radius: 4px; }
         .conv-item {
           display: flex;
           align-items: center;
           gap: 12px;
           padding: 10px;
-          border-radius: 14px;
+          border-radius: 10px;
           cursor: pointer;
           transition: background 0.15s;
           border: 1px solid transparent;
           margin-bottom: 2px;
         }
-        .conv-item:hover { background: rgba(255,255,255,0.05); }
-        .conv-item.selected { background: rgba(6,182,212,0.12); border-color: rgba(6,182,212,0.2); }
+        .conv-item:hover { background: var(--pluto-bg-hover); }
+        .conv-item.selected { background: var(--pluto-bg-active); border-color: rgba(34, 211, 238, 0.2); }
         .conv-avatar-wrap { position: relative; flex-shrink: 0; }
-        .conv-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.06); }
+        .conv-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid var(--pluto-border); }
         .conv-online-dot {
           position: absolute; bottom: 1px; right: 1px;
           width: 11px; height: 11px;
-          background: #22c55e; border-radius: 50%;
-          border: 2px solid #111827;
-          box-shadow: 0 0 5px rgba(34,197,94,0.6);
+          background: var(--pluto-online); border-radius: 50%;
+          border: 2px solid var(--pluto-bg-navbar);
+          box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
         }
         .conv-body { flex: 1; min-width: 0; }
         .conv-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .conv-name { font-size: 14px; font-weight: 600; color: #e2e8f0; white-space: nowrap; overflow: hidden; max-width: 160px; text-overflow: ellipsis; }
-        .conv-time { font-size: 11px; color: rgba(255,255,255,0.25); flex-shrink: 0; }
+        .conv-name { font-size: 14px; font-weight: 600; color: var(--pluto-text-primary); white-space: nowrap; overflow: hidden; max-width: 160px; text-overflow: ellipsis; }
+        .conv-time { font-size: 11px; color: var(--pluto-text-hint); flex-shrink: 0; }
         .conv-bottom { display: flex; justify-content: space-between; align-items: center; }
-        .conv-msg { font-size: 12px; color: rgba(255,255,255,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-        .conv-msg.unread-msg { color: rgba(255,255,255,0.75); font-weight: 600; }
-        .conv-badge { background: #06b6d4; color: #fff; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; flex-shrink: 0; }
-        .conv-empty { text-align: center; color: rgba(255,255,255,0.2); font-size: 13px; padding: 32px 16px; }
-        .conv-seen-text { font-size: 11px; color: rgba(255,255,255,0.4); flex-shrink: 0; }
-        .search-section-label { font-size: 11px; color: rgba(255,255,255,0.25); padding: 8px 12px 4px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+        .conv-msg { font-size: 12px; color: var(--pluto-text-hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+        .conv-msg.unread-msg { color: var(--pluto-text-primary); font-weight: 600; }
+        .conv-badge { background: var(--pluto-badge); color: #fff; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; flex-shrink: 0; }
+        .conv-empty { text-align: center; color: var(--pluto-text-hint); font-size: 13px; padding: 32px 16px; }
+        .conv-seen-text { font-size: 11px; color: var(--pluto-text-hint); flex-shrink: 0; }
+        .search-section-label { font-size: 11px; color: var(--pluto-text-hint); padding: 8px 12px 4px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
       `}</style>
 
       <div className="chat-leftbar">

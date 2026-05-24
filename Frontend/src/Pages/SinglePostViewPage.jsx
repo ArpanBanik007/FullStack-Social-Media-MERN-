@@ -29,6 +29,47 @@ const timeAgo = (d) => {
   return `${Math.floor(h / 24)}d ago`;
 };
 
+/* ── Shared CSS ── */
+const SPV_CSS = `
+  .spv-root { min-height: 100vh; display: flex; flex-direction: column; background: var(--pluto-bg-page); }
+  .spv-topbar { position: sticky; top: 0; z-index: 20; background: rgba(10,14,26,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--pluto-border); padding: 0 16px; height: 56px; display: flex; align-items: center; gap: 12px; }
+  .spv-back-btn { width: 34px; height: 34px; border-radius: 8px; background: var(--pluto-bg-input); border: 1px solid var(--pluto-border); display: flex; align-items: center; justify-content: center; color: var(--pluto-text-secondary); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-size: 18px; }
+  .spv-back-btn:hover { background: var(--pluto-bg-hover); color: var(--pluto-text-primary); }
+  .spv-topbar-title { font-size: 15px; font-weight: 600; color: var(--pluto-text-primary); }
+  .spv-body { max-width: 640px; margin: 0 auto; width: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 100px; }
+  .spv-post-card { background: var(--pluto-bg-card); border: 1px solid var(--pluto-border); border-radius: 14px; overflow: hidden; transition: border-color 0.2s ease; }
+  .spv-post-card:hover { border-color: rgba(34,211,238,0.18); }
+  .spv-post-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  .spv-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--pluto-border); cursor: pointer; flex-shrink: 0; transition: border-color 0.2s ease; }
+  .spv-avatar:hover { border-color: rgba(34,211,238,0.4); }
+  .spv-username { font-size: 15px; font-weight: 600; color: var(--pluto-text-primary); cursor: pointer; }
+  .spv-timestamp { font-size: 13px; color: var(--pluto-text-hint); margin-top: 2px; }
+  .spv-post-body { padding: 0 16px 14px; }
+  .spv-post-title { font-size: 15px; line-height: 1.55; color: var(--pluto-text-primary); margin-bottom: 12px; }
+  .spv-post-img-wrap { border-radius: 10px; overflow: hidden; background: #08111d; border: 1px solid var(--pluto-border); display: flex; align-items: center; justify-content: center; }
+  .spv-post-img { max-width: 100%; max-height: 80vh; width: auto; height: auto; object-fit: contain; display: block; }
+  .spv-actions { display: flex; align-items: center; border-top: 1px solid var(--pluto-border); padding: 4px 8px; }
+  .spv-action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0; border-radius: 8px; background: transparent; border: none; font-size: 14px; font-weight: 500; color: var(--pluto-text-secondary); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+  .spv-action-btn:hover { background: var(--pluto-bg-hover); color: var(--pluto-text-primary); }
+  .spv-action-btn.liked { color: var(--pluto-like); }
+  .spv-action-btn.liked:hover { background: rgba(244,114,182,0.08); }
+  .spv-action-sep { width: 1px; height: 20px; background: var(--pluto-border); flex-shrink: 0; }
+  .spv-comments-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pluto-text-hint); padding: 0 4px; }
+  .spv-comment-row { display: flex; gap: 12px; padding: 12px 14px; background: var(--pluto-bg-card); border: 1px solid var(--pluto-border); border-radius: 12px; }
+  .spv-comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--pluto-border); flex-shrink: 0; margin-top: 2px; }
+  .spv-comment-author { font-size: 13px; font-weight: 600; color: var(--pluto-text-primary); margin-bottom: 4px; }
+  .spv-comment-text { font-size: 14px; color: var(--pluto-text-secondary); line-height: 1.5; word-break: break-word; }
+  .spv-comment-time { font-size: 12px; color: var(--pluto-text-hint); margin-top: 5px; }
+  .spv-comment-input-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 20; background: rgba(10,14,26,0.96); backdrop-filter: blur(8px); border-top: 1px solid var(--pluto-border); padding: 12px 16px; }
+  .spv-comment-input-wrap { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
+  .spv-comment-input { flex: 1; background: var(--pluto-bg-input); border: 1px solid var(--pluto-border); border-radius: 9999px; padding: 9px 18px; font-size: 14px; color: var(--pluto-text-primary); outline: none; font-family: inherit; transition: border-color 0.2s ease; }
+  .spv-comment-input::placeholder { color: var(--pluto-text-hint); }
+  .spv-comment-input:focus { border-color: rgba(34,211,238,0.4); }
+  .spv-comment-send { font-size: 14px; font-weight: 600; color: var(--pluto-accent); background: none; border: none; cursor: pointer; transition: opacity 0.15s ease; white-space: nowrap; padding: 0; }
+  .spv-comment-send:hover:not(:disabled) { opacity: 0.8; }
+  .spv-comment-send:disabled { opacity: 0.3; cursor: not-allowed; }
+`;
+
 function SinglePostViewPage() {
   const { postId } = useParams();
   const navigate = useNavigate();
@@ -52,13 +93,8 @@ function SinglePostViewPage() {
     const fetchAll = async () => {
       try {
         const [postRes, commentsRes] = await Promise.all([
-          API.get(`/posts/single/${postId}`, {
-            withCredentials: true,
-          }),
-          API.get(
-            `/posts/comments/post/${postId}`,
-            { withCredentials: true },
-          ),
+          API.get(`/posts/single/${postId}`, { withCredentials: true }),
+          API.get(`/posts/comments/post/${postId}`, { withCredentials: true }),
         ]);
 
         const fetchedPost = postRes.data?.data;
@@ -168,234 +204,207 @@ function SinglePostViewPage() {
   // ── Loading skeleton ───────────────────────────────────
   if (loading) {
     return (
-      <div className="bg-gray-950 min-h-screen flex flex-col">
-        <div className="sticky top-0 z-20 bg-gray-900/80 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gray-800 animate-pulse" />
-          <div className="h-4 w-24 bg-gray-800 rounded animate-pulse" />
-        </div>
-        <div className="max-w-lg mx-auto w-full px-4 py-4 flex flex-col gap-3">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="bg-gray-800/50 rounded-2xl p-4 animate-pulse"
-            >
-              <div className="flex gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gray-700" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-700 rounded w-1/3" />
-                  <div className="h-2 bg-gray-700 rounded w-1/4" />
+      <>
+        <style>{SPV_CSS}</style>
+        <div className="spv-root">
+          <div className="spv-topbar">
+            <div className="spv-back-btn"><IoArrowBack /></div>
+            <div className="skeleton" style={{ height: 14, width: 60, borderRadius: 6 }} />
+          </div>
+          <div className="spv-body">
+            {[1, 2].map((i) => (
+              <div key={i} className="spv-post-card" style={{ padding: 16 }}>
+                <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                  <div className="skeleton" style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 13, width: "35%", marginBottom: 7 }} />
+                    <div className="skeleton" style={{ height: 10, width: "20%" }} />
+                  </div>
                 </div>
+                <div className="skeleton" style={{ width: "100%", height: 280, borderRadius: 10 }} />
               </div>
-              <div className="w-full aspect-[4/5] bg-gray-700 rounded-xl" />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!post) {
     return (
-      <div className="bg-gray-950 min-h-screen flex flex-col items-center justify-center gap-3 text-gray-500">
-        <div className="text-5xl">🔍</div>
-        <p className="text-white font-bold text-lg">Post not found</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-2 px-4 py-2 rounded-xl bg-blue-600/20 border border-blue-600/30 text-blue-400 text-sm font-semibold"
-        >
-          Go Back
-        </button>
-      </div>
+      <>
+        <style>{SPV_CSS}</style>
+        <div className="spv-root" style={{ alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontSize: 48 }}>🔍</div>
+          <p style={{ fontSize: 18, fontWeight: 700, color: "var(--pluto-text-primary)", marginTop: 12 }}>Post not found</p>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ marginTop: 12, padding: "8px 20px", borderRadius: 10, background: "var(--pluto-accent-bg)", border: "1px solid var(--pluto-accent)", color: "var(--pluto-accent)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+          >
+            Go Back
+          </button>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="bg-gray-950 min-h-screen flex flex-col pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-gray-950/90 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition"
-        >
-          <IoArrowBack />
-        </button>
-        <span className="text-white font-bold text-base">Post</span>
-      </div>
+    <>
+      <style>{SPV_CSS}</style>
 
-      <div className="max-w-lg mx-auto w-full px-4 py-4 flex flex-col gap-3">
-        {/* Post Card */}
-        <div className="bg-gray-800/60 rounded-2xl overflow-hidden border border-white/5">
-          {/* Post Header */}
-          <div className="flex items-center gap-3 p-4">
-            {post.createdBy?.avatar ? (
-              <img
-                src={post.createdBy.avatar}
-                className="w-10 h-10 rounded-full object-cover border-2 border-blue-500/40 cursor-pointer flex-shrink-0"
+      <div className="spv-root">
+        {/* Header */}
+        <div className="spv-topbar">
+          <button className="spv-back-btn" onClick={() => navigate(-1)}>
+            <IoArrowBack />
+          </button>
+          <span className="spv-topbar-title">Post</span>
+        </div>
+
+        <div className="spv-body">
+          {/* Post Card */}
+          <div className="spv-post-card">
+            {/* Post Header */}
+            <div className="spv-post-header">
+              {post.createdBy?.avatar ? (
+                <img
+                  src={post.createdBy.avatar}
+                  className="spv-avatar"
+                  onClick={() =>
+                    post.createdBy._id === mydetails?._id
+                      ? navigate("/profile")
+                      : navigate(`/profile/${post.createdBy._id}`)
+                  }
+                  alt="avatar"
+                />
+              ) : (
+                <RiAccountCircleFill
+                  style={{ fontSize: 40, color: "var(--pluto-text-hint)", flexShrink: 0, cursor: "pointer" }}
+                  onClick={() =>
+                    post.createdBy._id === mydetails?._id
+                      ? navigate("/profile")
+                      : navigate(`/profile/${post.createdBy._id}`)
+                  }
+                />
+              )}
+              <div
+                style={{ cursor: "pointer" }}
                 onClick={() =>
                   post.createdBy._id === mydetails?._id
                     ? navigate("/profile")
                     : navigate(`/profile/${post.createdBy._id}`)
                 }
+              >
+                <div className="spv-username">@{post.createdBy?.username}</div>
+                <div className="spv-timestamp">{timeAgo(post.createdAt)}</div>
+              </div>
+            </div>
+
+            {/* Post Content */}
+            <div className="spv-post-body">
+              {post.title && <div className="spv-post-title">{post.title}</div>}
+              {post.posturl && (
+                <div className="spv-post-img-wrap">
+                  <img src={post.posturl} alt="post" className="spv-post-img" />
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="spv-actions">
+              <button
+                className={`spv-action-btn ${isLiked ? "liked" : ""}`}
+                onClick={handleLike}
+                disabled={likeLoading}
+              >
+                {isLiked ? <FaHeart /> : <FaRegHeart />}
+                <span>{likeCount}</span>
+              </button>
+
+              <div className="spv-action-sep" />
+
+              <div className="spv-action-btn" style={{ cursor: "default" }}>
+                <FaComment />
+                <span>{post.commentCount ?? comments.length}</span>
+              </div>
+
+              <div className="spv-action-sep" />
+
+              <div className="spv-action-btn" style={{ cursor: "default" }}>
+                <FaEye />
+                <span>{views}</span>
+              </div>
+
+              <div className="spv-action-sep" />
+
+              <button className="spv-action-btn">
+                <FaShareNodes />
+                <span>Share</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Comments Section */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="spv-comments-label">Comments · {comments.length}</div>
+
+            {comments.length === 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 0", textAlign: "center" }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>💬</div>
+                <div style={{ fontSize: 14, color: "var(--pluto-text-secondary)" }}>No comments yet</div>
+                <div style={{ fontSize: 13, color: "var(--pluto-text-hint)", marginTop: 4 }}>Be the first to comment!</div>
+              </div>
+            ) : (
+              comments.map((c) => (
+                <div key={c._id} className="spv-comment-row">
+                  {c.user?.avatar ? (
+                    <img src={c.user.avatar} className="spv-comment-avatar" alt="avatar" />
+                  ) : (
+                    <RiAccountCircleFill style={{ fontSize: 32, color: "var(--pluto-text-hint)", flexShrink: 0, marginTop: 2 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="spv-comment-author">@{c.user?.username}</div>
+                    <div className="spv-comment-text">{c.content}</div>
+                    <div className="spv-comment-time">{timeAgo(c.createdAt)}</div>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={commentsEndRef} />
+          </div>
+        </div>
+
+        {/* Fixed Comment Input */}
+        <div className="spv-comment-input-bar">
+          <div className="spv-comment-input-wrap">
+            {mydetails?.avatar ? (
+              <img
+                src={mydetails.avatar}
+                style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                alt="avatar"
               />
             ) : (
-              <RiAccountCircleFill
-                className="text-4xl text-gray-600 flex-shrink-0 cursor-pointer"
-                onClick={() =>
-                  post.createdBy._id === mydetails?._id
-                    ? navigate("/profile")
-                    : navigate(`/profile/${post.createdBy._id}`)
-                }
-              />
+              <RiAccountCircleFill style={{ fontSize: 32, color: "var(--pluto-text-hint)", flexShrink: 0 }} />
             )}
-            <div
-              className="cursor-pointer"
-              onClick={() =>
-                post.createdBy._id === mydetails?._id
-                  ? navigate("/profile")
-                  : navigate(`/profile/${post.createdBy._id}`)
-              }
-            >
-              <p className="text-white font-bold text-sm">
-                @{post.createdBy?.username}
-              </p>
-              <p className="text-gray-500 text-xs">{timeAgo(post.createdAt)}</p>
-            </div>
-          </div>
-
-          {/* Post Content */}
-          <div className="px-4 pb-3">
-            {post.title && (
-              <p className="text-white/80 text-sm leading-relaxed mb-3">
-                {post.title}
-              </p>
-            )}
-            {post.posturl && (
-              <div className="w-full rounded-xl overflow-hidden bg-black/30 flex items-center justify-center">
-                <img
-                  src={post.posturl}
-                  alt="post"
-                  className="max-w-full max-h-[80vh] w-auto h-auto object-contain block"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center border-t border-white/5 px-2 py-1">
-            {/* Like */}
-            <button
-              onClick={handleLike}
-              disabled={likeLoading}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                isLiked
-                  ? "text-red-400 hover:bg-red-500/10"
-                  : "text-gray-500 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {isLiked ? <FaHeart /> : <FaRegHeart />}
-              <span>{likeCount}</span>
-            </button>
-
-            <div className="w-px h-5 bg-white/5" />
-
-            {/* Comment count */}
-            <div className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-gray-500">
-              <FaComment />
-              <span>{post.commentCount ?? comments.length}</span>
-            </div>
-
-            <div className="w-px h-5 bg-white/5" />
-
-            {/* ✅ Views — নতুন */}
-            <div className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold text-gray-500">
-              <FaEye />
-              <span>{views}</span>
-            </div>
-
-            <div className="w-px h-5 bg-white/5" />
-
-            {/* Share */}
-            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 transition">
-              <FaShareNodes />
-              <span>Share</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Comments Section */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs text-gray-600 uppercase font-bold tracking-widest px-1">
-            Comments · {comments.length}
-          </p>
-          {comments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-14 text-center">
-              <div className="text-4xl mb-3">💬</div>
-              <p className="text-gray-400 text-sm">No comments yet</p>
-              <p className="text-gray-600 text-xs mt-1">
-                Be the first to comment!
-              </p>
-            </div>
-          ) : (
-            comments.map((c) => (
-              <div
-                key={c._id}
-                className="flex gap-3 p-3 rounded-2xl bg-gray-800/40 border border-white/5"
-              >
-                {c.user?.avatar ? (
-                  <img
-                    src={c.user.avatar}
-                    className="w-8 h-8 rounded-full object-cover border border-white/10 flex-shrink-0 mt-0.5"
-                  />
-                ) : (
-                  <RiAccountCircleFill className="text-3xl text-gray-600 flex-shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-white/80 text-xs font-bold mb-1">
-                    @{c.user?.username}
-                  </p>
-                  <p className="text-gray-400 text-sm leading-relaxed break-words">
-                    {c.content}
-                  </p>
-                  <p className="text-gray-600 text-xs mt-1.5">
-                    {timeAgo(c.createdAt)}
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-          <div ref={commentsEndRef} />
-        </div>
-      </div>
-
-      {/* Fixed Comment Input */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-950/95 backdrop-blur border-t border-white/5 px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          {mydetails?.avatar ? (
-            <img
-              src={mydetails.avatar}
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            <input
+              type="text"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
+              placeholder="Write a comment..."
+              className="spv-comment-input"
             />
-          ) : (
-            <RiAccountCircleFill className="text-3xl text-gray-600 flex-shrink-0" />
-          )}
-          <input
-            type="text"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
-            placeholder="Write a comment..."
-            className="flex-1 bg-gray-800 text-white text-sm rounded-full px-4 py-2.5 outline-none border border-white/5 focus:border-blue-500/40 placeholder-gray-600"
-          />
-          <button
-            onClick={handleAddComment}
-            disabled={sending || !content.trim()}
-            className="text-blue-400 font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:text-blue-300 transition"
-          >
-            {sending ? "..." : "Post"}
-          </button>
+            <button
+              className="spv-comment-send"
+              onClick={handleAddComment}
+              disabled={sending || !content.trim()}
+            >
+              {sending ? "..." : "Post"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -289,15 +289,13 @@ function ChattingPage({ conversation, onOpenProfile }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-
         .chatting-root {
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Inter', sans-serif;
           flex: 1;
           display: flex;
           flex-direction: column;
           height: 100%;
-          background: #0f172a;
+          background: var(--pluto-bg-page);
           min-width: 0;
         }
 
@@ -306,9 +304,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
           align-items: center;
           gap: 12px;
           padding: 14px 20px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
+          border-bottom: 1px solid var(--pluto-border);
           flex-shrink: 0;
-          background: #111827;
+          background: var(--pluto-bg-navbar);
         }
 
         .chatting-avatar-wrap { position: relative; flex-shrink: 0; }
@@ -317,7 +315,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
           height: 42px;
           border-radius: 50%;
           object-fit: cover;
-          border: 2px solid rgba(6,182,212,0.3);
+          border: 2px solid rgba(34, 211, 238, 0.3);
         }
         .chatting-online {
           position: absolute;
@@ -325,37 +323,37 @@ function ChattingPage({ conversation, onOpenProfile }) {
           right: 1px;
           width: 10px;
           height: 10px;
-          background: #22c55e;
+          background: var(--pluto-online);
           border-radius: 50%;
-          border: 2px solid #111827;
-          box-shadow: 0 0 5px rgba(34,197,94,0.6);
+          border: 2px solid var(--pluto-bg-navbar);
+          box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
         }
 
         .chatting-info { flex: 1; min-width: 0; }
-        .chatting-name { font-size: 15px; font-weight: 700; color: #f1f5f9; }
-        .chatting-status { font-size: 12px; color: #22c55e; font-weight: 500; }
-        .chatting-status.offline { color: rgba(255,255,255,0.3); }
-        .chatting-typing { font-size: 12px; color: #06b6d4; font-style: italic; }
+        .chatting-name { font-size: 15px; font-weight: 700; color: var(--pluto-text-primary); }
+        .chatting-status { font-size: 12px; color: var(--pluto-online); font-weight: 500; }
+        .chatting-status.offline { color: var(--pluto-text-hint); }
+        .chatting-typing { font-size: 12px; color: var(--pluto-accent); font-style: italic; }
 
         .chatting-actions { display: flex; align-items: center; gap: 4px; }
         .chatting-action-btn {
           width: 38px; height: 38px; border-radius: 10px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 17px; color: rgba(255,255,255,0.4);
+          font-size: 17px; color: var(--pluto-text-hint);
           cursor: pointer; transition: background 0.15s, color 0.15s;
           border: none; background: transparent;
         }
-        .chatting-action-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+        .chatting-action-btn:hover { background: var(--pluto-bg-hover); color: var(--pluto-text-primary); }
 
         .chatting-messages {
           flex: 1; overflow-y: auto;
           padding: 20px 20px 8px;
           display: flex; flex-direction: column; gap: 6px;
           scrollbar-width: thin;
-          scrollbar-color: rgba(255,255,255,0.06) transparent;
+          scrollbar-color: var(--pluto-border) transparent;
         }
         .chatting-messages::-webkit-scrollbar { width: 4px; }
-        .chatting-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 4px; }
+        .chatting-messages::-webkit-scrollbar-thumb { background: var(--pluto-border); border-radius: 4px; }
 
         .msg-row { display: flex; align-items: flex-end; gap: 8px; }
         .msg-row.me { flex-direction: row-reverse; }
@@ -378,24 +376,24 @@ function ChattingPage({ conversation, onOpenProfile }) {
         .msg-video { max-width: 250px; border-radius: 12px; margin-bottom: 4px; display: block; }
         .msg-file {
           display: flex; align-items: center; gap: 12px; padding: 10px;
-          background: rgba(0,0,0,0.15); border-radius: 8px; margin-bottom: 4px;
+          background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 4px;
           text-decoration: none; color: inherit;
         }
-        .msg-file:hover { background: rgba(0,0,0,0.25); }
-        .msg-row.them .msg-bubble { background: rgba(255,255,255,0.07); color: #e2e8f0; border-bottom-left-radius: 4px; }
+        .msg-file:hover { background: rgba(0,0,0,0.3); }
+        .msg-row.them .msg-bubble { background: var(--pluto-bg-hover); color: var(--pluto-text-primary); border-bottom-left-radius: 4px; }
         .msg-row.me .msg-bubble { background: linear-gradient(135deg, #0891b2, #2563eb); color: #fff; border-bottom-right-radius: 4px; }
 
-        .msg-meta { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 11px; color: rgba(255,255,255,0.4); }
+        .msg-meta { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 11px; color: var(--pluto-text-hint); }
         .msg-row.me .msg-meta { align-self: flex-end; }
         .msg-row.them .msg-meta { align-self: flex-start; }
         .msg-status-icon { display: flex; align-items: center; font-size: 15px; }
-        .msg-seen { color: #3b82f6; }
+        .msg-seen { color: var(--pluto-badge); }
 
         .msg-row-inner { position: relative; display: flex; align-items: center; gap: 8px; }
         .msg-options {
           display: none;
-          background: rgba(15,23,42,0.95);
-          border: 1px solid rgba(255,255,255,0.1);
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
           border-radius: 20px; padding: 4px; gap: 4px; align-items: center;
           position: absolute; top: -15px; z-index: 10;
           box-shadow: 0 4px 12px rgba(0,0,0,0.5);
@@ -403,60 +401,60 @@ function ChattingPage({ conversation, onOpenProfile }) {
         .msg-row-inner:hover .msg-options, .msg-options.active { display: flex; }
         .msg-row.me .msg-options { right: 0; }
         .msg-row.them .msg-options { left: 40px; }
-        .msg-option-btn { background: transparent; border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 12px; font-size: 16px; transition: background 0.2s; }
-        .msg-option-btn:hover { background: rgba(255,255,255,0.1); }
+        .msg-option-btn { background: transparent; border: none; color: var(--pluto-text-primary); cursor: pointer; padding: 4px 8px; border-radius: 12px; font-size: 16px; transition: background 0.2s; }
+        .msg-option-btn:hover { background: var(--pluto-bg-hover); }
 
         .msg-reactions-bar { display: flex; gap: 4px; margin-top: -8px; z-index: 2; position: relative; }
         .msg-row.me .msg-reactions-bar { justify-content: flex-end; right: 10px; }
         .msg-row.them .msg-reactions-bar { justify-content: flex-start; left: 10px; }
         .msg-reaction-pill {
-          background: rgba(30,41,59,0.95); border: 1px solid rgba(255,255,255,0.1);
+          background: var(--pluto-bg-card); border: 1px solid var(--pluto-border);
           border-radius: 12px; padding: 2px 6px; font-size: 12px;
-          cursor: pointer; display: flex; align-items: center; gap: 4px; color: #fff;
+          cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--pluto-text-primary);
         }
-        .msg-reaction-pill.reacted { background: rgba(6,182,212,0.2); border-color: rgba(6,182,212,0.5); }
+        .msg-reaction-pill.reacted { background: var(--pluto-accent-bg); border-color: rgba(34, 211, 238, 0.5); }
 
         .reply-preview-bar {
-          background: rgba(15,23,42,0.95); border-left: 3px solid #06b6d4;
+          background: var(--pluto-bg-card); border-left: 3px solid var(--pluto-accent);
           padding: 8px 12px; display: flex; justify-content: space-between;
           align-items: center; border-radius: 8px 8px 0 0;
-          border-top: 1px solid rgba(255,255,255,0.05);
-          border-right: 1px solid rgba(255,255,255,0.05);
+          border-top: 1px solid var(--pluto-border);
+          border-right: 1px solid var(--pluto-border);
           margin-bottom: -1px; z-index: 10;
         }
-        .reply-preview-content { font-size: 13px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
-        .reply-preview-close { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 16px; }
+        .reply-preview-content { font-size: 13px; color: var(--pluto-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+        .reply-preview-close { background: none; border: none; color: var(--pluto-text-hint); cursor: pointer; font-size: 16px; }
 
         .replied-msg-box {
-          background: rgba(0,0,0,0.25); border-left: 3px solid rgba(255,255,255,0.5);
+          background: rgba(0,0,0,0.25); border-left: 3px solid var(--pluto-text-hint);
           padding: 4px 8px; border-radius: 4px; font-size: 13px; margin-bottom: 6px;
-          cursor: pointer; color: rgba(255,255,255,0.9);
+          cursor: pointer; color: var(--pluto-text-secondary);
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
           transition: background 0.2s;
         }
-        .replied-msg-box:hover { background: rgba(0,0,0,0.4); }
+        .replied-msg-box:hover { background: rgba(0,0,0,0.35); }
 
-        .typing-indicator { padding: 6px 20px; font-size: 12px; color: #06b6d4; font-style: italic; flex-shrink: 0; }
+        .typing-indicator { padding: 6px 20px; font-size: 12px; color: var(--pluto-accent); font-style: italic; flex-shrink: 0; }
 
         .chatting-input-bar {
-          padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.06);
+          padding: 12px 16px; border-top: 1px solid var(--pluto-border);
           display: flex; align-items: center; gap: 10px;
-          flex-shrink: 0; background: #111827; position: relative;
+          flex-shrink: 0; background: var(--pluto-bg-navbar); position: relative;
         }
         .chatting-input-wrap {
           flex: 1; display: flex; align-items: center; gap: 8px;
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+          background: var(--pluto-bg-input); border: 1px solid var(--pluto-border);
           border-radius: 14px; padding: 8px 12px; transition: border-color 0.2s;
         }
-        .chatting-input-wrap:focus-within { border-color: rgba(6,182,212,0.35); }
+        .chatting-input-wrap:focus-within { border-color: rgba(34, 211, 238, 0.35); }
         .chatting-input {
           flex: 1; background: transparent; border: none; outline: none;
-          font-size: 14px; font-family: 'DM Sans', sans-serif;
-          color: #e2e8f0; resize: none; max-height: 100px; line-height: 1.5;
+          font-size: 14px; font-family: 'Inter', sans-serif;
+          color: var(--pluto-text-primary); resize: none; max-height: 100px; line-height: 1.5;
         }
-        .chatting-input::placeholder { color: rgba(255,255,255,0.2); }
-        .chatting-input-icon { font-size: 17px; color: rgba(255,255,255,0.25); cursor: pointer; transition: color 0.15s; flex-shrink: 0; }
-        .chatting-input-icon:hover { color: rgba(255,255,255,0.6); }
+        .chatting-input::placeholder { color: var(--pluto-text-hint); }
+        .chatting-input-icon { font-size: 17px; color: var(--pluto-text-hint); cursor: pointer; transition: color 0.15s; flex-shrink: 0; }
+        .chatting-input-icon:hover { color: var(--pluto-text-secondary); }
 
         .send-btn {
           width: 42px; height: 42px; border-radius: 12px;
@@ -473,15 +471,15 @@ function ChattingPage({ conversation, onOpenProfile }) {
 
         .image-preview-container {
           position: absolute; bottom: 70px; left: 20px;
-          background: rgba(15,23,42,0.95); padding: 8px; border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.1);
+          background: var(--pluto-bg-card); padding: 8px; border-radius: 12px;
+          border: 1px solid var(--pluto-border);
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
           display: flex; align-items: center; gap: 12px; z-index: 90;
         }
         .image-preview { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
-        .file-preview-text { font-size: 13px; color: #fff; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-preview-text { font-size: 13px; color: var(--pluto-text-primary); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .image-preview-close {
-          background: rgba(255,255,255,0.1); border: none; color: white;
+          background: var(--pluto-bg-hover); border: none; color: var(--pluto-text-primary);
           width: 24px; height: 24px; border-radius: 50%;
           display: flex; align-items: center; justify-content: center; cursor: pointer;
         }

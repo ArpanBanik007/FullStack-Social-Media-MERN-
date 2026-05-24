@@ -10,7 +10,9 @@ function RightBar() {
   useEffect(() => {
     const fetchFollowers = async () => {
       try {
-        const res = await API.get("/users/my-followers", { withCredentials: true });
+        const res = await API.get("/users/my-followers", {
+          withCredentials: true,
+        });
         const data = res.data?.data;
         setFollowers(Array.isArray(data) ? data : data?.followers || []);
       } catch (err) {
@@ -184,13 +186,26 @@ function RightBar() {
               <div key={i} className="follower-card">
                 <div className="skeleton" style={{ width: 40, height: 40 }} />
                 <div style={{ flex: 1 }}>
-                  <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 6 }} />
-                  <div className="skeleton" style={{ height: 10, width: "40%" }} />
+                  <div
+                    className="skeleton"
+                    style={{ height: 14, width: "70%", marginBottom: 6 }}
+                  />
+                  <div
+                    className="skeleton"
+                    style={{ height: 10, width: "40%" }}
+                  />
                 </div>
               </div>
             ))
           ) : followers.length === 0 ? (
-            <div style={{ padding: 20, textAlign: "center", color: "var(--text-secondary)", opacity: 0.5 }}>
+            <div
+              style={{
+                padding: 20,
+                textAlign: "center",
+                color: "var(--text-secondary)",
+                opacity: 0.5,
+              }}
+            >
               <div style={{ fontSize: 32, marginBottom: 10 }}>🌌</div>
               <div style={{ fontSize: 13 }}>No cosmic connections yet</div>
             </div>
@@ -203,7 +218,10 @@ function RightBar() {
               >
                 <div className="avatar-container">
                   <img
-                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=16243A&color=00D9FF`}
+                    src={
+                      user.avatar ||
+                      `https://ui-avatars.com/api/?name=${user.username}&background=16243A&color=00D9FF`
+                    }
                     alt={user.username}
                     className="follower-avatar"
                   />
@@ -211,7 +229,9 @@ function RightBar() {
                 </div>
                 <div className="follower-info">
                   <div className="follower-username">{user.username}</div>
-                  <div className="follower-name">{user.fullName || "Stardust"}</div>
+                  <div className="follower-name">
+                    {user.fullName || "Stardust"}
+                  </div>
                 </div>
               </div>
             ))

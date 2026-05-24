@@ -2,7 +2,6 @@ import API from "../utils/API.js";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 // Inline styled inputs — no dependency on InputField/Button for auth pages
 function LoginPage() {
   const navigate = useNavigate();
@@ -21,11 +20,9 @@ function LoginPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await API.post(
-        "/users/login",
-        formData,
-        { withCredentials: true },
-      );
+      const res = await API.post("/users/login", formData, {
+        withCredentials: true,
+      });
       setSuccess(res?.data?.message || "Login successful!");
 
       // Store token in localStorage as fallback for Socket.IO

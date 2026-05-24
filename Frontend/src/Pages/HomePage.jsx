@@ -8,65 +8,115 @@ function HomePage() {
   return (
     <>
       <style>{`
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: #0a0e1a;
+        }
+
         .homepage-root {
           min-height: 100vh;
-          background-color: var(--bg-deep);
-          position: relative;
-          overflow: hidden;
+          background-color: #0a0e1a;
+          display: flex;
+          flex-direction: column;
         }
 
-        .blob-1 { top: -10%; left: -10%; animation: pulse-glow 8s infinite ease-in-out; }
-        .blob-2 { bottom: -10%; right: -10%; animation: pulse-glow 12s infinite ease-in-out; background: radial-gradient(circle, rgba(110, 231, 255, 0.05) 0%, transparent 70%); }
-        .blob-3 { top: 40%; right: 20%; animation: pulse-glow 10s infinite ease-in-out; width: 300px; height: 300px; opacity: 0.5; }
+        .homepage-body {
+          display: flex;
+          flex-direction: row;
+          width: 100%;
+          flex: 1;
+          position: relative;
+        }
 
+        /* LEFT SIDEBAR */
+        .homepage-left {
+          width: 220px;
+          min-width: 220px;
+          position: sticky;
+          top: 64px;
+          height: calc(100vh - 64px);
+          overflow-y: auto;
+          background-color: #0d1117;
+          border-right: 1px solid #1e2738;
+          flex-shrink: 0;
+        }
+
+        /* CENTER FEED */
         .homepage-feed {
-          margin-left: 280px;
-          margin-right: 260px;
-          padding-top: 24px;
-          min-height: calc(100vh - 70px);
-          position: relative;
-          z-index: 1;
+          flex: 1;
+          min-width: 0;
+          padding: 20px 24px;
+          overflow-y: auto;
+          height: calc(100vh - 64px);
+          position: sticky;
+          top: 64px;
         }
 
+        .homepage-feed-inner {
+          max-width: 640px;
+          margin: 0 auto;
+        }
+
+        /* RIGHT SIDEBAR */
+        .homepage-right {
+          width: 260px;
+          min-width: 260px;
+          position: sticky;
+          top: 64px;
+          height: calc(100vh - 64px);
+          overflow-y: auto;
+          background-color: #0d1117;
+          border-left: 1px solid #1e2738;
+          flex-shrink: 0;
+        }
+
+        /* SCROLLBAR HIDE */
+        .homepage-left::-webkit-scrollbar,
+        .homepage-feed::-webkit-scrollbar,
+        .homepage-right::-webkit-scrollbar {
+          width: 0px;
+        }
+
+        /* RESPONSIVE */
         @media (max-width: 1100px) {
-          .homepage-feed {
-            margin-left: 260px;
-            margin-right: 0;
+          .homepage-right {
+            display: none;
           }
         }
 
         @media (max-width: 768px) {
+          .homepage-left {
+            display: none;
+          }
           .homepage-feed {
-            margin-left: 0;
-            margin-right: 0;
-            padding-top: 16px;
-            padding-left: 12px;
-            padding-right: 12px;
+            padding: 16px 12px;
           }
         }
       `}</style>
 
       <div className="homepage-root">
-        {/* Animated Background Blobs */}
-        <div className="bg-blob blob-1" />
-        <div className="bg-blob blob-2" />
-        <div className="bg-blob blob-3" />
-
         <Navbar />
 
-        <div className="flex justify-center w-full">
-          {/* Left sidebar */}
-          <div className="hidden md:block">
+        <div className="homepage-body">
+          {/* Left Sidebar */}
+          <div className="homepage-left">
             <LeftBar />
           </div>
 
-          {/* Main feed */}
-          <div className="homepage-feed w-full max-w-[640px]">
-            <Feedpage />
+          {/* Center Feed */}
+          <div className="homepage-feed">
+            <div className="homepage-feed-inner">
+              <Feedpage />
+            </div>
           </div>
 
-          {/* Right sidebar */}
-          <div className="hidden lg:block">
+          {/* Right Sidebar */}
+          <div className="homepage-right">
             <RightBar />
           </div>
         </div>

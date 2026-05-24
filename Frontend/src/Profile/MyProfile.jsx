@@ -25,9 +25,7 @@ function FollowModal({ type, userId, onClose }) {
     const fetchList = async () => {
       try {
         const url =
-          type === "followers"
-            ? "/users/my-followers"
-            : "/users/my-followings";
+          type === "followers" ? "/users/my-followers" : "/users/my-followings";
         const res = await API.get(url, { withCredentials: true });
         const data =
           type === "followers"
@@ -577,7 +575,11 @@ export default function MyProfile() {
         )}
 
         {/* Cover */}
-        <div className="profile-cover" onClick={() => user.coverImage && setPreviewImage(user.coverImage)} style={{ cursor: user.coverImage ? "zoom-in" : "default" }}>
+        <div
+          className="profile-cover"
+          onClick={() => user.coverImage && setPreviewImage(user.coverImage)}
+          style={{ cursor: user.coverImage ? "zoom-in" : "default" }}
+        >
           {user.coverImage ? (
             <img src={user.coverImage} alt="cover" />
           ) : (
@@ -595,7 +597,11 @@ export default function MyProfile() {
         {/* Profile Card */}
         <div className="profile-card">
           <div className="profile-top-row">
-            <div className="profile-avatar-wrap" onClick={() => user.avatar && setPreviewImage(user.avatar)} style={{ cursor: user.avatar ? "zoom-in" : "default" }}>
+            <div
+              className="profile-avatar-wrap"
+              onClick={() => user.avatar && setPreviewImage(user.avatar)}
+              style={{ cursor: user.avatar ? "zoom-in" : "default" }}
+            >
               <img src={user.avatar} alt="avatar" className="profile-avatar" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>

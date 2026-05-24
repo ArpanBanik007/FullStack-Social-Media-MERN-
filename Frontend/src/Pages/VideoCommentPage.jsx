@@ -132,11 +132,11 @@ function VideoCommentPage() {
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap');
         @keyframes menuInVC { from{opacity:0;transform:translateY(-6px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes shimVC { 0%{background-position:-300px 0} 100%{background-position:300px 0} }
-        .skVC { background:linear-gradient(90deg,#1e293b 25%,#263348 50%,#1e293b 75%); background-size:300px 100%; animation:shimVC 1.3s infinite linear; border-radius:10px; }
+        .skVC { background:linear-gradient(90deg, var(--pluto-bg-card) 25%, var(--pluto-bg-hover) 50%, var(--pluto-bg-card) 75%); background-size:300px 100%; animation:shimVC 1.3s infinite linear; border-radius:10px; }
 
         .vc-root {
           min-height: 100vh;
-          background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+          background: var(--pluto-bg-page);
           color: #fff;
           font-family: 'Syne', sans-serif;
           display: flex; flex-direction: column;
@@ -247,7 +247,7 @@ function VideoCommentPage() {
 
         .vc-comment-menu {
           position: absolute; right: 0; top: 28px; z-index: 50;
-          background: linear-gradient(160deg,#1e293b,#0f172a);
+          background: var(--pluto-bg-card);
           border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
           padding: 5px; width: 140px;
           box-shadow: 0 12px 36px rgba(0,0,0,0.5);

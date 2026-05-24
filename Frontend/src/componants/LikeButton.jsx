@@ -17,14 +17,12 @@ function LikeButton({ postId, likeCount }) {
     if (likeLoading) return;
     setLikeLoading(true);
 
-    // Optimistic UI update
     const wasLiked = isLiked;
     setLocalLikeCount((prev) => (wasLiked ? prev - 1 : prev + 1));
     dispatch(syncPostLike({ postId, isLiked: !wasLiked }));
-    
+
     dispatch(toggleLike(postId))
       .catch(() => {
-        // Revert on error
         setLocalLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
         dispatch(syncPostLike({ postId, isLiked: wasLiked }));
       })
@@ -34,17 +32,52 @@ function LikeButton({ postId, likeCount }) {
   };
 
   return (
-    <button
-      onClick={handleLike}
-      disabled={likeLoading}
-      className={`flex items-center cursor-pointer gap-1 transition-colors duration-200
-        ${isLiked ? "text-red-500" : "text-gray-400 hover:text-red-500"}
-        ${likeLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-    >
-      {isLiked ? <FaHeart /> : <FaRegHeart />}{" "}
-      {/* ✅ liked হলে filled, না হলে outlined */}
-      <span className="text-xs font-semibold">{localLikeCount}</span>
-    </button>
+    <>
+      <style>{`
+        .pluto-like-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 12px;
+          border-radius: 8px;
+          background: transparent;
+          border: none;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.15s ease, color 0.15s ease;
+        }
+        .pluto-like-btn.liked {
+          color: var(--pluto-like);
+        }
+        .pluto-like-btn.unliked {
+          color: var(--pluto-text-secondary);
+        }
+        .pluto-like-btn.unliked:hover {
+          background: var(--pluto-bg-hover);
+          color: var(--pluto-like);
+        }
+        .pluto-like-btn.liked:hover {
+          background: rgba(244, 114, 182, 0.08);
+        }
+        .pluto-like-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .pluto-like-btn svg {
+          font-size: 16px;
+        }
+      `}</style>
+
+      <button
+        onClick={handleLike}
+        disabled={likeLoading}
+        className={`pluto-like-btn ${isLiked ? "liked" : "unliked"}`}
+      >
+        {isLiked ? <FaHeart /> : <FaRegHeart />}
+        <span>{localLikeCount}</span>
+      </button>
+    </>
   );
 }
 

@@ -130,108 +130,94 @@ function UpperFeedpage() {
   return (
     <>
       <style>{`
+        /* ── Composer box ── */
         .upper-feed {
-          background: rgba(22, 36, 58, 0.35);
-          backdrop-filter: blur(16px);
-          border: 1px solid var(--glass-border);
-          border-radius: 24px;
-          padding: 18px;
-          margin-bottom: 16px;
-          transition: all 0.3s ease;
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
+          border-radius: 14px;
+          padding: 16px;
+          margin-bottom: 12px;
         }
 
-        .upper-feed:hover {
-          background: rgba(22, 36, 58, 0.45);
-          border-color: rgba(0, 217, 255, 0.15);
-        }
-
+        /* ── Avatar + input row ── */
         .upper-feed-user-row {
           display: flex;
           align-items: center;
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
 
         .upper-feed-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 14px;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
           object-fit: cover;
-          border: 1.5px solid var(--glass-border);
+          border: 2px solid var(--pluto-border);
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: border-color 0.2s ease;
+          flex-shrink: 0;
         }
-
-        .upper-feed-avatar:hover {
-          border-color: var(--accent-primary);
-          transform: scale(1.05);
-        }
+        .upper-feed-avatar:hover { border-color: var(--pluto-accent); }
 
         .upper-feed-input-box {
           flex: 1;
-          height: 44px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--glass-border);
-          border-radius: 14px;
+          height: 40px;
+          background: var(--pluto-bg-input);
+          border: 1px solid var(--pluto-border);
+          border-radius: 9999px;
           display: flex;
           align-items: center;
-          padding: 0 16px;
-          color: var(--text-secondary);
-          font-size: 14px;
+          padding: 0 18px;
+          color: var(--pluto-text-hint);
+          font-size: 15px;
           cursor: pointer;
-          transition: all 0.3s ease;
-          opacity: 0.7;
+          transition: border-color 0.2s ease;
         }
-
         .upper-feed-input-box:hover {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(0, 217, 255, 0.2);
-          opacity: 1;
+          border-color: rgba(34, 211, 238, 0.3);
         }
 
+        /* ── Action buttons ── */
         .upper-feed-actions {
           display: flex;
-          gap: 10px;
-          margin-top: 14px;
+          gap: 8px;
           padding-top: 14px;
-          border-top: 1px solid var(--glass-border);
+          border-top: 1px solid var(--pluto-border);
         }
 
         .upper-media-btn {
           flex: 1;
-          height: 38px;
+          height: 36px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid transparent;
-          color: var(--text-secondary);
+          gap: 6px;
+          border-radius: 8px;
+          background: transparent;
+          border: 1px solid var(--pluto-border);
+          color: var(--pluto-text-secondary);
           font-size: 13px;
-          font-weight: 600;
+          font-weight: 500;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
-
         .upper-media-btn:hover {
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--text-primary);
+          background: var(--pluto-bg-hover);
+          color: var(--pluto-text-primary);
+          border-color: rgba(34, 211, 238, 0.2);
         }
+        .upper-media-btn svg { font-size: 16px; }
 
-        .upper-media-btn.photo:hover { color: #00D9FF; background: rgba(0, 217, 255, 0.04); }
-        .upper-media-btn.video:hover { color: #A855F7; background: rgba(168, 85, 247, 0.04); }
-        .upper-media-btn.emoji:hover { color: #FBBF24; background: rgba(251, 191, 36, 0.04); }
-
-        /* Modal Styles */
+        /* ── Modal backdrop ── */
         .modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(7, 17, 32, 0.8);
-          backdrop-filter: blur(10px);
+          background: rgba(10, 14, 26, 0.85);
+          backdrop-filter: blur(6px);
           z-index: 2000;
         }
 
+        /* ── Modal box ── */
         .modal-box {
           position: fixed;
           top: 50%;
@@ -239,58 +225,53 @@ function UpperFeedpage() {
           transform: translate(-50%, -50%);
           width: 90%;
           max-width: 500px;
-          background: var(--surface-elevated);
-          border: 1px solid var(--glass-border);
-          border-radius: 28px;
-          padding: 30px;
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
+          border-radius: 16px;
+          padding: 28px;
           z-index: 2001;
-          box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-          animation: modalScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+          animation: modal-in 0.25s ease;
+        }
+        @keyframes modal-in {
+          from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+          to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
         }
 
-        @keyframes modalScale {
-          from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
-          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-
+        /* ── Modal textarea ── */
         .modal-textarea {
           width: 100%;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--glass-border);
-          border-radius: 16px;
-          padding: 16px;
-          color: var(--text-primary);
+          background: var(--pluto-bg-input);
+          border: 1px solid var(--pluto-border);
+          border-radius: 10px;
+          padding: 14px;
+          color: var(--pluto-text-primary);
           font-family: inherit;
-          font-size: 16px;
+          font-size: 15px;
           resize: none;
           outline: none;
-          margin: 20px 0;
-          transition: all 0.3s ease;
+          margin: 18px 0;
+          transition: border-color 0.2s ease;
         }
+        .modal-textarea::placeholder { color: var(--pluto-text-hint); }
+        .modal-textarea:focus { border-color: var(--pluto-accent); }
 
-        .modal-textarea:focus {
-          border-color: var(--accent-primary);
-          background: rgba(255, 255, 255, 0.04);
-        }
-
+        /* ── Submit button ── */
         .btn-post-submit {
           width: 100%;
-          height: 50px;
-          background: linear-gradient(to right, #00D9FF, #3b82f6);
+          height: 46px;
+          background: var(--pluto-accent);
           border: none;
-          border-radius: 16px;
-          color: white;
+          border-radius: 10px;
+          color: #0a0e1a;
           font-weight: 700;
-          font-size: 16px;
+          font-size: 15px;
           cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 10px 20px rgba(0, 217, 255, 0.2);
+          transition: opacity 0.2s ease;
+          letter-spacing: 0.03em;
         }
-
-        .btn-post-submit:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 15px 30px rgba(0, 217, 255, 0.3);
-        }
+        .btn-post-submit:hover:not(:disabled) { opacity: 0.88; }
+        .btn-post-submit:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
 
       <div className="upper-feed">
@@ -313,13 +294,13 @@ function UpperFeedpage() {
         </div>
 
         <div className="upper-feed-actions">
-          <button className="upper-media-btn photo" onClick={() => { setPostType("photo"); setShowPostBox(true); }}>
+          <button className="upper-media-btn" onClick={() => { setPostType("photo"); setShowPostBox(true); }}>
             <IoMdPhotos /> <span>Neural Image</span>
           </button>
-          <button className="upper-media-btn video" onClick={() => { setPostType("video"); setShowPostBox(true); }}>
+          <button className="upper-media-btn" onClick={() => { setPostType("video"); setShowPostBox(true); }}>
             <RiVideoUploadFill /> <span>Data Stream</span>
           </button>
-          <button className="upper-media-btn emoji" onClick={() => { setPostType("text"); setShowPostBox(true); }}>
+          <button className="upper-media-btn" onClick={() => { setPostType("text"); setShowPostBox(true); }}>
             <MdOutlineEmojiEmotions /> <span>Energy</span>
           </button>
         </div>
@@ -329,9 +310,14 @@ function UpperFeedpage() {
         <>
           <div className="modal-backdrop" onClick={resetAll} />
           <div className="modal-box">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{modalTitle}</h2>
-              <button onClick={resetAll} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", fontSize: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "var(--pluto-text-primary)" }}>
+                {modalTitle}
+              </h2>
+              <button
+                onClick={resetAll}
+                style={{ background: "none", border: "none", color: "var(--pluto-text-secondary)", cursor: "pointer", fontSize: 22, display: "flex" }}
+              >
                 <IoClose />
               </button>
             </div>
@@ -347,15 +333,15 @@ function UpperFeedpage() {
             )}
 
             {postType === "photo" && (
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 0 }}>
                 {!imagePreview ? (
-                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 40, border: "2px dashed var(--glass-border)", borderRadius: 20, cursor: "pointer" }}>
+                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 36, border: "2px dashed var(--pluto-border)", borderRadius: 12, cursor: "pointer", marginTop: 18 }}>
                     <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
-                    <IoMdPhotos style={{ fontSize: 40, opacity: 0.3, marginBottom: 12 }} />
-                    <span style={{ color: "var(--text-secondary)", fontSize: 14 }}>Upload Visual Data</span>
+                    <IoMdPhotos style={{ fontSize: 36, opacity: 0.4, marginBottom: 10, color: "var(--pluto-accent)" }} />
+                    <span style={{ color: "var(--pluto-text-secondary)", fontSize: 14 }}>Upload Visual Data</span>
                   </label>
                 ) : (
-                  <img src={imagePreview} style={{ width: "100%", borderRadius: 16, border: "1px solid var(--glass-border)" }} alt="preview" />
+                  <img src={imagePreview} style={{ width: "100%", borderRadius: 10, border: "1px solid var(--pluto-border)", marginTop: 18 }} alt="preview" />
                 )}
                 <textarea
                   className="modal-textarea"
@@ -368,15 +354,15 @@ function UpperFeedpage() {
             )}
 
             {postType === "video" && (
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 0 }}>
                 {!previewVideo ? (
-                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 40, border: "2px dashed var(--glass-border)", borderRadius: 20, cursor: "pointer" }}>
+                  <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 36, border: "2px dashed var(--pluto-border)", borderRadius: 12, cursor: "pointer", marginTop: 18 }}>
                     <input type="file" accept="video/*" onChange={handleVideoSelect} style={{ display: "none" }} />
-                    <RiVideoUploadFill style={{ fontSize: 40, opacity: 0.3, marginBottom: 12 }} />
-                    <span style={{ color: "var(--text-secondary)", fontSize: 14 }}>Upload Motion Stream</span>
+                    <RiVideoUploadFill style={{ fontSize: 36, opacity: 0.4, marginBottom: 10, color: "var(--pluto-accent)" }} />
+                    <span style={{ color: "var(--pluto-text-secondary)", fontSize: 14 }}>Upload Motion Stream</span>
                   </label>
                 ) : (
-                  <video src={previewVideo} controls style={{ width: "100%", borderRadius: 16 }} />
+                  <video src={previewVideo} controls style={{ width: "100%", borderRadius: 10, marginTop: 18 }} />
                 )}
                 <textarea
                   className="modal-textarea"

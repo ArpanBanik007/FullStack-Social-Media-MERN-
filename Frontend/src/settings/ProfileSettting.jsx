@@ -75,14 +75,10 @@ function ProfileSetting() {
     formData.append("coverImage", file);
     try {
       setCoverLoading(true);
-      await API.patch(
-        "/users/cover-Image",
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      await API.patch("/users/cover-Image", formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       dispatch(fetchMydetils());
       showMessage("success", "Cover image updated!");
     } catch (err) {
@@ -117,11 +113,9 @@ function ProfileSetting() {
 
     try {
       setLoading(true);
-      await API.patch(
-        "/users/update-account",
-        payload,
-        { withCredentials: true },
-      );
+      await API.patch("/users/update-account", payload, {
+        withCredentials: true,
+      });
       dispatch(fetchMydetils());
       showMessage("success", "Profile updated successfully!");
     } catch (err) {

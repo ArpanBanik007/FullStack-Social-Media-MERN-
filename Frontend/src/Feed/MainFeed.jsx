@@ -68,19 +68,29 @@ function MainFeed() {
     return () => socket.off("post-reaction-updated", handleReactionUpdate);
   }, [posts.length]);
 
+  /* ── Skeleton loader ── */
   if (feedLoading || userLoading) {
     return (
-      <div style={{ padding: "20px 0" }}>
+      <div style={{ paddingTop: 4 }}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="glass-card" style={{ padding: 18, borderRadius: 24, marginBottom: 16 }}>
-            <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-              <div className="skeleton" style={{ width: 44, height: 44, borderRadius: 14 }} />
+          <div
+            key={i}
+            style={{
+              background: "var(--pluto-bg-card)",
+              border: "1px solid var(--pluto-border)",
+              borderRadius: 14,
+              padding: 16,
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              <div className="skeleton" style={{ width: 42, height: 42, borderRadius: "50%" }} />
               <div style={{ flex: 1 }}>
-                <div className="skeleton" style={{ height: 14, width: "30%", marginBottom: 6 }} />
-                <div className="skeleton" style={{ height: 10, width: "15%" }} />
+                <div className="skeleton" style={{ height: 13, width: "32%", marginBottom: 7 }} />
+                <div className="skeleton" style={{ height: 10, width: "18%" }} />
               </div>
             </div>
-            <div className="skeleton" style={{ width: "100%", height: 300, borderRadius: 18 }} />
+            <div className="skeleton" style={{ width: "100%", height: 260, borderRadius: 10 }} />
           </div>
         ))}
       </div>
@@ -90,171 +100,165 @@ function MainFeed() {
   return (
     <>
       <style>{`
+        /* ── Post card ── */
         .post-card {
           position: relative;
-          background: rgba(22, 36, 58, 0.35);
-          backdrop-filter: blur(16px);
-          border: 1px solid var(--glass-border);
-          border-radius: 24px;
-          padding: 18px;
-          margin-bottom: 16px;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          overflow: hidden;
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
+          border-radius: 14px;
+          padding: 16px;
+          margin-bottom: 12px;
+          transition: border-color 0.2s ease;
         }
-
         .post-card:hover {
-          background: rgba(22, 36, 58, 0.5);
-          border-color: rgba(0, 217, 255, 0.25);
-          transform: translateY(-2px);
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 217, 255, 0.05);
+          border-color: rgba(34, 211, 238, 0.18);
         }
 
+        /* ── Post header ── */
         .post-header {
           display: flex;
           align-items: center;
           gap: 12px;
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
 
-        .post-avatar-wrap {
-          position: relative;
-          cursor: pointer;
-        }
-
+        /* ── Avatar ── */
+        .post-avatar-wrap { cursor: pointer; flex-shrink: 0; }
         .post-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 14px;
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
           object-fit: cover;
-          border: 1.5px solid var(--glass-border);
-          transition: all 0.3s ease;
+          border: 2px solid var(--pluto-border);
+          display: block;
+          transition: border-color 0.2s ease;
         }
+        .post-card:hover .post-avatar { border-color: rgba(34, 211, 238, 0.3); }
 
-        .post-card:hover .post-avatar {
-          border-color: var(--accent-primary);
-          box-shadow: 0 0 12px rgba(0, 217, 255, 0.2);
-        }
-
+        /* ── Author info ── */
         .post-user-info {
           flex: 1;
           min-width: 0;
+          cursor: pointer;
         }
-
         .post-author-name {
           font-size: 15px;
-          font-weight: 700;
-          color: var(--text-primary);
-          transition: color 0.3s ease;
-          letter-spacing: -0.2px;
+          font-weight: 600;
+          color: var(--pluto-text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
-
-        .post-author-name:hover { color: var(--accent-primary); }
-
         .post-meta {
-          font-size: 11px;
-          color: var(--text-secondary);
-          opacity: 0.5;
+          font-size: 13px;
+          color: var(--pluto-text-hint);
           margin-top: 1px;
         }
 
-        .post-content {
-          margin-bottom: 16px;
-        }
-
+        /* ── Post body ── */
         .post-title-text {
-          font-size: 15px;
-          line-height: 1.5;
-          color: var(--text-primary);
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 1.55;
+          color: var(--pluto-text-primary);
           margin-bottom: 12px;
-          font-weight: 400;
-          opacity: 0.95;
         }
 
+        /* ── Post image ── */
         .post-media-container {
-          position: relative;
-          border-radius: 18px;
+          border-radius: 10px;
           overflow: hidden;
           background: #08111d;
-          border: 1px solid var(--glass-border);
-          max-height: 420px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+          border: 1px solid var(--pluto-border);
+          cursor: pointer;
         }
-
         .post-image {
           width: 100%;
           max-height: 420px;
           object-fit: cover;
-          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-          aspect-ratio: 16 / 10;
+          display: block;
+          transition: transform 0.5s ease;
         }
+        .post-card:hover .post-image { transform: scale(1.02); }
 
-        .post-card:hover .post-image {
-          transform: scale(1.04);
-        }
-
+        /* ── Actions bar ── */
         .post-actions-bar {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding-top: 14px;
-          border-top: 1px solid var(--glass-border);
+          gap: 4px;
+          padding-top: 12px;
+          border-top: 1px solid var(--pluto-border);
         }
 
         .feed-action-btn {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 14px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid transparent;
-          color: var(--text-secondary);
-          font-size: 13px;
-          font-weight: 600;
-          transition: all 0.3s ease;
+          padding: 7px 12px;
+          border-radius: 8px;
+          background: transparent;
+          border: none;
+          color: var(--pluto-text-secondary);
+          font-size: 14px;
+          font-weight: 500;
+          transition: background 0.15s ease, color 0.15s ease;
           cursor: pointer;
         }
-
         .feed-action-btn:hover {
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--text-primary);
-          transform: translateY(-1px);
+          background: var(--pluto-bg-hover);
+          color: var(--pluto-text-primary);
         }
-
-        .feed-action-btn.comment-btn:hover {
-          color: var(--accent-primary);
-          background: rgba(0, 217, 255, 0.04);
-        }
-
         .feed-action-btn svg { font-size: 16px; }
 
+        /* ── Views pill ── */
         .views-badge {
           margin-left: auto;
           display: flex;
           align-items: center;
           gap: 5px;
-          color: var(--text-secondary);
-          font-size: 12px;
-          opacity: 0.4;
+          color: var(--pluto-text-hint);
+          font-size: 13px;
+        }
+
+        /* ── Dots menu trigger ── */
+        .post-menu-btn {
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 6px;
+          color: var(--pluto-text-hint);
+          transition: background 0.15s ease, color 0.15s ease;
+          display: flex;
+        }
+        .post-menu-btn:hover {
+          background: var(--pluto-bg-hover);
+          color: var(--pluto-text-secondary);
         }
       `}</style>
 
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 10px" }}>
+      <div>
         {posts.map((post) => (
           <div key={post._id} className="post-card">
+            {/* ── Header ── */}
             <div className="post-header">
-              <div className="post-avatar-wrap" onClick={() => navigate(post?.createdBy?._id === mydetails?._id ? "/profile" : `/profile/${post?.createdBy?._id}`)}>
+              <div
+                className="post-avatar-wrap"
+                onClick={() => navigate(post?.createdBy?._id === mydetails?._id ? "/profile" : `/profile/${post?.createdBy?._id}`)}
+              >
                 <img
-                  src={post?.createdBy?.avatar || `https://ui-avatars.com/api/?name=${post?.createdBy?.username}&background=16243A&color=00D9FF`}
+                  src={post?.createdBy?.avatar || `https://ui-avatars.com/api/?name=${post?.createdBy?.username}&background=1a2235&color=22d3ee`}
                   className="post-avatar"
                   alt="avatar"
                 />
               </div>
-              <div className="post-user-info" onClick={() => navigate(post?.createdBy?._id === mydetails?._id ? "/profile" : `/profile/${post?.createdBy?._id}`)}>
+
+              <div
+                className="post-user-info"
+                onClick={() => navigate(post?.createdBy?._id === mydetails?._id ? "/profile" : `/profile/${post?.createdBy?._id}`)}
+              >
                 <div className="post-author-name">@{post?.createdBy?.username}</div>
-                <div className="post-meta">{new Date(post.createdAt).toLocaleDateString()} • {post?.createdBy?.bio?.substring(0, 20) || "Nexus Explorer"}</div>
+                <div className="post-meta">
+                  {new Date(post.createdAt).toLocaleDateString()} &bull; {post?.createdBy?.bio?.substring(0, 20) || "Nexus Explorer"}
+                </div>
               </div>
 
               {post.createdBy._id !== mydetails?._id && (
@@ -264,8 +268,11 @@ function MainFeed() {
                 />
               )}
 
-              <div className="post-menu-btn" onClick={() => setOpenMenuId(openMenuId === post._id ? null : post._id)}>
-                <PiDotsThreeBold style={{ fontSize: 22, cursor: "pointer", color: "var(--text-secondary)", opacity: 0.6 }} />
+              <div
+                className="post-menu-btn"
+                onClick={() => setOpenMenuId(openMenuId === post._id ? null : post._id)}
+              >
+                <PiDotsThreeBold style={{ fontSize: 22 }} />
               </div>
 
               <PostActionMenu
@@ -275,28 +282,39 @@ function MainFeed() {
               />
             </div>
 
-            <div className="post-content">
+            {/* ── Content ── */}
+            <div>
               {post.title && <div className="post-title-text">{post.title}</div>}
               {post.posturl && (
-                <div className="post-media-container" onClick={() => navigate(`/post/single/${post._id}`)}>
+                <div
+                  className="post-media-container"
+                  onClick={() => navigate(`/post/single/${post._id}`)}
+                >
                   <img src={post.posturl} className="post-image" alt="content" />
                 </div>
               )}
             </div>
 
+            {/* ── Actions ── */}
             <div className="post-actions-bar">
               <LikeButton postId={post._id} likeCount={post.likes || 0} />
-              
-              <button className="feed-action-btn comment-btn" onClick={() => navigate(`/post/single/${post._id}`)}>
-                <FaComment /> <span>{post.comments || 0}</span>
+
+              <button
+                className="feed-action-btn"
+                onClick={() => navigate(`/post/single/${post._id}`)}
+              >
+                <FaComment style={{ color: "var(--pluto-text-secondary)" }} />
+                <span>{post.comments || 0}</span>
               </button>
 
               <button className="feed-action-btn">
-                <FaShareNodes /> <span>Share</span>
+                <FaShareNodes />
+                <span>Share</span>
               </button>
 
               <div className="views-badge">
-                <FaEye /> <span>{post.views || 0}</span>
+                <FaEye />
+                <span>{post.views || 0}</span>
               </div>
             </div>
           </div>

@@ -37,17 +37,21 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL
 // ✅ Professional Full Screen Loading Animation
 const AppLoader = () => {
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-4">
+    <div style={{ height: "100vh", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--pluto-bg-page)" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
         {/* Spinner */}
-        <div className="relative w-14 h-14">
-          <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-
-          <div className="absolute inset-0 rounded-full border-4 border-black border-t-transparent animate-spin"></div>
+        <div style={{ position: "relative", width: 56, height: 56 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "4px solid var(--pluto-border)" }}></div>
+          <div style={{
+            position: "absolute", inset: 0, borderRadius: "50%",
+            border: "4px solid transparent",
+            borderTopColor: "var(--pluto-accent)",
+            animation: "pluto-spin 0.75s linear infinite"
+          }}></div>
         </div>
-
+        <style>{`@keyframes pluto-spin { to { transform: rotate(360deg); } }`}</style>
         {/* Text */}
-        <p className="text-sm text-gray-600 font-medium tracking-wide">
+        <p style={{ fontSize: 13, color: "var(--pluto-text-hint)", fontWeight: 500, letterSpacing: "0.05em", margin: 0 }}>
           Loading...
         </p>
       </div>

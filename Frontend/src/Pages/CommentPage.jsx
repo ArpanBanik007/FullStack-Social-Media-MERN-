@@ -19,9 +19,7 @@ function CommentPage() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await API.get(
-          `/posts/single/${postId}`,
-        );
+        const res = await API.get(`/posts/single/${postId}`);
         setPost(res.data?.data);
       } catch (err) {
         console.error(err);
@@ -33,9 +31,7 @@ function CommentPage() {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await API.get(
-          `/posts/comments/post/${postId}`,
-        );
+        const res = await API.get(`/posts/comments/post/${postId}`);
         setComments(res.data?.data || []);
       } catch (err) {
         console.error(err);
@@ -54,7 +50,7 @@ function CommentPage() {
       const handleNewComment = (data) => {
         if (data.postId === postId) {
           setComments((prev) => {
-            if (prev.some(c => c._id === data.comment._id)) return prev;
+            if (prev.some((c) => c._id === data.comment._id)) return prev;
             return [data.comment, ...prev];
           });
         }
@@ -75,10 +71,10 @@ function CommentPage() {
       const res = await API.post(
         `/posts/comments/post/${postId}`,
         { content },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setComments((prev) => {
-        if (prev.some(c => c._id === res.data.data._id)) return prev;
+        if (prev.some((c) => c._id === res.data.data._id)) return prev;
         return [res.data.data, ...prev];
       });
       setContent("");

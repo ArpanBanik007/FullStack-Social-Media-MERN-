@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 
-
 const STEPS = ["Email", "Verify", "Profile"];
 
 export default function SignUp() {
@@ -66,7 +65,7 @@ export default function SignUp() {
       const res = await API.post(
         "/users/sendOTP",
         { email: formData.email },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setSuccess(res.data.message || "OTP sent to your email");
       setOtpSent(true);
@@ -91,7 +90,7 @@ export default function SignUp() {
       const res = await API.post(
         "/users/verifyOTP",
         { email: formData.email, otp: formData.otp },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setSuccess(res.data.message || "Email verified successfully!");
       setOtpVerified(true);
@@ -126,14 +125,10 @@ export default function SignUp() {
       Object.entries(formData).forEach(([k, v]) => {
         if (v) fd.append(k, v);
       });
-      const res = await API.post(
-        "/users/register",
-        fd,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      const res = await API.post("/users/register", fd, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setSuccess(res.data.message || "Registration successful!");
       setTimeout(() => navigate("/home"), 1500);
     } catch (err) {
@@ -377,7 +372,10 @@ export default function SignUp() {
                     disabled={!formData.email || sendingOTP}
                   >
                     {sendingOTP ? (
-                      <span className="auth-spinner" style={{ width: "14px", height: "14px" }} />
+                      <span
+                        className="auth-spinner"
+                        style={{ width: "14px", height: "14px" }}
+                      />
                     ) : (
                       "Send OTP"
                     )}
@@ -390,7 +388,9 @@ export default function SignUp() {
             {step === 2 && (
               <>
                 <div className="auth-input-wrap">
-                  <label className="auth-label">Enter OTP sent to {formData.email}</label>
+                  <label className="auth-label">
+                    Enter OTP sent to {formData.email}
+                  </label>
                   <input
                     className="auth-input"
                     type="text"
@@ -399,7 +399,11 @@ export default function SignUp() {
                     value={formData.otp}
                     onChange={handleChange}
                     maxLength={6}
-                    style={{ letterSpacing: "4px", textAlign: "center", fontSize: "18px" }}
+                    style={{
+                      letterSpacing: "4px",
+                      textAlign: "center",
+                      fontSize: "18px",
+                    }}
                   />
                 </div>
                 <div className="auth-btn-row">
@@ -420,7 +424,11 @@ export default function SignUp() {
                     onClick={handleSendOTP}
                     disabled={otpCooldown > 0 || sendingOTP}
                   >
-                    {sendingOTP ? "Sending..." : otpCooldown > 0 ? `Resend ${otpCooldown}s` : "Resend OTP"}
+                    {sendingOTP
+                      ? "Sending..."
+                      : otpCooldown > 0
+                        ? `Resend ${otpCooldown}s`
+                        : "Resend OTP"}
                   </button>
                 </div>
                 <div className="auth-btn-row" style={{ marginTop: "10px" }}>
@@ -569,7 +577,6 @@ export default function SignUp() {
                 </div>
               </>
             )}
-
           </form>
 
           <div className="auth-footer">

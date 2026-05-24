@@ -12,183 +12,255 @@ import { BiLoaderAlt } from "react-icons/bi";
 function SearchDropdown() {
   const dispatch = useDispatch();
   const results = useSelector(selectSearchResults);
-  const status = useSelector(selectSearchStatus);
+  const status  = useSelector(selectSearchStatus);
 
   const { users = [], posts = [], videos = [] } = results;
   const totalResults = users.length + posts.length + videos.length;
 
   const handleClose = () => dispatch(closeSearch());
 
-  // ── Loading State ──────────────────────────────────────────────────────────
+  /* ── Shared dropdown shell style ── */
+  const shellStyle = {
+    position: "absolute",
+    top: "calc(100% + 8px)",
+    left: 0,
+    right: 0,
+    background: "var(--pluto-bg-card)",
+    border: "1px solid var(--pluto-border)",
+    borderRadius: 14,
+    boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
+    zIndex: 999,
+    overflow: "hidden",
+  };
+
+  /* ── Loading ── */
   if (status === "loading") {
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl z-50 p-6 flex items-center justify-center gap-2">
-        <BiLoaderAlt className="animate-spin text-blue-500 text-xl" />
-        <span className="text-gray-400 text-sm">Searching...</span>
+      <div style={{ ...shellStyle, padding: "20px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+        <BiLoaderAlt style={{ fontSize: 18, color: "var(--pluto-accent)", animation: "spin 0.8s linear infinite" }} />
+        <span style={{ fontSize: 14, color: "var(--pluto-text-secondary)" }}>Searching…</span>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
-  // ── No Results ─────────────────────────────────────────────────────────────
+  /* ── No results ── */
   if (status === "succeeded" && totalResults === 0) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl z-50 p-6 text-center">
-        <p className="text-gray-500 text-sm">No results found</p>
+      <div style={{ ...shellStyle, padding: "20px 16px", textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "var(--pluto-text-hint)", margin: 0 }}>No results found</p>
       </div>
     );
   }
 
-  // ── Results ────────────────────────────────────────────────────────────────
   if (status !== "succeeded") return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-[480px] overflow-y-auto custom-scroll">
-      {/* ── Users Section ── */}
-      {users.length > 0 && (
-        <div>
-          <SectionHeader
-            icon={<FiUser />}
-            label="People"
-            count={users.length}
-          />
-          {users.map((user) => (
-            <Link
-              key={user._id}
-              to={`/profile/${user._id}`}
-              onClick={handleClose}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
-            >
-              <img
-                src={user.avatar || "https://via.placeholder.com/40?text=U"}
-                alt={user.username}
-                className="w-9 h-9 rounded-full object-cover border border-white/10 flex-shrink-0"
-              />
-              <div className="min-w-0">
-                <p className="text-gray-200 text-sm font-semibold truncate">
-                  {user.fullName || user.username}
-                </p>
-                <p className="text-gray-500 text-xs truncate">
-                  @{user.username}
-                </p>
+    <>
+      <style>{`
+        .sd-shell {
+          max-height: 460px;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: var(--pluto-border) transparent;
+        }
+        .sd-shell::-webkit-scrollbar { width: 4px; }
+        .sd-shell::-webkit-scrollbar-thumb { background: var(--pluto-border); border-radius: 999px; }
+
+        /* Section header */
+        .sd-section-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px 6px;
+          border-top: 1px solid var(--pluto-border);
+        }
+        .sd-section-header:first-child { border-top: none; }
+        .sd-section-label {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--pluto-text-hint);
+        }
+        .sd-section-count {
+          font-size: 11px;
+          color: var(--pluto-text-hint);
+          background: var(--pluto-bg-input);
+          padding: 1px 7px;
+          border-radius: 999px;
+        }
+
+        /* Result row */
+        .sd-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 16px;
+          text-decoration: none;
+          transition: background 0.15s ease;
+        }
+        .sd-row:hover {
+          background: var(--pluto-bg-hover);
+        }
+
+        /* User avatar */
+        .sd-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid var(--pluto-border);
+          flex-shrink: 0;
+          display: block;
+        }
+
+        /* Post / video thumbnail */
+        .sd-thumb {
+          flex-shrink: 0;
+          background: var(--pluto-bg-input);
+          border-radius: 8px;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid var(--pluto-border);
+        }
+        .sd-thumb img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .sd-thumb-icon {
+          font-size: 16px;
+          color: var(--pluto-text-hint);
+        }
+
+        .sd-info-primary {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--pluto-text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .sd-info-secondary {
+          font-size: 12px;
+          color: var(--pluto-text-hint);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-top: 1px;
+        }
+      `}</style>
+
+      <div style={shellStyle}>
+        <div className="sd-shell">
+
+          {/* ── People ── */}
+          {users.length > 0 && (
+            <div>
+              <div className="sd-section-header">
+                <FiUser style={{ fontSize: 12, color: "var(--pluto-text-hint)" }} />
+                <span className="sd-section-label">People</span>
+                <span className="sd-section-count">{users.length}</span>
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* ── Posts Section ── */}
-      {posts.length > 0 && (
-        <div>
-          <SectionHeader
-            icon={<FiImage />}
-            label="Posts"
-            count={posts.length}
-          />
-          {posts.map((post) => {
-            const thumb = post.images?.[0] || post.posturl;
-            return (
-              <Link
-                key={post._id}
-                to={`/post/single/${post._id}`}
-                onClick={handleClose}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
-              >
-                {/* Thumbnail */}
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
-                  {thumb ? (
-                    <img
-                      src={thumb}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-600">
-                      <FiImage />
-                    </div>
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-gray-200 text-sm font-semibold truncate">
-                    {post.title ||
-                      post.content?.substring(0, 40) + "..." ||
-                      "Post"}
-                  </p>
-                  {post.createdBy && (
-                    <p className="text-gray-500 text-xs truncate">
-                      @{post.createdBy.username}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Videos Section ── */}
-      {videos.length > 0 && (
-        <div>
-          <SectionHeader
-            icon={<FiVideo />}
-            label="Videos"
-            count={videos.length}
-          />
-          {videos.map((video) => (
-            <Link
-              key={video._id}
-              to={`/video/single/${video._id}`}
-              onClick={handleClose}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
-            >
-              {/* Thumbnail */}
-              <div className="w-12 h-9 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-                {video.thumbnail ? (
+              {users.map((user) => (
+                <Link
+                  key={user._id}
+                  to={`/profile/${user._id}`}
+                  onClick={handleClose}
+                  className="sd-row"
+                >
                   <img
-                    src={video.thumbnail}
-                    alt=""
-                    className="w-full h-full object-cover"
+                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=1a2235&color=22d3ee`}
+                    alt={user.username}
+                    className="sd-avatar"
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-600">
-                    <FiVideo />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="sd-info-primary">{user.fullName || user.username}</div>
+                    <div className="sd-info-secondary">@{user.username}</div>
                   </div>
-                )}
-              </div>
+                </Link>
+              ))}
+            </div>
+          )}
 
-              <div className="min-w-0 flex-1">
-                <p className="text-gray-200 text-sm font-semibold truncate">
-                  {video.title || "Video"}
-                </p>
-                {video.createdBy && (
-                  <p className="text-gray-500 text-xs truncate">
-                    @{video.createdBy.username}
-                  </p>
-                )}
+          {/* ── Posts ── */}
+          {posts.length > 0 && (
+            <div>
+              <div className="sd-section-header">
+                <FiImage style={{ fontSize: 12, color: "var(--pluto-text-hint)" }} />
+                <span className="sd-section-label">Posts</span>
+                <span className="sd-section-count">{posts.length}</span>
               </div>
-            </Link>
-          ))}
+              {posts.map((post) => {
+                const thumb = post.images?.[0] || post.posturl;
+                return (
+                  <Link
+                    key={post._id}
+                    to={`/post/single/${post._id}`}
+                    onClick={handleClose}
+                    className="sd-row"
+                  >
+                    <div className="sd-thumb" style={{ width: 44, height: 44 }}>
+                      {thumb ? (
+                        <img src={thumb} alt="" onError={(e) => { e.target.style.display = "none"; }} />
+                      ) : (
+                        <FiImage className="sd-thumb-icon" />
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div className="sd-info-primary">
+                        {post.title || post.content?.substring(0, 40) + "…" || "Post"}
+                      </div>
+                      {post.createdBy && (
+                        <div className="sd-info-secondary">@{post.createdBy.username}</div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Videos ── */}
+          {videos.length > 0 && (
+            <div>
+              <div className="sd-section-header">
+                <FiVideo style={{ fontSize: 12, color: "var(--pluto-text-hint)" }} />
+                <span className="sd-section-label">Videos</span>
+                <span className="sd-section-count">{videos.length}</span>
+              </div>
+              {videos.map((video) => (
+                <Link
+                  key={video._id}
+                  to={`/video/single/${video._id}`}
+                  onClick={handleClose}
+                  className="sd-row"
+                >
+                  <div className="sd-thumb" style={{ width: 48, height: 36 }}>
+                    {video.thumbnail ? (
+                      <img src={video.thumbnail} alt="" />
+                    ) : (
+                      <FiVideo className="sd-thumb-icon" />
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="sd-info-primary">{video.title || "Video"}</div>
+                    {video.createdBy && (
+                      <div className="sd-info-secondary">@{video.createdBy.username}</div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
         </div>
-      )}
-    </div>
-  );
-}
-
-// ── Section Header ───────────────────────────────────────────────────────────
-function SectionHeader({ icon, label, count }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-2 border-t border-white/5 first:border-t-0">
-      <span className="text-gray-500 text-xs">{icon}</span>
-      <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="text-xs text-gray-600 bg-white/5 px-1.5 py-0.5 rounded-full">
-        {count}
-      </span>
-    </div>
+      </div>
+    </>
   );
 }
 

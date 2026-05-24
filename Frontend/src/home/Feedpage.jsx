@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React from "react";
 import UpperFeedpage from "../Feed/UpperFeed";
 import MainFeed from "../Feed/MainFeed";
 
 function Feedpage() {
   return (
-    <div className="flex flex-col">
+    <div style={{ display: "flex", flexDirection: "column" }}>
       <UpperFeedpage />
       <MainFeed />
     </div>

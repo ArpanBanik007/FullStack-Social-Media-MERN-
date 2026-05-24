@@ -186,7 +186,7 @@ function ChatMainPage() {
           height: 100vh;
           display: flex;
           flex-direction: column;
-          background: #0f172a;
+          background: var(--pluto-bg-page);
           overflow: hidden;
         }
         .chat-page-body {
@@ -201,13 +201,13 @@ function ChatMainPage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          color: rgba(255,255,255,0.15);
+          color: var(--pluto-text-hint);
           gap: 12px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Inter', sans-serif;
         }
         .chat-empty-icon { font-size: 52px; }
-        .chat-empty-text { font-size: 15px; font-weight: 500; }
-        .chat-empty-sub  { font-size: 13px; opacity: 0.6; }
+        .chat-empty-text { font-size: 15px; font-weight: 500; color: var(--pluto-text-secondary); }
+        .chat-empty-sub  { font-size: 13px; color: var(--pluto-text-hint); }
       `}</style>
 
       <div className="chat-page-root">

@@ -15,16 +15,15 @@ function AllVideos() {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const res = await API.get(
-          "/videos/myvideos",
-          { withCredentials: true },
-        );
+        const res = await API.get("/videos/myvideos", {
+          withCredentials: true,
+        });
         const fetchedVideos = res.data?.data?.videos || [];
         setVideos(fetchedVideos);
-        fetchedVideos.forEach(v => {
-           if (v.userLiked !== undefined) {
-               dispatch(syncVideoLike({ videoId: v._id, isLiked: v.userLiked }));
-           }
+        fetchedVideos.forEach((v) => {
+          if (v.userLiked !== undefined) {
+            dispatch(syncVideoLike({ videoId: v._id, isLiked: v.userLiked }));
+          }
         });
       } catch (err) {
         console.error("Video fetch error:", err);
