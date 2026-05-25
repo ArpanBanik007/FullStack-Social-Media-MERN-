@@ -90,7 +90,8 @@ const SHARED_STYLES = `
   .ap-menu-sep { height:1px; background:rgba(255,255,255,0.06); margin:4px 0; }
 `;
 
-const AllPosts = () => {
+// ✅ onPostsLoaded prop add করা হয়েছে
+const AllPosts = ({ onPostsLoaded }) => {
   const dispatch = useDispatch();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +105,10 @@ const AllPosts = () => {
         const res = await API.get("/posts/my-posts", { withCredentials: true });
         const fetchedPosts = res.data?.data || [];
         setPosts(fetchedPosts);
+
+        // ✅ fetch শেষে count parent এ পাঠাও
+        onPostsLoaded?.(fetchedPosts.length);
+
         fetchedPosts.forEach((post) => {
           if (post.userLiked !== undefined) {
             dispatch(
@@ -113,6 +118,7 @@ const AllPosts = () => {
         });
       } catch (error) {
         console.error("Failed to fetch posts:", error);
+        onPostsLoaded?.(0); // ✅ error হলেও 0 পাঠাও
       } finally {
         setLoading(false);
       }
@@ -151,10 +157,10 @@ const AllPosts = () => {
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
-      await API.delete(`/posts/${postId}`, {
-        withCredentials: true,
-      });
-      setPosts(posts.filter((p) => p._id !== postId));
+      await API.delete(`/posts/${postId}`, { withCredentials: true });
+      const updated = posts.filter((p) => p._id !== postId);
+      setPosts(updated);
+      onPostsLoaded?.(updated.length); // ✅ delete হলে count update
     } catch (error) {
       console.error(error);
     }
@@ -177,7 +183,7 @@ const AllPosts = () => {
     return (
       <>
         <style>{SHARED_STYLES}</style>
-        {[1, 2, 2].map((i) => (
+        {[1, 2, 3].map((i) => (
           <div key={i} className="ap-card" style={{ padding: 14 }}>
             <div style={{ display: "flex", gap: 11, marginBottom: 14 }}>
               <div

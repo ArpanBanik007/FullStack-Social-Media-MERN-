@@ -1,15 +1,16 @@
 import API from "../utils/API.js";
 import { useEffect, useRef, useState } from "react";
-import { useSelector, useDispatch } from "react-redux"; // ✅ একবারই
+import { useSelector, useDispatch } from "react-redux";
 
 import { FaBookmark, FaPlay } from "react-icons/fa";
-import { FaEye } from "react-icons/fa"; // ✅ নতুন
+import { FaEye } from "react-icons/fa";
 import {
   FaComment,
   FaShareNodes,
   FaVolumeXmark,
   FaVolumeHigh,
 } from "react-icons/fa6";
+import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { connectSocket } from "../socket";
@@ -26,7 +27,7 @@ function VideoPlayer() {
   const [isMuted, setIsMuted] = useState(true);
   const [savedIds, setSavedIds] = useState(new Set());
   const videoRefs = useRef([]);
-  const viewedVideos = useRef(new Set()); // ✅ duplicate view রোখে
+  const viewedVideos = useRef(new Set());
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { mydetails } = useSelector((state) => state.mydetails);
@@ -40,10 +41,7 @@ function VideoPlayer() {
   useEffect(() => {
     const fetchFeedVideos = async () => {
       try {
-        const res = await API.get(
-          "/videos/feed",
-          { withCredentials: true },
-        );
+        const res = await API.get("/videos/feed", { withCredentials: true });
         const fetchedVideos = res.data?.data?.videos || [];
         setVideos(fetchedVideos);
         fetchedVideos.forEach((v) => {
@@ -102,7 +100,7 @@ function VideoPlayer() {
     return () => socket.off("comment-count-updated", handleCommentCountUpdate);
   }, []);
 
-  // ── Socket: view count update ✅ নতুন ─────────────────
+  // ── Socket: view count update ──────────────────────────
   useEffect(() => {
     const socket = connectSocket();
     const handleViewCount = (data) => {
@@ -139,7 +137,6 @@ function VideoPlayer() {
           const index = videoRefs.current.indexOf(videoEl);
 
           if (entry.isIntersecting) {
-            // অন্য সব video pause করো
             videoRefs.current.forEach((v) => {
               if (v && v !== videoEl) v.pause();
             });
@@ -162,7 +159,7 @@ function VideoPlayer() {
     return () => observer.disconnect();
   }, [videos, isMuted]);
 
-  // ── View Observer ✅ নতুন — আলাদা observer ────────────
+  // ── View Observer ──────────────────────────────────────
   useEffect(() => {
     if (!videos.length) return;
 
@@ -174,20 +171,15 @@ function VideoPlayer() {
           const videoId = entry.target.dataset.videoid;
           if (!videoId) return;
 
-          // আগে দেখা হয়ে থাকলে skip করো
           if (viewedVideos.current.has(videoId)) return;
 
-          // Lock করো — duplicate হবে না
           viewedVideos.current.add(videoId);
-
-          // API call — view save করো
           dispatch(addVideoView(videoId));
         });
       },
-      { threshold: 0.5 }, // 50% দেখা গেলে trigger
+      { threshold: 0.5 },
     );
 
-    // সব video slide observe করো
     document.querySelectorAll("[data-videoid]").forEach((el) => {
       viewObserver.observe(el);
     });
@@ -222,6 +214,7 @@ function VideoPlayer() {
       <>
         <style>{`
           @keyframes pulseVP { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+          @keyframes spin { to { transform:rotate(360deg); } }
         `}</style>
         <div
           style={{
@@ -264,7 +257,6 @@ function VideoPlayer() {
             </span>
           </div>
         </div>
-        <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
       </>
     );
   }
@@ -397,7 +389,13 @@ function VideoPlayer() {
         <div className="vp-phone">
           {/* Top bar */}
           <div className="vp-controls">
+            {/* ← Back button */}
+            <button className="vp-mute-btn" onClick={() => navigate(-1)}>
+              <IoArrowBack />
+            </button>
+
             <span className="vp-controls-title">Pluto</span>
+
             <button className="vp-mute-btn" onClick={handleMuteToggle}>
               {isMuted ? <FaVolumeXmark /> : <FaVolumeHigh />}
             </button>
@@ -429,7 +427,6 @@ function VideoPlayer() {
               const isSaved = savedIds.has(video._id);
 
               return (
-                // ✅ data-videoid — IntersectionObserver এটা দিয়ে চেনে
                 <div
                   key={video._id}
                   className="vp-slide"
@@ -525,7 +522,7 @@ function VideoPlayer() {
                       </span>
                     </button>
 
-                    {/* ✅ Views — নতুন */}
+                    {/* Views */}
                     <button className="vp-action-btn">
                       <div className="vp-action-icon">
                         <FaEye />

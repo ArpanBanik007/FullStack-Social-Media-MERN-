@@ -10,9 +10,6 @@ import AllPosts from "./AllPosts";
 import AllVideos from "./AllVideos";
 import AllSaved from "./AllSaved";
 import { useNavigate } from "react-router-dom";
-
-import { useSelector, useDispatch } from "react-redux";
-import { fetchMyPosts } from "../slices/postSlice";
 import ImagePreviewModal from "../componants/ImagePreviewModal";
 
 /* ─────────────── FOLLOW MODAL ─────────────── */
@@ -266,8 +263,8 @@ export default function MyProfile() {
   const [user, setUser] = useState(null);
   const [modalType, setModalType] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  const dispatch = useDispatch();
-  const { posts } = useSelector((state) => state.posts);
+  // ✅ NEW: postsCount state — AllPosts callback থেকে set হবে
+  const [postsCount, setPostsCount] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -281,18 +278,16 @@ export default function MyProfile() {
     fetchUser();
   }, [navigate]);
 
-  useEffect(() => {
-    if (!posts || posts.length === 0) dispatch(fetchMyPosts());
-  }, [dispatch]);
-
   const TABS = [
     { key: "posts", icon: <FaCamera />, label: "Posts" },
     { key: "videos", icon: <MdOndemandVideo />, label: "Videos" },
     { key: "saved", icon: <FaBookmark />, label: "Saved" },
   ];
 
+  // ✅ NEW: onPostsLoaded prop pass করা হচ্ছে AllPosts এ
   const renderContent = () => {
-    if (activeTab === "posts") return <AllPosts />;
+    if (activeTab === "posts")
+      return <AllPosts onPostsLoaded={setPostsCount} />;
     if (activeTab === "videos") return <AllVideos />;
     if (activeTab === "saved") return <AllSaved />;
   };
@@ -615,8 +610,11 @@ export default function MyProfile() {
 
           {/* Stats */}
           <div className="profile-stats">
+            {/* ✅ postsCount: callback আসলে সেটা দেখাবে, না আসলে user.postsCount fallback */}
             <div className="stat-pill" style={{ cursor: "default" }}>
-              <span className="stat-num">{posts?.length || 0}</span>
+              <span className="stat-num">
+                {postsCount !== null ? postsCount : user.postsCount || 0}
+              </span>
               <span className="stat-label">Posts</span>
             </div>
             <div
