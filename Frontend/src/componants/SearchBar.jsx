@@ -28,7 +28,6 @@ function SearchBar({ placeholder = "Search people, posts, videos..." }) {
     }
   }, [debouncedQuery, dispatch]);
 
-  // Close on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -40,8 +39,10 @@ function SearchBar({ placeholder = "Search people, posts, videos..." }) {
   }, [dispatch]);
 
   const handleChange = (e) => dispatch(setQuery(e.target.value));
-  const handleClear  = () => dispatch(closeSearch());
-  const handleKeyDown = (e) => { if (e.key === "Escape") dispatch(closeSearch()); };
+  const handleClear = () => dispatch(closeSearch());
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") dispatch(closeSearch());
+  };
 
   return (
     <>
@@ -51,6 +52,7 @@ function SearchBar({ placeholder = "Search people, posts, videos..." }) {
           width: 100%;
         }
 
+        /* ── Search input box ── */
         .pluto-search-inner {
           display: flex;
           align-items: center;
@@ -100,12 +102,26 @@ function SearchBar({ placeholder = "Search people, posts, videos..." }) {
           transition: color 0.15s ease;
         }
         .pluto-search-clear:hover { color: var(--pluto-text-secondary); }
+
+        /* ── Mobile: input box slightly smaller ── */
+        @media (max-width: 768px) {
+          .pluto-search-inner {
+            padding: 7px 14px 7px 12px;
+            /* Instagram style — slightly grey pill */
+            background: var(--pluto-bg-input, #262626);
+            border-radius: 9999px;
+          }
+          .pluto-search-input {
+            font-size: 15px;
+          }
+        }
       `}</style>
 
       <div ref={searchRef} className="pluto-search-wrap">
         <div className="pluto-search-inner">
-          <span className="pluto-search-icon"><FiSearch /></span>
-
+          <span className="pluto-search-icon">
+            <FiSearch />
+          </span>
           <input
             type="text"
             value={query}
@@ -114,7 +130,6 @@ function SearchBar({ placeholder = "Search people, posts, videos..." }) {
             placeholder={placeholder}
             className="pluto-search-input"
           />
-
           {query && (
             <button onClick={handleClear} className="pluto-search-clear">
               <FiX />

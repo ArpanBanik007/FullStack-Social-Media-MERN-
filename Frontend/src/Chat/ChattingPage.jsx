@@ -23,12 +23,14 @@ import {
   FiVideo,
   FiMoreVertical,
   FiCornerUpLeft,
+  FiArrowLeft,
 } from "react-icons/fi";
 import { IoCheckmark, IoCheckmarkDone } from "react-icons/io5";
 import EmojiPicker from "emoji-picker-react";
 import { formatLastSeen } from "../utils/timeUtils";
 
-function ChattingPage({ conversation, onOpenProfile }) {
+// onBack prop — mobile এ back button এর জন্য
+function ChattingPage({ conversation, onOpenProfile, onBack }) {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   const reduxMessages = useSelector((state) => state.chat.messages);
@@ -74,11 +76,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
     const socket = getSocket();
     if (!socket) return;
 
-    // Room join
     socket.emit("joinRoom", conversation._id);
     console.log("📌 Joined room:", conversation._id);
 
-    // messageSeen handler
     const handleMessageSeen = ({ chatId, seenBy, seenAt }) => {
       dispatch(
         markMessagesSeenLocally({
@@ -89,29 +89,24 @@ function ChattingPage({ conversation, onOpenProfile }) {
       );
     };
 
-    // messageDeleted handler
     const handleMessageDeleted = ({ messageId, deletedFor }) => {
       dispatch(deleteMessageLocally({ messageId, deleteFor: deletedFor }));
     };
 
-    // messageEdited handler
     const handleMessageEdited = ({ messageId, content }) => {
       dispatch(editMessageLocally({ messageId, content }));
     };
 
-    // reactionUpdated handler
     const handleReactionUpdated = ({ messageId, reactions }) => {
       dispatch(updateReactions({ messageId, reactions }));
     };
 
-    // typing handler
     const handleTyping = ({ conversationId, userId, userName }) => {
       if (String(conversationId) === String(conversation._id)) {
         dispatch(setTypingUser({ userName }));
       }
     };
 
-    // stopTyping handler
     const handleStopTyping = ({ conversationId, userId }) => {
       if (String(conversationId) === String(conversation._id)) {
         dispatch(removeTypingUser({ userId }));
@@ -148,7 +143,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [reduxMessages]);
 
-  // ── Mark seen — unread message থাকলে socket emit করো
+  // ── Mark seen
   useEffect(() => {
     if (!conversation?._id || reduxMessages.length === 0) return;
 
@@ -175,15 +170,18 @@ function ChattingPage({ conversation, onOpenProfile }) {
 
     if (type.startsWith("image/")) {
       detectedType = "image";
-      if (file.size > 5 * 1024 * 1024) return alert("Image must be less than 5MB");
+      if (file.size > 5 * 1024 * 1024)
+        return alert("Image must be less than 5MB");
       setFilePreview(URL.createObjectURL(file));
     } else if (type.startsWith("video/")) {
       detectedType = "video";
-      if (file.size > 10 * 1024 * 1024) return alert("Video must be less than 10MB");
+      if (file.size > 10 * 1024 * 1024)
+        return alert("Video must be less than 10MB");
       setFilePreview(URL.createObjectURL(file));
     } else if (type === "application/pdf") {
       detectedType = "file";
-      if (file.size > 5 * 1024 * 1024) return alert("PDF must be less than 5MB");
+      if (file.size > 5 * 1024 * 1024)
+        return alert("PDF must be less than 5MB");
       setFilePreview("/pdf-icon.png");
     } else {
       return alert("Unsupported file type");
@@ -196,7 +194,6 @@ function ChattingPage({ conversation, onOpenProfile }) {
   const handleSend = () => {
     if ((!input.trim() && !selectedFile) || !conversation) return;
 
-    // Typing stop emit
     const socket = getSocket();
     if (socket && conversation?._id) {
       socket.emit("stopTyping", { conversationId: conversation._id });
@@ -239,7 +236,6 @@ function ChattingPage({ conversation, onOpenProfile }) {
   const handleInputChange = (e) => {
     setInput(e.target.value);
 
-    // Typing emit
     const socket = getSocket();
     if (socket && conversation?._id) {
       socket.emit("typing", { conversationId: conversation._id });
@@ -309,6 +305,34 @@ function ChattingPage({ conversation, onOpenProfile }) {
           background: var(--pluto-bg-navbar);
         }
 
+        /* Mobile header */
+        @media (max-width: 768px) {
+          .chatting-header {
+            padding: max(14px, env(safe-area-inset-top, 14px)) 14px 14px;
+            gap: 8px;
+          }
+        }
+
+        /* Back button — শুধু mobile এ দেখাবে */
+        .chatting-back-btn {
+          display: none;
+          background: transparent;
+          border: none;
+          color: var(--pluto-text-secondary);
+          font-size: 22px;
+          padding: 4px;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border-radius: 8px;
+          transition: background 0.15s;
+        }
+        .chatting-back-btn:hover { background: var(--pluto-bg-hover); }
+        @media (max-width: 768px) {
+          .chatting-back-btn { display: flex; }
+        }
+
         .chatting-avatar-wrap { position: relative; flex-shrink: 0; }
         .chatting-avatar {
           width: 42px;
@@ -317,6 +341,10 @@ function ChattingPage({ conversation, onOpenProfile }) {
           object-fit: cover;
           border: 2px solid rgba(34, 211, 238, 0.3);
         }
+        @media (max-width: 768px) {
+          .chatting-avatar { width: 38px; height: 38px; }
+        }
+
         .chatting-online {
           position: absolute;
           bottom: 1px;
@@ -330,7 +358,18 @@ function ChattingPage({ conversation, onOpenProfile }) {
         }
 
         .chatting-info { flex: 1; min-width: 0; }
-        .chatting-name { font-size: 15px; font-weight: 700; color: var(--pluto-text-primary); }
+        .chatting-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--pluto-text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        @media (max-width: 768px) {
+          .chatting-name { font-size: 14px; }
+        }
+
         .chatting-status { font-size: 12px; color: var(--pluto-online); font-weight: 500; }
         .chatting-status.offline { color: var(--pluto-text-hint); }
         .chatting-typing { font-size: 12px; color: var(--pluto-accent); font-style: italic; }
@@ -345,6 +384,12 @@ function ChattingPage({ conversation, onOpenProfile }) {
         }
         .chatting-action-btn:hover { background: var(--pluto-bg-hover); color: var(--pluto-text-primary); }
 
+        /* Mobile এ phone/video button hide করো, শুধু more রাখো */
+        @media (max-width: 768px) {
+          .chatting-action-phone,
+          .chatting-action-video { display: none; }
+        }
+
         .chatting-messages {
           flex: 1; overflow-y: auto;
           padding: 20px 20px 8px;
@@ -353,15 +398,36 @@ function ChattingPage({ conversation, onOpenProfile }) {
           scrollbar-color: var(--pluto-border) transparent;
         }
         .chatting-messages::-webkit-scrollbar { width: 4px; }
-        .chatting-messages::-webkit-scrollbar-thumb { background: var(--pluto-border); border-radius: 4px; }
+        .chatting-messages::-webkit-scrollbar-thumb {
+          background: var(--pluto-border);
+          border-radius: 4px;
+        }
+
+        /* Mobile message padding */
+        @media (max-width: 768px) {
+          .chatting-messages {
+            padding: 12px 10px 8px;
+            gap: 4px;
+          }
+        }
 
         .msg-row { display: flex; align-items: flex-end; gap: 8px; }
         .msg-row.me { flex-direction: row-reverse; }
 
-        .msg-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-bottom: 2px; }
+        .msg-avatar {
+          width: 28px; height: 28px; border-radius: 50%;
+          object-fit: cover; flex-shrink: 0; margin-bottom: 2px;
+        }
         .msg-row.me .msg-avatar { display: none; }
+        @media (max-width: 768px) {
+          .msg-avatar { width: 24px; height: 24px; }
+        }
 
         .msg-content { display: flex; flex-direction: column; max-width: 75%; }
+        @media (max-width: 768px) {
+          .msg-content { max-width: 85%; }
+        }
+
         .msg-row.me .msg-content { align-items: flex-end; }
         .msg-row.them .msg-content { align-items: flex-start; }
 
@@ -371,25 +437,60 @@ function ChattingPage({ conversation, onOpenProfile }) {
           overflow-wrap: break-word; word-break: break-word;
           box-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
+        @media (max-width: 768px) {
+          .msg-bubble { font-size: 14px; padding: 8px 12px; }
+        }
+
         .msg-deleted { font-style: italic; opacity: 0.4; font-size: 13px; }
-        .msg-image { max-width: 250px; max-height: 250px; border-radius: 12px; object-fit: cover; margin-bottom: 4px; display: block; }
-        .msg-video { max-width: 250px; border-radius: 12px; margin-bottom: 4px; display: block; }
+        .msg-image {
+          max-width: 250px; max-height: 250px; border-radius: 12px;
+          object-fit: cover; margin-bottom: 4px; display: block;
+        }
+        @media (max-width: 768px) {
+          .msg-image { max-width: 200px; max-height: 200px; }
+        }
+
+        .msg-video {
+          max-width: 250px; border-radius: 12px;
+          margin-bottom: 4px; display: block;
+        }
+        @media (max-width: 768px) {
+          .msg-video { max-width: 200px; }
+        }
+
         .msg-file {
           display: flex; align-items: center; gap: 12px; padding: 10px;
           background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 4px;
           text-decoration: none; color: inherit;
         }
         .msg-file:hover { background: rgba(0,0,0,0.3); }
-        .msg-row.them .msg-bubble { background: var(--pluto-bg-hover); color: var(--pluto-text-primary); border-bottom-left-radius: 4px; }
-        .msg-row.me .msg-bubble { background: linear-gradient(135deg, #0891b2, #2563eb); color: #fff; border-bottom-right-radius: 4px; }
 
-        .msg-meta { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 11px; color: var(--pluto-text-hint); }
+        .msg-row.them .msg-bubble {
+          background: var(--pluto-bg-hover);
+          color: var(--pluto-text-primary);
+          border-bottom-left-radius: 4px;
+        }
+        .msg-row.me .msg-bubble {
+          background: linear-gradient(135deg, #0891b2, #2563eb);
+          color: #fff;
+          border-bottom-right-radius: 4px;
+        }
+
+        .msg-meta {
+          display: flex; align-items: center; gap: 4px;
+          margin-top: 4px; font-size: 11px; color: var(--pluto-text-hint);
+        }
         .msg-row.me .msg-meta { align-self: flex-end; }
         .msg-row.them .msg-meta { align-self: flex-start; }
         .msg-status-icon { display: flex; align-items: center; font-size: 15px; }
         .msg-seen { color: var(--pluto-badge); }
 
-        .msg-row-inner { position: relative; display: flex; align-items: center; gap: 8px; }
+        .msg-row-inner {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
         .msg-options {
           display: none;
           background: var(--pluto-bg-card);
@@ -398,76 +499,147 @@ function ChattingPage({ conversation, onOpenProfile }) {
           position: absolute; top: -15px; z-index: 10;
           box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
-        .msg-row-inner:hover .msg-options, .msg-options.active { display: flex; }
+        .msg-row-inner:hover .msg-options,
+        .msg-options.active { display: flex; }
         .msg-row.me .msg-options { right: 0; }
         .msg-row.them .msg-options { left: 40px; }
-        .msg-option-btn { background: transparent; border: none; color: var(--pluto-text-primary); cursor: pointer; padding: 4px 8px; border-radius: 12px; font-size: 16px; transition: background 0.2s; }
+        .msg-option-btn {
+          background: transparent; border: none;
+          color: var(--pluto-text-primary);
+          cursor: pointer; padding: 4px 8px;
+          border-radius: 12px; font-size: 16px;
+          transition: background 0.2s;
+        }
         .msg-option-btn:hover { background: var(--pluto-bg-hover); }
 
-        .msg-reactions-bar { display: flex; gap: 4px; margin-top: -8px; z-index: 2; position: relative; }
+        /* Mobile: emoji options বড় করো */
+        @media (max-width: 768px) {
+          .msg-option-btn { padding: 6px 10px; font-size: 18px; }
+          .msg-options { top: -20px; }
+        }
+
+        .msg-reactions-bar {
+          display: flex; gap: 4px; margin-top: -8px;
+          z-index: 2; position: relative;
+        }
         .msg-row.me .msg-reactions-bar { justify-content: flex-end; right: 10px; }
         .msg-row.them .msg-reactions-bar { justify-content: flex-start; left: 10px; }
         .msg-reaction-pill {
-          background: var(--pluto-bg-card); border: 1px solid var(--pluto-border);
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
           border-radius: 12px; padding: 2px 6px; font-size: 12px;
-          cursor: pointer; display: flex; align-items: center; gap: 4px; color: var(--pluto-text-primary);
+          cursor: pointer; display: flex; align-items: center;
+          gap: 4px; color: var(--pluto-text-primary);
         }
-        .msg-reaction-pill.reacted { background: var(--pluto-accent-bg); border-color: rgba(34, 211, 238, 0.5); }
+        .msg-reaction-pill.reacted {
+          background: var(--pluto-accent-bg);
+          border-color: rgba(34, 211, 238, 0.5);
+        }
 
         .reply-preview-bar {
-          background: var(--pluto-bg-card); border-left: 3px solid var(--pluto-accent);
-          padding: 8px 12px; display: flex; justify-content: space-between;
-          align-items: center; border-radius: 8px 8px 0 0;
+          background: var(--pluto-bg-card);
+          border-left: 3px solid var(--pluto-accent);
+          padding: 8px 12px;
+          display: flex; justify-content: space-between; align-items: center;
+          border-radius: 8px 8px 0 0;
           border-top: 1px solid var(--pluto-border);
           border-right: 1px solid var(--pluto-border);
           margin-bottom: -1px; z-index: 10;
         }
-        .reply-preview-content { font-size: 13px; color: var(--pluto-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
-        .reply-preview-close { background: none; border: none; color: var(--pluto-text-hint); cursor: pointer; font-size: 16px; }
+        .reply-preview-content {
+          font-size: 13px; color: var(--pluto-text-secondary);
+          white-space: nowrap; overflow: hidden;
+          text-overflow: ellipsis; max-width: 90%;
+        }
+        .reply-preview-close {
+          background: none; border: none;
+          color: var(--pluto-text-hint); cursor: pointer; font-size: 16px;
+        }
 
         .replied-msg-box {
-          background: rgba(0,0,0,0.25); border-left: 3px solid var(--pluto-text-hint);
-          padding: 4px 8px; border-radius: 4px; font-size: 13px; margin-bottom: 6px;
-          cursor: pointer; color: var(--pluto-text-secondary);
+          background: rgba(0,0,0,0.25);
+          border-left: 3px solid var(--pluto-text-hint);
+          padding: 4px 8px; border-radius: 4px; font-size: 13px;
+          margin-bottom: 6px; cursor: pointer;
+          color: var(--pluto-text-secondary);
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
           transition: background 0.2s;
         }
         .replied-msg-box:hover { background: rgba(0,0,0,0.35); }
 
-        .typing-indicator { padding: 6px 20px; font-size: 12px; color: var(--pluto-accent); font-style: italic; flex-shrink: 0; }
+        .typing-indicator {
+          padding: 6px 20px; font-size: 12px;
+          color: var(--pluto-accent); font-style: italic; flex-shrink: 0;
+        }
 
         .chatting-input-bar {
-          padding: 12px 16px; border-top: 1px solid var(--pluto-border);
+          padding: 12px 16px;
+          border-top: 1px solid var(--pluto-border);
           display: flex; align-items: center; gap: 10px;
-          flex-shrink: 0; background: var(--pluto-bg-navbar); position: relative;
+          flex-shrink: 0;
+          background: var(--pluto-bg-navbar);
+          position: relative;
+          /* Mobile safe area */
+          padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
         }
+        @media (max-width: 768px) {
+          .chatting-input-bar { padding: 10px 10px max(10px, env(safe-area-inset-bottom, 10px)); gap: 8px; }
+        }
+
         .chatting-input-wrap {
           flex: 1; display: flex; align-items: center; gap: 8px;
-          background: var(--pluto-bg-input); border: 1px solid var(--pluto-border);
-          border-radius: 14px; padding: 8px 12px; transition: border-color 0.2s;
+          background: var(--pluto-bg-input);
+          border: 1px solid var(--pluto-border);
+          border-radius: 14px; padding: 8px 12px;
+          transition: border-color 0.2s;
         }
-        .chatting-input-wrap:focus-within { border-color: rgba(34, 211, 238, 0.35); }
+        .chatting-input-wrap:focus-within {
+          border-color: rgba(34, 211, 238, 0.35);
+        }
         .chatting-input {
           flex: 1; background: transparent; border: none; outline: none;
           font-size: 14px; font-family: 'Inter', sans-serif;
-          color: var(--pluto-text-primary); resize: none; max-height: 100px; line-height: 1.5;
+          color: var(--pluto-text-primary);
+          resize: none; max-height: 100px; line-height: 1.5;
+        }
+        @media (max-width: 768px) {
+          .chatting-input { font-size: 15px; }
         }
         .chatting-input::placeholder { color: var(--pluto-text-hint); }
-        .chatting-input-icon { font-size: 17px; color: var(--pluto-text-hint); cursor: pointer; transition: color 0.15s; flex-shrink: 0; }
+
+        .chatting-input-icon {
+          font-size: 17px; color: var(--pluto-text-hint);
+          cursor: pointer; transition: color 0.15s; flex-shrink: 0;
+        }
         .chatting-input-icon:hover { color: var(--pluto-text-secondary); }
+
+        /* Mobile: emoji button hide করো (space বাঁচাতে) */
+        @media (max-width: 768px) {
+          .chatting-emoji-icon { display: none; }
+        }
 
         .send-btn {
           width: 42px; height: 42px; border-radius: 12px;
           background: linear-gradient(135deg, #0891b2, #2563eb);
           border: none; color: #fff; font-size: 17px;
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer; transition: opacity 0.2s, transform 0.15s; flex-shrink: 0;
+          cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+          flex-shrink: 0;
           box-shadow: 0 4px 14px rgba(8,145,178,0.35);
         }
         .send-btn:hover { opacity: 0.9; transform: scale(1.05); }
         .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
-        .emoji-picker-container { position: absolute; bottom: 70px; right: 20px; z-index: 100; }
+        .emoji-picker-container {
+          position: absolute; bottom: 70px; right: 20px; z-index: 100;
+        }
+        @media (max-width: 768px) {
+          .emoji-picker-container { right: 10px; bottom: 65px; }
+          /* EmojiPicker width কমাও */
+          .emoji-picker-container .EmojiPickerReact {
+            width: 300px !important;
+          }
+        }
 
         .image-preview-container {
           position: absolute; bottom: 70px; left: 20px;
@@ -476,18 +648,37 @@ function ChattingPage({ conversation, onOpenProfile }) {
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
           display: flex; align-items: center; gap: 12px; z-index: 90;
         }
-        .image-preview { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
-        .file-preview-text { font-size: 13px; color: var(--pluto-text-primary); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .image-preview {
+          width: 60px; height: 60px; border-radius: 8px; object-fit: cover;
+        }
+        .file-preview-text {
+          font-size: 13px; color: var(--pluto-text-primary);
+          max-width: 150px; white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis;
+        }
         .image-preview-close {
-          background: var(--pluto-bg-hover); border: none; color: var(--pluto-text-primary);
+          background: var(--pluto-bg-hover); border: none;
+          color: var(--pluto-text-primary);
           width: 24px; height: 24px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
         }
       `}</style>
 
       <div className="chatting-root">
         {/* Header */}
         <div className="chatting-header">
+          {/* Mobile back button */}
+          {onBack && (
+            <button
+              className="chatting-back-btn"
+              onClick={onBack}
+              aria-label="Back"
+            >
+              <FiArrowLeft />
+            </button>
+          )}
+
           <div
             className="chatting-avatar-wrap"
             onClick={onOpenProfile}
@@ -509,7 +700,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
             {typingUsers.length > 0 ? (
               <div className="chatting-typing">typing...</div>
             ) : (
-              <div className={`chatting-status ${!conversation.online ? "offline" : ""}`}>
+              <div
+                className={`chatting-status ${!conversation.online ? "offline" : ""}`}
+              >
                 {conversation.online
                   ? "Active now"
                   : conversation.lastSeen
@@ -519,10 +712,10 @@ function ChattingPage({ conversation, onOpenProfile }) {
             )}
           </div>
           <div className="chatting-actions">
-            <button className="chatting-action-btn">
+            <button className="chatting-action-btn chatting-action-phone">
               <FiPhone />
             </button>
-            <button className="chatting-action-btn">
+            <button className="chatting-action-btn chatting-action-video">
               <FiVideo />
             </button>
             <button className="chatting-action-btn" onClick={onOpenProfile}>
@@ -549,7 +742,11 @@ function ChattingPage({ conversation, onOpenProfile }) {
                 className={`msg-row ${msg.from}`}
               >
                 {msg.from === "them" && (
-                  <img className="msg-avatar" src={conversation.avatar} alt="" />
+                  <img
+                    className="msg-avatar"
+                    src={conversation.avatar}
+                    alt=""
+                  />
                 )}
                 <div className="msg-content">
                   <div
@@ -635,7 +832,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
                                 >
                                   {msg.fileName || "Document.pdf"}
                                 </span>
-                                <span style={{ fontSize: "11px", opacity: 0.7 }}>
+                                <span
+                                  style={{ fontSize: "11px", opacity: 0.7 }}
+                                >
                                   Click to view
                                 </span>
                               </div>
@@ -648,7 +847,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
 
                     {!msg.isDeleted && (
                       <div
-                        className={`msg-options ${activeMessageId === msg.id ? "active" : ""}`}
+                        className={`msg-options ${
+                          activeMessageId === msg.id ? "active" : ""
+                        }`}
                       >
                         {reactionEmojis.map((emoji) => (
                           <button
@@ -677,7 +878,9 @@ function ChattingPage({ conversation, onOpenProfile }) {
                       {reactionEntries.map(([emoji, count]) => (
                         <div
                           key={emoji}
-                          className={`msg-reaction-pill ${myReaction === emoji ? "reacted" : ""}`}
+                          className={`msg-reaction-pill ${
+                            myReaction === emoji ? "reacted" : ""
+                          }`}
                           onClick={() => handleReact(msg.id, emoji)}
                         >
                           {emoji} {count > 1 && count}
@@ -740,15 +943,17 @@ function ChattingPage({ conversation, onOpenProfile }) {
           {filePreview && (
             <div className="image-preview-container">
               {fileType === "image" && (
-                <img src={filePreview} alt="Preview" className="image-preview" />
+                <img
+                  src={filePreview}
+                  alt="Preview"
+                  className="image-preview"
+                />
               )}
               {fileType === "video" && (
                 <video src={filePreview} className="image-preview" muted />
               )}
               {fileType === "file" && (
-                <div className="file-preview-text">
-                  📄 {selectedFile?.name}
-                </div>
+                <div className="file-preview-text">📄 {selectedFile?.name}</div>
               )}
               <button
                 className="image-preview-close"
@@ -786,7 +991,7 @@ function ChattingPage({ conversation, onOpenProfile }) {
             />
             <FiSmile
               ref={emojiButtonRef}
-              className="chatting-input-icon"
+              className="chatting-input-icon chatting-emoji-icon"
               onClick={() => setShowEmojiPicker((prev) => !prev)}
             />
           </div>

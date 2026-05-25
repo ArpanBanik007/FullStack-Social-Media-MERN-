@@ -8,11 +8,11 @@ import { FaBell } from "react-icons/fa6";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { BsChatLeftTextFill } from "react-icons/bs";
+import { FiSearch } from "react-icons/fi";
 import SearchBar from "../componants/SearchBar";
 import { persistor } from "../store/store";
 import { resetMyDetails } from "../slices/mydetails.slice";
 import { resetMyPosts } from "../slices/postSlice";
-
 import { useDispatch, useSelector } from "react-redux";
 
 function Navbar() {
@@ -72,7 +72,10 @@ function Navbar() {
   return (
     <>
       <style>{`
-        /* ── Navbar root ── */
+
+        /* ════════════════════════════════
+           DESKTOP NAVBAR — একদম same
+        ════════════════════════════════ */
         .navbar-root {
           position: sticky;
           top: 0;
@@ -88,8 +91,6 @@ function Navbar() {
           gap: 16px;
           flex-shrink: 0;
         }
-
-        /* ── Logo ── */
         .navbar-logo {
           font-size: 22px;
           font-weight: 700;
@@ -100,22 +101,16 @@ function Navbar() {
           transition: opacity 0.2s ease;
         }
         .navbar-logo:hover { opacity: 0.85; }
-
-        /* ── Search wrapper ── */
         .navbar-search {
           flex: 1;
           max-width: 420px;
         }
-
-        /* ── Icon group ── */
         .navbar-icons {
           display: flex;
           align-items: center;
           gap: 8px;
           flex-shrink: 0;
         }
-
-        /* ── Individual icon button ── */
         .nav-icon-btn {
           position: relative;
           width: 38px;
@@ -131,18 +126,14 @@ function Navbar() {
           background: transparent;
         }
         .nav-icon-btn svg { font-size: 22px; }
-
         .nav-icon-btn:hover {
           background: var(--pluto-bg-hover);
           color: var(--pluto-text-primary);
         }
-
         .nav-icon-btn.active {
           color: var(--pluto-icon-active);
           background: var(--pluto-accent-bg);
         }
-
-        /* ── Notification badge ── */
         .nav-badge {
           position: absolute;
           top: 4px;
@@ -160,16 +151,12 @@ function Navbar() {
           justify-content: center;
           border: 2px solid var(--pluto-bg-navbar);
         }
-
-        /* ── Divider ── */
         .nav-divider {
           width: 1px;
           height: 24px;
           background: var(--pluto-border);
           margin: 0 4px;
         }
-
-        /* ── Profile avatar button ── */
         .profile-btn {
           width: 36px;
           height: 36px;
@@ -190,8 +177,6 @@ function Navbar() {
           border-color: var(--pluto-accent);
           color: var(--pluto-accent);
         }
-
-        /* ── Dropdown ── */
         .profile-dropdown {
           position: absolute;
           top: calc(100% + 12px);
@@ -207,9 +192,8 @@ function Navbar() {
         }
         @keyframes pluto-dropdown {
           from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0);    }
+          to   { opacity: 1; transform: translateY(0); }
         }
-
         .dropdown-item {
           width: 100%;
           padding: 10px 14px;
@@ -232,35 +216,218 @@ function Navbar() {
         }
         .dropdown-item.danger { color: #f87171; }
         .dropdown-item.danger:hover { background: rgba(248, 113, 113, 0.08); }
-
         .dropdown-sep {
           height: 1px;
           background: var(--pluto-border);
           margin: 6px 0;
         }
-
-        /* ── Mobile ── */
         .mobile-right { display: none; }
+
+        /* ════════════════════════════════
+           MOBILE — Instagram style
+           Top: Logo + Notification
+           Middle: SearchBar
+           Bottom: 5 icons
+        ════════════════════════════════ */
+
+        /* Hide করা হবে mobile এ */
+        .mobile-hidden-on-mobile { display: flex; }
+
+        /* Mobile top bar */
+        .mob-topbar {
+          display: none;
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          width: 100%;
+          background: var(--pluto-bg-navbar);
+          border-bottom: 1px solid var(--pluto-border);
+          flex-direction: column;
+        }
+
+        /* Row 1: Logo + Notification */
+        .mob-topbar-row1 {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 16px 6px;
+        }
+
+        .mob-logo {
+          font-size: 24px;
+          font-weight: 800;
+          color: var(--pluto-accent);
+          cursor: pointer;
+          letter-spacing: -0.5px;
+          font-style: italic;
+        }
+
+        .mob-topbar-icons {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .mob-icon-btn {
+          position: relative;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--pluto-text-primary);
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          border-radius: 50%;
+          transition: background 0.15s;
+        }
+        .mob-icon-btn svg { font-size: 24px; }
+        .mob-icon-btn:active { background: var(--pluto-bg-hover); }
+
+        .mob-badge {
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          min-width: 16px;
+          height: 16px;
+          padding: 0 3px;
+          background: #ef4444;
+          color: #fff;
+          border-radius: 50%;
+          font-size: 10px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid var(--pluto-bg-navbar);
+        }
+
+        /* Row 2: SearchBar */
+        .mob-topbar-row2 {
+          padding: 0 16px 10px;
+        }
+
+        /* Bottom nav */
+        .mob-bottom-nav {
+          display: none;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 50;
+          height: 54px;
+          background: var(--pluto-bg-navbar);
+          border-top: 1px solid var(--pluto-border);
+          align-items: center;
+          justify-content: space-around;
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .mob-nav-btn {
+          position: relative;
+          flex: 1;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: var(--pluto-icon-default);
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          transition: color 0.15s;
+        }
+        .mob-nav-btn svg { font-size: 26px; }
+        .mob-nav-btn.active { color: var(--pluto-text-primary); }
+
+        /* Instagram style — active এ bold icon, no underline */
+        .mob-nav-btn.active svg {
+          stroke-width: 2.5px;
+          filter: drop-shadow(0 0 1px currentColor);
+        }
+
+        /* Profile avatar bottom nav */
+        .mob-nav-avatar {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 2px solid transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--pluto-icon-default);
+          font-size: 22px;
+          transition: border-color 0.15s;
+          overflow: hidden;
+        }
+        .mob-nav-btn.active .mob-nav-avatar {
+          border-color: var(--pluto-text-primary);
+        }
+
+        .mob-nav-badge {
+          position: absolute;
+          top: 6px;
+          right: calc(50% - 20px);
+          min-width: 16px;
+          height: 16px;
+          padding: 0 3px;
+          background: #ef4444;
+          color: #fff;
+          border-radius: 50%;
+          font-size: 10px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid var(--pluto-bg-navbar);
+        }
+
+        /* Profile dropdown — mobile এ bottom nav এর উপরে */
+        .mob-profile-menu {
+          position: fixed;
+          bottom: 62px;
+          right: 8px;
+          width: 190px;
+          padding: 8px;
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
+          border-radius: 14px;
+          box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
+          z-index: 1001;
+          animation: mob-menu-up 0.18s ease;
+        }
+        @keyframes mob-menu-up {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Responsive switch ── */
         @media (max-width: 768px) {
-          .navbar-root    { padding: 0 16px; }
-          .navbar-icons   { display: none; }
-          .mobile-right   { display: flex; align-items: center; gap: 10px; }
-          .navbar-search  { display: none; }
+          /* Desktop navbar সম্পূর্ণ hide */
+          .navbar-root { display: none !important; }
+
+          /* Mobile navbar show */
+          .mob-topbar { display: flex; }
+          .mob-bottom-nav { display: flex; }
+
+          /* Page content নিচে padding — bottom nav এর জন্য */
+          #root > *:not(.mob-topbar):not(.mob-bottom-nav) {
+            padding-bottom: 54px;
+          }
         }
       `}</style>
 
+      {/* ════════════════════════════════
+          DESKTOP NAVBAR — একদম same, কোনো change নেই
+      ════════════════════════════════ */}
       <nav className="navbar-root">
-        {/* Logo */}
         <div className="navbar-logo" onClick={() => handleNav("/home")}>
           Pluto
         </div>
-
-        {/* Search */}
         <div className="navbar-search">
           <SearchBar placeholder="Search cosmic universe..." />
         </div>
-
-        {/* Nav Icons */}
         <div className="navbar-icons">
           {ICONS.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -276,20 +443,14 @@ function Navbar() {
               </div>
             );
           })}
-
           <div className="nav-divider" />
-
-          {/* Profile */}
           <div style={{ position: "relative" }}>
             <div
-              className={`profile-btn ${
-                location.pathname === "/profile" || showProfileMenu ? "active" : ""
-              }`}
+              className={`profile-btn ${location.pathname === "/profile" || showProfileMenu ? "active" : ""}`}
               onClick={() => setShowProfileMenu((p) => !p)}
             >
               <RiAccountCircleFill />
             </div>
-
             {showProfileMenu && (
               <>
                 <div
@@ -321,8 +482,6 @@ function Navbar() {
             )}
           </div>
         </div>
-
-        {/* Mobile fallback */}
         <div className="mobile-right">
           <button
             className="mobile-menu-btn"
@@ -331,6 +490,122 @@ function Navbar() {
             <BsThreeDotsVertical />
           </button>
         </div>
+      </nav>
+
+      {/* ════════════════════════════════
+          MOBILE TOP BAR
+          Row 1: Pluto (logo) + 🔔 + chat icon
+          Row 2: SearchBar
+      ════════════════════════════════ */}
+      <div className="mob-topbar">
+        {/* Row 1 */}
+        <div className="mob-topbar-row1">
+          {/* Logo — Instagram italic style */}
+          <div className="mob-logo" onClick={() => handleNav("/home")}>
+            Pluto
+          </div>
+
+          {/* Right icons */}
+          <div className="mob-topbar-icons">
+            {/* Chat */}
+            <button className="mob-icon-btn" onClick={() => handleNav("/chat")}>
+              <BsChatLeftTextFill />
+              {unreadCount > 0 && (
+                <span className="mob-badge">{unreadCount}</span>
+              )}
+            </button>
+
+            {/* Notification */}
+            <button
+              className="mob-icon-btn"
+              onClick={() => handleNav("/notifications")}
+            >
+              <FaBell />
+              <span className="mob-badge">3</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: SearchBar */}
+        <div className="mob-topbar-row2">
+          <SearchBar placeholder="Search..." />
+        </div>
+      </div>
+
+      {/* ════════════════════════════════
+          MOBILE BOTTOM NAV
+          Home | Videos | Upload | Search | Profile
+      ════════════════════════════════ */}
+      <nav className="mob-bottom-nav">
+        {/* Home */}
+        <button
+          className={`mob-nav-btn ${location.pathname === "/home" ? "active" : ""}`}
+          onClick={() => handleNav("/home")}
+        >
+          <IoMdHome />
+        </button>
+
+        {/* Videos */}
+        <button
+          className={`mob-nav-btn ${location.pathname.startsWith("/videos") ? "active" : ""}`}
+          onClick={() => handleNav("/videos")}
+        >
+          <MdOndemandVideo />
+        </button>
+
+        {/* Upload — center */}
+        <button className="mob-nav-btn" onClick={() => handleNav("/upload")}>
+          <BiVideoPlus style={{ fontSize: 30 }} />
+        </button>
+
+        {/* Search */}
+        <button
+          className={`mob-nav-btn ${location.pathname === "/search" ? "active" : ""}`}
+          onClick={() => handleNav("/search")}
+        >
+          <FiSearch />
+        </button>
+
+        {/* Profile */}
+        <button
+          className={`mob-nav-btn ${location.pathname === "/profile" || showProfileMenu ? "active" : ""}`}
+          onClick={() => setShowProfileMenu((p) => !p)}
+        >
+          <div className="mob-nav-avatar">
+            <RiAccountCircleFill />
+          </div>
+        </button>
+
+        {/* Profile dropdown */}
+        {showProfileMenu && (
+          <>
+            <div
+              style={{ position: "fixed", inset: 0, zIndex: 1000 }}
+              onClick={() => setShowProfileMenu(false)}
+            />
+            <div className="mob-profile-menu">
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  navigate("/profile");
+                  setShowProfileMenu(false);
+                }}
+              >
+                <RiAccountCircleFill style={{ fontSize: 18 }} /> My Profile
+              </button>
+              <div className="dropdown-sep" />
+              <button
+                className="dropdown-item danger"
+                onClick={() => {
+                  handleLogout();
+                  setShowProfileMenu(false);
+                }}
+              >
+                🚪 Logout
+              </button>
+            </div>
+          </>
+        )}
       </nav>
     </>
   );

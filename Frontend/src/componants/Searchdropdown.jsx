@@ -12,52 +12,30 @@ import { BiLoaderAlt } from "react-icons/bi";
 function SearchDropdown() {
   const dispatch = useDispatch();
   const results = useSelector(selectSearchResults);
-  const status  = useSelector(selectSearchStatus);
+  const status = useSelector(selectSearchStatus);
 
   const { users = [], posts = [], videos = [] } = results;
   const totalResults = users.length + posts.length + videos.length;
 
   const handleClose = () => dispatch(closeSearch());
 
-  /* ── Shared dropdown shell style ── */
-  const shellStyle = {
-    position: "absolute",
-    top: "calc(100% + 8px)",
-    left: 0,
-    right: 0,
-    background: "var(--pluto-bg-card)",
-    border: "1px solid var(--pluto-border)",
-    borderRadius: 14,
-    boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
-    zIndex: 999,
-    overflow: "hidden",
-  };
-
-  /* ── Loading ── */
-  if (status === "loading") {
-    return (
-      <div style={{ ...shellStyle, padding: "20px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-        <BiLoaderAlt style={{ fontSize: 18, color: "var(--pluto-accent)", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontSize: 14, color: "var(--pluto-text-secondary)" }}>Searching…</span>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  /* ── No results ── */
-  if (status === "succeeded" && totalResults === 0) {
-    return (
-      <div style={{ ...shellStyle, padding: "20px 16px", textAlign: "center" }}>
-        <p style={{ fontSize: 14, color: "var(--pluto-text-hint)", margin: 0 }}>No results found</p>
-      </div>
-    );
-  }
-
-  if (status !== "succeeded") return null;
-
   return (
     <>
       <style>{`
+        /* ── Dropdown shell ── */
+        .sd-shell-wrap {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          right: 0;
+          background: var(--pluto-bg-card);
+          border: 1px solid var(--pluto-border);
+          border-radius: 14px;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+          z-index: 999;
+          overflow: hidden;
+        }
+
         .sd-shell {
           max-height: 460px;
           overflow-y: auto;
@@ -65,7 +43,25 @@ function SearchDropdown() {
           scrollbar-color: var(--pluto-border) transparent;
         }
         .sd-shell::-webkit-scrollbar { width: 4px; }
-        .sd-shell::-webkit-scrollbar-thumb { background: var(--pluto-border); border-radius: 999px; }
+        .sd-shell::-webkit-scrollbar-thumb {
+          background: var(--pluto-border);
+          border-radius: 999px;
+        }
+
+        /* Loading / empty */
+        .sd-center {
+          padding: 20px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .sd-spinner {
+          font-size: 18px;
+          color: var(--pluto-accent);
+          animation: spin 0.8s linear infinite;
+        }
 
         /* Section header */
         .sd-section-header {
@@ -100,9 +96,7 @@ function SearchDropdown() {
           text-decoration: none;
           transition: background 0.15s ease;
         }
-        .sd-row:hover {
-          background: var(--pluto-bg-hover);
-        }
+        .sd-row:hover { background: var(--pluto-bg-hover); }
 
         /* User avatar */
         .sd-avatar {
@@ -115,7 +109,7 @@ function SearchDropdown() {
           display: block;
         }
 
-        /* Post / video thumbnail */
+        /* Thumbnail */
         .sd-thumb {
           flex-shrink: 0;
           background: var(--pluto-bg-input);
@@ -153,113 +147,209 @@ function SearchDropdown() {
           text-overflow: ellipsis;
           margin-top: 1px;
         }
+
+        /* ── Mobile fixes ── */
+        @media (max-width: 768px) {
+          .sd-shell-wrap {
+            /* Mobile এ top bar এর নিচে full width dropdown */
+            position: fixed;
+            top: auto;
+            /* mob-topbar height: ~52px (row1) + ~50px (row2 searchbar) = ~102px */
+            top: 102px;
+            left: 0;
+            right: 0;
+            border-radius: 0 0 16px 16px;
+            border-left: none;
+            border-right: none;
+            border-top: 1px solid var(--pluto-border);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+          }
+
+          .sd-shell {
+            /* Mobile এ বড় screen — bottom nav এর উপর পর্যন্ত */
+            max-height: calc(100dvh - 170px);
+          }
+
+          /* Mobile এ row গুলো একটু বড় — touch friendly */
+          .sd-row {
+            padding: 12px 16px;
+          }
+
+          .sd-avatar {
+            width: 42px;
+            height: 42px;
+          }
+
+          .sd-info-primary { font-size: 15px; }
+          .sd-info-secondary { font-size: 13px; }
+        }
       `}</style>
 
-      <div style={shellStyle}>
-        <div className="sd-shell">
+      {/* Loading */}
+      {status === "loading" && (
+        <div className="sd-shell-wrap">
+          <div className="sd-center">
+            <BiLoaderAlt className="sd-spinner" />
+            <span
+              style={{ fontSize: 14, color: "var(--pluto-text-secondary)" }}
+            >
+              Searching…
+            </span>
+          </div>
+        </div>
+      )}
 
-          {/* ── People ── */}
-          {users.length > 0 && (
-            <div>
-              <div className="sd-section-header">
-                <FiUser style={{ fontSize: 12, color: "var(--pluto-text-hint)" }} />
-                <span className="sd-section-label">People</span>
-                <span className="sd-section-count">{users.length}</span>
-              </div>
-              {users.map((user) => (
-                <Link
-                  key={user._id}
-                  to={`/profile/${user._id}`}
-                  onClick={handleClose}
-                  className="sd-row"
-                >
-                  <img
-                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=1a2235&color=22d3ee`}
-                    alt={user.username}
-                    className="sd-avatar"
+      {/* No results */}
+      {status === "succeeded" && totalResults === 0 && (
+        <div className="sd-shell-wrap">
+          <div className="sd-center">
+            <p
+              style={{
+                fontSize: 14,
+                color: "var(--pluto-text-hint)",
+                margin: 0,
+              }}
+            >
+              No results found
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Results */}
+      {status === "succeeded" && totalResults > 0 && (
+        <div className="sd-shell-wrap">
+          <div className="sd-shell">
+            {/* People */}
+            {users.length > 0 && (
+              <div>
+                <div className="sd-section-header">
+                  <FiUser
+                    style={{ fontSize: 12, color: "var(--pluto-text-hint)" }}
                   />
-                  <div style={{ minWidth: 0 }}>
-                    <div className="sd-info-primary">{user.fullName || user.username}</div>
-                    <div className="sd-info-secondary">@{user.username}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* ── Posts ── */}
-          {posts.length > 0 && (
-            <div>
-              <div className="sd-section-header">
-                <FiImage style={{ fontSize: 12, color: "var(--pluto-text-hint)" }} />
-                <span className="sd-section-label">Posts</span>
-                <span className="sd-section-count">{posts.length}</span>
-              </div>
-              {posts.map((post) => {
-                const thumb = post.images?.[0] || post.posturl;
-                return (
+                  <span className="sd-section-label">People</span>
+                  <span className="sd-section-count">{users.length}</span>
+                </div>
+                {users.map((user) => (
                   <Link
-                    key={post._id}
-                    to={`/post/single/${post._id}`}
+                    key={user._id}
+                    to={`/profile/${user._id}`}
                     onClick={handleClose}
                     className="sd-row"
                   >
-                    <div className="sd-thumb" style={{ width: 44, height: 44 }}>
-                      {thumb ? (
-                        <img src={thumb} alt="" onError={(e) => { e.target.style.display = "none"; }} />
+                    <img
+                      src={
+                        user.avatar ||
+                        `https://ui-avatars.com/api/?name=${user.username}&background=1a2235&color=22d3ee`
+                      }
+                      alt={user.username}
+                      className="sd-avatar"
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="sd-info-primary">
+                        {user.fullName || user.username}
+                      </div>
+                      <div className="sd-info-secondary">@{user.username}</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Posts */}
+            {posts.length > 0 && (
+              <div>
+                <div className="sd-section-header">
+                  <FiImage
+                    style={{ fontSize: 12, color: "var(--pluto-text-hint)" }}
+                  />
+                  <span className="sd-section-label">Posts</span>
+                  <span className="sd-section-count">{posts.length}</span>
+                </div>
+                {posts.map((post) => {
+                  const thumb = post.images?.[0] || post.posturl;
+                  return (
+                    <Link
+                      key={post._id}
+                      to={`/post/single/${post._id}`}
+                      onClick={handleClose}
+                      className="sd-row"
+                    >
+                      <div
+                        className="sd-thumb"
+                        style={{ width: 44, height: 44 }}
+                      >
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt=""
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <FiImage className="sd-thumb-icon" />
+                        )}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div className="sd-info-primary">
+                          {post.title ||
+                            post.content?.substring(0, 40) + "…" ||
+                            "Post"}
+                        </div>
+                        {post.createdBy && (
+                          <div className="sd-info-secondary">
+                            @{post.createdBy.username}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Videos */}
+            {videos.length > 0 && (
+              <div>
+                <div className="sd-section-header">
+                  <FiVideo
+                    style={{ fontSize: 12, color: "var(--pluto-text-hint)" }}
+                  />
+                  <span className="sd-section-label">Videos</span>
+                  <span className="sd-section-count">{videos.length}</span>
+                </div>
+                {videos.map((video) => (
+                  <Link
+                    key={video._id}
+                    to={`/video/single/${video._id}`}
+                    onClick={handleClose}
+                    className="sd-row"
+                  >
+                    <div className="sd-thumb" style={{ width: 48, height: 36 }}>
+                      {video.thumbnail ? (
+                        <img src={video.thumbnail} alt="" />
                       ) : (
-                        <FiImage className="sd-thumb-icon" />
+                        <FiVideo className="sd-thumb-icon" />
                       )}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div className="sd-info-primary">
-                        {post.title || post.content?.substring(0, 40) + "…" || "Post"}
+                        {video.title || "Video"}
                       </div>
-                      {post.createdBy && (
-                        <div className="sd-info-secondary">@{post.createdBy.username}</div>
+                      {video.createdBy && (
+                        <div className="sd-info-secondary">
+                          @{video.createdBy.username}
+                        </div>
                       )}
                     </div>
                   </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ── Videos ── */}
-          {videos.length > 0 && (
-            <div>
-              <div className="sd-section-header">
-                <FiVideo style={{ fontSize: 12, color: "var(--pluto-text-hint)" }} />
-                <span className="sd-section-label">Videos</span>
-                <span className="sd-section-count">{videos.length}</span>
+                ))}
               </div>
-              {videos.map((video) => (
-                <Link
-                  key={video._id}
-                  to={`/video/single/${video._id}`}
-                  onClick={handleClose}
-                  className="sd-row"
-                >
-                  <div className="sd-thumb" style={{ width: 48, height: 36 }}>
-                    {video.thumbnail ? (
-                      <img src={video.thumbnail} alt="" />
-                    ) : (
-                      <FiVideo className="sd-thumb-icon" />
-                    )}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div className="sd-info-primary">{video.title || "Video"}</div>
-                    {video.createdBy && (
-                      <div className="sd-info-secondary">@{video.createdBy.username}</div>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
