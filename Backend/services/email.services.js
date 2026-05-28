@@ -1,54 +1,97 @@
-import nodemailer from "nodemailer"
-import asyncHandler from "../utils/asyncHandler.js"
-
-
-
+import nodemailer from "nodemailer";
 
 export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-
 export const sendOTPEmail = async (email, otp) => {
-  // 1. Setup transporter
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: process.env.SMTP_PORT || 465,
-    secure: true, // true for 465, false for 587
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+ const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  family: 4,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
-  // 2. Email content
+  await transporter.verify();
+
   const mailOptions = {
     from: `"Pluto Support" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Pluto Email Verification Code",
     html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; color: #333333; border: 1px solid #eaeaec; border-radius: 8px;">
-        <h2 style="margin-top: 0; color: #111111;">Email Verification</h2>
-        <p style="font-size: 15px; line-height: 1.5; margin-bottom: 24px;">
-          Hello,
-        </p>
-        <p style="font-size: 15px; line-height: 1.5; margin-bottom: 24px;">
-          Please use the verification code below to complete your registration with Pluto.
-        </p>
-        <div style="background-color: #f4f4f5; padding: 16px; border-radius: 6px; text-align: center; margin-bottom: 24px;">
-          <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #000000;">${otp}</span>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+                  max-width: 520px; margin: 40px auto; background-color: #ffffff; 
+                  border-radius: 12px; overflow: hidden; 
+                  box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid #eaeaec;">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%); 
+                    padding: 32px 40px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 800; 
+                     color: #ffffff; letter-spacing: -0.5px;">
+            🪐 Pluto
+          </h1>
+          <p style="margin: 6px 0 0; color: #a0a0b0; font-size: 13px;">Social Network</p>
         </div>
-        <p style="font-size: 14px; color: #555555; margin-bottom: 32px;">
-          This code will expire in 3 minutes.
-        </p>
-        <hr style="border: none; border-top: 1px solid #eaeaea; margin-bottom: 20px;" />
-        <p style="font-size: 12px; color: #888888; margin: 0;">
-          If you didn’t request this, you can safely ignore this email.
-        </p>
+
+        <!-- Body -->
+        <div style="padding: 40px 40px 32px;">
+          <h2 style="margin: 0 0 12px; font-size: 20px; color: #111111; font-weight: 700;">
+            Verify your email address
+          </h2>
+          <p style="margin: 0 0 28px; font-size: 15px; color: #555555; line-height: 1.6;">
+            Hi there! Use the verification code below to complete your 
+            registration. This code expires in <strong>3 minutes</strong>.
+          </p>
+
+          <!-- OTP Box -->
+          <div style="background: linear-gradient(135deg, #f8f8ff 0%, #f0f0ff 100%);
+                      border: 2px dashed #c7c7e0; border-radius: 10px; 
+                      padding: 24px; text-align: center; margin-bottom: 28px;">
+            <p style="margin: 0 0 8px; font-size: 12px; color: #888888; 
+                      text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">
+              Your OTP Code
+            </p>
+            <span style="font-size: 42px; font-weight: 800; letter-spacing: 10px; 
+                         color: #1a1a2e; font-family: 'Courier New', monospace;">
+              ${otp}
+            </span>
+          </div>
+
+          <!-- Warning -->
+          <div style="background-color: #fff8e1; border-left: 4px solid #f6c90e; 
+                      border-radius: 6px; padding: 14px 16px; margin-bottom: 28px;">
+            <p style="margin: 0; font-size: 13px; color: #7a6000; line-height: 1.5;">
+              ⚠️ <strong>Never share this code</strong> with anyone. 
+              Pluto will never ask for your OTP via phone or chat.
+            </p>
+          </div>
+
+          <p style="margin: 0; font-size: 14px; color: #888888; line-height: 1.6;">
+            Didn't request this? You can safely ignore this email. 
+            Your account won't be created without verification.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f9f9fb; padding: 20px 40px; 
+                    border-top: 1px solid #eaeaec; text-align: center;">
+          <p style="margin: 0; font-size: 12px; color: #aaaaaa;">
+            © ${new Date().getFullYear()} Pluto Social Network · All rights reserved
+          </p>
+        </div>
+
       </div>
     `,
   };
 
-  // 3. Send email
-  await transporter.sendMail(mailOptions);
+  const info = await transporter.sendMail(mailOptions);
+  console.log("✅ OTP Email sent:", info.messageId);
 };
