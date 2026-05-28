@@ -14,9 +14,7 @@ export const sendOTPEmail = async (email, otp) => {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  tls: {
-    rejectUnauthorized: false
-  }
+  tls: { rejectUnauthorized: false }
 });
 
   await transporter.verify();
