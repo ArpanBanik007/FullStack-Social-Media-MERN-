@@ -1,10 +1,12 @@
 import API from "../utils/API.js";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../slices/mydetails.slice";
 
-// Inline styled inputs — no dependency on InputField/Button for auth pages
 function LoginPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,12 +27,11 @@ function LoginPage() {
       });
       setSuccess(res?.data?.message || "Login successful!");
 
-      // Store token in localStorage as fallback for Socket.IO
-      if (res.data?.data?.accessToken) {
-        localStorage.setItem("token", res.data.data.accessToken);
-      }
+      // ✅ Redux এ user + token set করো
+      const { user, accessToken } = res.data.data;
+      dispatch(setCredentials({ user, accessToken }));
 
-      setTimeout(() => navigate("/home"), 1000);
+      setTimeout(() => navigate("/home"), 500);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
