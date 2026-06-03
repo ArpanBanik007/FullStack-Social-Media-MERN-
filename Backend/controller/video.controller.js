@@ -247,7 +247,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
 //   );
 // });
 
-
 const getShortsFeed = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const { lastVideoId, limit = 10, search = "", category = "" } = req.query;
@@ -267,6 +266,11 @@ const getShortsFeed = asyncHandler(async (req, res) => {
     if (lastVideo) query.createdAt = { $lt: lastVideo.createdAt };
   }
 
+  // ✅ এটাই মূল fix — string কে ObjectId এ convert
+  const userObjectId = userId
+    ? new mongoose.Types.ObjectId(String(userId))
+    : null;
+
   const videos = await Video.aggregate([
     { $match: query },
     { $sort: { createdAt: -1 } },
@@ -280,18 +284,20 @@ const getShortsFeed = asyncHandler(async (req, res) => {
       },
     },
     { $unwind: "$createdBy" },
-    // ✅ videolikes collection দিয়ে check
     {
       $lookup: {
         from: "videolikes",
-        let: { videoId: "$_id", userId: userId },
+        let: { videoId: "$_id" },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["$video", "$$videoId"] }, // ✅ video field
-                  { $eq: ["$user", "$$userId"] },
+                  { $eq: ["$video", "$$videoId"] },
+                  // ✅ userObjectId null হলে always false
+                  userObjectId
+                    ? { $eq: ["$user", userObjectId] }
+                    : { $eq: [1, 0] },
                 ],
               },
             },
@@ -328,6 +334,7 @@ const getShortsFeed = asyncHandler(async (req, res) => {
 
 
 
+
 // ── Get Single Video ─────────────────────────────────────────────────
 const getSingleVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -361,11 +368,8 @@ const getSingleVideo = asyncHandler(async (req, res) => {
   );
 });
 
-
-
 const toggleLikes = asyncHandler(async (req, res) => {
-  const io= getIO();
-
+  const io = getIO();
   const userId = req.user?._id;
   const { videoId } = req.params;
 
@@ -392,9 +396,12 @@ const toggleLikes = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId).select("likes");
 
   if (io) {
-    io.to(`video:${videoId}`).emit("video-reaction-updated", { // ✅ আলাদা event
+    io.to(`video:${videoId}`).emit("video-reaction-updated", {
       videoId,
       likes: video.likes,
+      // ✅ কে like করল সেটা পাঠাও
+      userId: userId.toString(),
+      liked,
     });
   }
 
@@ -402,44 +409,6 @@ const toggleLikes = asyncHandler(async (req, res) => {
     new ApiResponse(200, { liked }, "Like toggled successfully")
   );
 });
-
-
-
-const toggleDislike = asyncHandler(async (req, res) => {
-  const io= getIO();
-
-  const { videoId } = req.params;
-  const userId = req.user?._id;
-
-  if (!videoId || !userId) {
-    throw new ApiError(400, "User ID or Video ID is missing");
-  }
-
-  const alreadyDisliked = await Dislike.isDisliked(userId, videoId);
-
-  if (alreadyDisliked) {
-
-    await Dislike.deleteOne({ user: userId, video: videoId });
-
-    await Video.findByIdAndUpdate(videoId, { $inc: { dislikes: -1 } });
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, null, "Dislike removed successfully"));
-  }
-
-  else {
-
-    await Dislike.create({ user: userId, video: videoId });
-
-    await Video.findByIdAndUpdate(videoId, { $inc: { dislikes: 1 } });
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, null, "Disliked the video"));
-  }
-});
-
 
 const getMyAllLikedVideos = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -576,7 +545,6 @@ export {
   deleteVideo,
   getShortsFeed,
   toggleLikes,
-  toggleDislike,
   getSingleVideo,
   getMyAllLikedVideos,
   getMyAllVideos,

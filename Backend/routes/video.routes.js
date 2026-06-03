@@ -10,10 +10,10 @@ import {
   deleteVideo,
   getShortsFeed,
   toggleLikes,
-  toggleDislike,
   getSingleVideo,
   getMyAllVideos,
   getClickedUserAllVideos,
+  getMyAllLikedVideos,
 } from "../controller/video.controller.js";
 
 const router = Router();
@@ -55,8 +55,9 @@ router.get("/:videoId", getSingleVideo);
 // ✅ Like / Unlike a video
 router.post("/like/:videoId", verifyJWT, toggleLikes);
 
+router.get("/mylikedvideos", verifyJWT, getMyAllLikedVideos);
 // ✅ Dislike / Remove dislike
-router.post("/dislike/:videoId", verifyJWT, toggleDislike);
+// router.post("/dislike/:videoId", verifyJWT, toggleDislike);
 
 
 

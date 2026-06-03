@@ -1,24 +1,22 @@
 import nodemailer from "nodemailer";
-
+import dotenv from "dotenv";
 export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-export const sendOTPEmail = async (email, otp) => {
- const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+// Transporter একবারই বানাও — module level-এ
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",  // service না, host দাও
   port: 587,
   secure: false,
-  family: 4,
+  family: 4,               // এটাই IPv4 force করে
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  tls: { rejectUnauthorized: false }
 });
 
-  await transporter.verify();
-
+export const sendOTPEmail = async (email, otp) => {
   const mailOptions = {
     from: `"Pluto Support" <${process.env.EMAIL_USER}>`,
     to: email,

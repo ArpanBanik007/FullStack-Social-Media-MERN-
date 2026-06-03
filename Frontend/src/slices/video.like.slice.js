@@ -1,16 +1,16 @@
 import API from "../utils/API.js";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
+const normalizeId = (id) => String(id ?? "");
 
 // ── Fetch My Liked Videos ──
 export const fetchMyVideoLikes = createAsyncThunk(
   "videoLikes/fetchMyVideoLikes",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await API.get(
-        "/likes/my-liked-videos",
-        { withCredentials: true }
-      );
+      const res = await API.get("/videos/mylikedvideos", {
+        withCredentials: true,
+      });
       return res.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -28,18 +28,13 @@ export const toggleVideoLike = createAsyncThunk(
         {},
         { withCredentials: true }
       );
-      
-      console.log("res.data.data →", res.data.data); // ← এটা দেখাও একবার
-      
       const liked = res.data?.data?.liked ?? res.data?.liked;
-      return { videoId: String(videoId), liked };
+      return { videoId: normalizeId(videoId), liked };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
-// ── Helper ──
-const normalizeId = (id) => String(id ?? ""); 
 
 const videoLikeSlice = createSlice({
   name: "videoLikes",
@@ -53,7 +48,7 @@ const videoLikeSlice = createSlice({
     removeFromLikedVideos: (state, action) => {
       const id = normalizeId(action.payload);
       state.videos = state.videos.filter((v) => normalizeId(v._id) !== id);
-      if (state.totalLikes > 0) state.totalLikes -= 1; // ✅ negative হবে না
+      if (state.totalLikes > 0) state.totalLikes -= 1;
     },
     clearLikedVideos: (state) => {
       state.videos = [];
@@ -61,6 +56,7 @@ const videoLikeSlice = createSlice({
       state.status = "idle";
       state.error = null;
     },
+    // ✅ Post এর syncPostLike এর মতো same pattern
     syncVideoLike: (state, action) => {
       const { videoId, isLiked } = action.payload;
       const id = normalizeId(videoId);
@@ -77,38 +73,35 @@ const videoLikeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ── fetchMyVideoLikes ──
       .addCase(fetchMyVideoLikes.pending, (state) => {
         state.status = "loading";
         state.error = null;
       })
       .addCase(fetchMyVideoLikes.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.videos = action.payload.videos ?? []; // ✅ undefined safety
-        state.totalLikes = action.payload.totalLikes ?? 0;
+        state.videos = (action.payload?.videos ?? []).map((v) => ({
+          ...v,
+          _id: normalizeId(v._id),
+        }));
+        state.totalLikes = action.payload?.totalLikes ?? 0;
       })
       .addCase(fetchMyVideoLikes.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       })
-
-      // ── toggleVideoLike ──
+      // ✅ toggleVideoLike fulfilled এ Redux sync — Post এর মতো
       .addCase(toggleVideoLike.fulfilled, (state, action) => {
-        const { videoId, liked } = action.payload; // videoId ইতিমধ্যে String
+        const { videoId, liked } = action.payload;
+        const exists = state.videos.some((v) => normalizeId(v._id) === videoId);
 
-        if (liked) {
-          const exists = state.videos.some(
-            (v) => normalizeId(v._id) === videoId // ✅
-          );
-          if (!exists) {
-            state.videos.push({ _id: videoId }); // ✅ String হিসেবে push
-            state.totalLikes += 1;
-          }
-        } else {
+        if (liked && !exists) {
+          state.videos.push({ _id: videoId });
+          state.totalLikes += 1;
+        } else if (!liked && exists) {
           state.videos = state.videos.filter(
-            (v) => normalizeId(v._id) !== videoId // ✅
+            (v) => normalizeId(v._id) !== videoId
           );
-          if (state.totalLikes > 0) state.totalLikes -= 1; // ✅ negative guard
+          if (state.totalLikes > 0) state.totalLikes -= 1;
         }
       });
   },
@@ -123,7 +116,8 @@ export const selectLikedVideos = (state) => state.videoLikes.videos;
 export const selectVideoLikeStatus = (state) => state.videoLikes.status;
 export const selectTotalVideoLikes = (state) => state.videoLikes.totalLikes;
 
+// ✅ Post এর selectIsPostLiked এর মতো same pattern
 export const selectIsVideoLiked = (videoId) => (state) =>
   state.videoLikes.videos.some(
-    (video) => normalizeId(video._id) === normalizeId(videoId) // ✅
+    (v) => normalizeId(v._id) === normalizeId(videoId)
   );
