@@ -1,6 +1,6 @@
-const SibApiV3Sdk = await import("@getbrevo/brevo");
+import * as SibApiV3Sdk from "@getbrevo/brevo";
 
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+const apiInstance = new SibApiV3Sdk.default.TransactionalEmailsApi();
 apiInstance.authentications["apiKey"].apiKey = process.env.BREVO_API_KEY;
 
 export const generateOTP = () => {
@@ -8,10 +8,10 @@ export const generateOTP = () => {
 };
 
 export const sendOTPEmail = async (email, otp) => {
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  const sendSmtpEmail = new SibApiV3Sdk.default.SendSmtpEmail();
 
   sendSmtpEmail.subject = "Pluto Email Verification Code";
-  sendSmtpEmail.sender = { name: "Pluto Support", email: "pluto@gmail.com" };
+  sendSmtpEmail.sender = { name: "Pluto Support", email: "pluto@brevo.com" };
   sendSmtpEmail.to = [{ email }];
   sendSmtpEmail.htmlContent = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
