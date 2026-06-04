@@ -1,17 +1,19 @@
-import { Resend } from "resend";
+const SibApiV3Sdk = await import("@getbrevo/brevo");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+apiInstance.authentications["apiKey"].apiKey = process.env.BREVO_API_KEY;
 
 export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 export const sendOTPEmail = async (email, otp) => {
-  const { data, error } = await resend.emails.send({
-    from: "Pluto Support <onboarding@resend.dev>",
-    to: email,
-    subject: "Pluto Email Verification Code",
-    html: `
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+  sendSmtpEmail.subject = "Pluto Email Verification Code";
+  sendSmtpEmail.sender = { name: "Pluto Support", email: "pluto@gmail.com" };
+  sendSmtpEmail.to = [{ email }];
+  sendSmtpEmail.htmlContent = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
                   max-width: 520px; margin: 40px auto; background-color: #ffffff; 
                   border-radius: 12px; overflow: hidden; 
@@ -20,9 +22,7 @@ export const sendOTPEmail = async (email, otp) => {
         <div style="background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%); 
                     padding: 32px 40px; text-align: center;">
           <h1 style="margin: 0; font-size: 28px; font-weight: 800; 
-                     color: #ffffff; letter-spacing: -0.5px;">
-            🪐 Pluto
-          </h1>
+                     color: #ffffff; letter-spacing: -0.5px;">🪐 Pluto</h1>
           <p style="margin: 6px 0 0; color: #a0a0b0; font-size: 13px;">Social Network</p>
         </div>
 
@@ -51,14 +51,12 @@ export const sendOTPEmail = async (email, otp) => {
           <div style="background-color: #fff8e1; border-left: 4px solid #f6c90e; 
                       border-radius: 6px; padding: 14px 16px; margin-bottom: 28px;">
             <p style="margin: 0; font-size: 13px; color: #7a6000; line-height: 1.5;">
-              ⚠️ <strong>Never share this code</strong> with anyone. 
-              Pluto will never ask for your OTP via phone or chat.
+              ⚠️ <strong>Never share this code</strong> with anyone.
             </p>
           </div>
 
           <p style="margin: 0; font-size: 14px; color: #888888; line-height: 1.6;">
-            Didn't request this? You can safely ignore this email. 
-            Your account won't be created without verification.
+            Didn't request this? You can safely ignore this email.
           </p>
         </div>
 
@@ -69,13 +67,8 @@ export const sendOTPEmail = async (email, otp) => {
           </p>
         </div>
       </div>
-    `,
-  });
+  `;
 
-  if (error) {
-    console.error("❌ Resend error:", error);
-    throw new Error(error.message);
-  }
-
-  console.log("✅ OTP Email sent:", data.id);
+  await apiInstance.sendTransacEmail(sendSmtpEmail);
+  console.log("✅ OTP Email sent via Brevo");
 };
