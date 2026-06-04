@@ -1,24 +1,14 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Transporter একবারই বানাও — module level-এ
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",  // service না, host দাও
-  port: 587,
-  secure: false,
-  family: 4,               // এটাই IPv4 force করে
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 export const sendOTPEmail = async (email, otp) => {
-  const mailOptions = {
-    from: `"Pluto Support" <${process.env.EMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: "Pluto Support <onboarding@resend.dev>",
     to: email,
     subject: "Pluto Email Verification Code",
     html: `
@@ -27,7 +17,6 @@ export const sendOTPEmail = async (email, otp) => {
                   border-radius: 12px; overflow: hidden; 
                   box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid #eaeaec;">
         
-        <!-- Header -->
         <div style="background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%); 
                     padding: 32px 40px; text-align: center;">
           <h1 style="margin: 0; font-size: 28px; font-weight: 800; 
@@ -37,7 +26,6 @@ export const sendOTPEmail = async (email, otp) => {
           <p style="margin: 6px 0 0; color: #a0a0b0; font-size: 13px;">Social Network</p>
         </div>
 
-        <!-- Body -->
         <div style="padding: 40px 40px 32px;">
           <h2 style="margin: 0 0 12px; font-size: 20px; color: #111111; font-weight: 700;">
             Verify your email address
@@ -47,7 +35,6 @@ export const sendOTPEmail = async (email, otp) => {
             registration. This code expires in <strong>3 minutes</strong>.
           </p>
 
-          <!-- OTP Box -->
           <div style="background: linear-gradient(135deg, #f8f8ff 0%, #f0f0ff 100%);
                       border: 2px dashed #c7c7e0; border-radius: 10px; 
                       padding: 24px; text-align: center; margin-bottom: 28px;">
@@ -61,7 +48,6 @@ export const sendOTPEmail = async (email, otp) => {
             </span>
           </div>
 
-          <!-- Warning -->
           <div style="background-color: #fff8e1; border-left: 4px solid #f6c90e; 
                       border-radius: 6px; padding: 14px 16px; margin-bottom: 28px;">
             <p style="margin: 0; font-size: 13px; color: #7a6000; line-height: 1.5;">
@@ -76,18 +62,20 @@ export const sendOTPEmail = async (email, otp) => {
           </p>
         </div>
 
-        <!-- Footer -->
         <div style="background-color: #f9f9fb; padding: 20px 40px; 
                     border-top: 1px solid #eaeaec; text-align: center;">
           <p style="margin: 0; font-size: 12px; color: #aaaaaa;">
             © ${new Date().getFullYear()} Pluto Social Network · All rights reserved
           </p>
         </div>
-
       </div>
     `,
-  };
+  });
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log("✅ OTP Email sent:", info.messageId);
+  if (error) {
+    console.error("❌ Resend error:", error);
+    throw new Error(error.message);
+  }
+
+  console.log("✅ OTP Email sent:", data.id);
 };
