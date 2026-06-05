@@ -1,3 +1,4 @@
+// VideoPlayer.js
 import API from "../utils/API.js";
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -14,9 +15,9 @@ import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { connectSocket } from "../socket";
-import { addVideoView, updateVideoViews } from "../slices/videoView.slice";
+import { addVideoView } from "../slices/videoView.slice";
 import VideoLikeButton from "../componants/VideoLikeButton";
-import { syncVideoLike } from "../slices/video.like.slice";
+import { syncVideoLike, fetchMyVideoLikes } from "../slices/video.like.slice";
 import FollowButton from "../componants/FollowButton";
 import { fetchMyFollowings } from "../slices/follow.slice";
 
@@ -35,6 +36,7 @@ function VideoPlayer() {
 
   useEffect(() => {
     dispatch(fetchMyFollowings());
+    dispatch(fetchMyVideoLikes()); // ✅ Fix: liked state load
   }, [dispatch]);
 
   // ── Videos fetch ───────────────────────────────────────
@@ -167,12 +169,9 @@ function VideoPlayer() {
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
-
           const videoId = entry.target.dataset.videoid;
           if (!videoId) return;
-
           if (viewedVideos.current.has(videoId)) return;
-
           viewedVideos.current.add(videoId);
           dispatch(addVideoView(videoId));
         });
@@ -389,13 +388,10 @@ function VideoPlayer() {
         <div className="vp-phone">
           {/* Top bar */}
           <div className="vp-controls">
-            {/* ← Back button */}
             <button className="vp-mute-btn" onClick={() => navigate(-1)}>
               <IoArrowBack />
             </button>
-
             <span className="vp-controls-title">Pluto</span>
-
             <button className="vp-mute-btn" onClick={handleMuteToggle}>
               {isMuted ? <FaVolumeXmark /> : <FaVolumeHigh />}
             </button>
@@ -522,7 +518,6 @@ function VideoPlayer() {
                       </span>
                     </button>
 
-                    {/* Views */}
                     <button className="vp-action-btn">
                       <div className="vp-action-icon">
                         <FaEye />
