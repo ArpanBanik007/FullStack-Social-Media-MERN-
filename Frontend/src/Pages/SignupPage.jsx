@@ -3,12 +3,14 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../slices/mydetails.slice";
 
 const STEPS = ["Email", "Verify", "Profile"];
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -130,6 +132,11 @@ export default function SignUp() {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      // ✅ Redux-এ user set করো
+      const { user, accessToken } = res.data.data;
+      dispatch(setCredentials({ user, accessToken }));
+
       setSuccess(res.data.message || "Registration successful!");
       setTimeout(() => navigate("/home"), 1500);
     } catch (err) {
@@ -168,7 +175,6 @@ export default function SignUp() {
           margin-bottom: 20px; letter-spacing: -0.03em;
         }
 
-        /* Step indicator */
         .step-track {
           display: flex; align-items: center; gap: 0;
           margin-bottom: 28px;
@@ -191,7 +197,6 @@ export default function SignUp() {
         .step-line { flex:1; height:1px; background:rgba(255,255,255,0.07); margin-bottom:14px; }
         .step-line.done { background: linear-gradient(90deg,#06b6d4,#6366f1); }
 
-        /* Inputs */
         .auth-label {
           display:block; font-size:11px; font-weight:700; letter-spacing:0.08em;
           text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:6px;
@@ -207,6 +212,7 @@ export default function SignUp() {
         }
         .auth-input:focus { border-color:rgba(6,182,212,0.45); background:rgba(6,182,212,0.05); }
         .auth-input::placeholder { color:rgba(255,255,255,0.18); }
+        .auth-input:disabled { opacity:0.5; cursor:not-allowed; }
         .auth-input-toggle {
           position:absolute; right:14px; top:50%; transform:translateY(-50%);
           font-size:16px; cursor:pointer; color:rgba(255,255,255,0.25);
@@ -214,7 +220,6 @@ export default function SignUp() {
         }
         .auth-input-toggle:hover { color:rgba(255,255,255,0.6); }
 
-        /* Phone override */
         .auth-phone-wrap .react-tel-input .form-control {
           width:100% !important; height:46px !important;
           background:rgba(255,255,255,0.04) !important;
@@ -227,6 +232,9 @@ export default function SignUp() {
           border-color:rgba(6,182,212,0.45) !important;
           background:rgba(6,182,212,0.05) !important;
           box-shadow:none !important;
+        }
+        .auth-phone-wrap .react-tel-input .form-control:disabled {
+          opacity:0.5 !important; cursor:not-allowed !important;
         }
         .auth-phone-wrap .react-tel-input .flag-dropdown {
           background:rgba(255,255,255,0.05) !important;
@@ -251,7 +259,6 @@ export default function SignUp() {
           color:rgba(255,255,255,0.8) !important; border-radius:8px !important;
         }
 
-        /* Photo upload */
         .photo-upload-cover {
           width:100%; height:120px; border-radius:16px; overflow:hidden;
           border:2px dashed rgba(255,255,255,0.1); cursor:pointer;
@@ -261,6 +268,7 @@ export default function SignUp() {
           position:relative; margin-bottom:20px;
         }
         .photo-upload-cover:hover { border-color:rgba(6,182,212,0.35); background:rgba(6,182,212,0.04); }
+        .photo-upload-cover.disabled { opacity:0.5; cursor:not-allowed; pointer-events:none; }
         .photo-upload-cover img { width:100%; height:100%; object-fit:cover; border-radius:14px; }
         .photo-upload-cover .upload-placeholder {
           display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -281,11 +289,11 @@ export default function SignUp() {
           font-size:24px;
         }
         .photo-upload-avatar:hover { border-color:rgba(6,182,212,0.4); }
+        .photo-upload-avatar.disabled { opacity:0.5; cursor:not-allowed; pointer-events:none; }
         .photo-upload-avatar img { width:100%; height:100%; object-fit:cover; }
 
         .photo-hint { text-align:center; font-size:11px; color:rgba(255,255,255,0.2); margin-bottom:20px; }
 
-        /* Buttons */
         .auth-btn-row { display:flex; gap:10px; margin-top:8px; }
         .auth-btn {
           flex:1; height:48px; border-radius:14px; border:none;
@@ -305,6 +313,7 @@ export default function SignUp() {
           border:1px solid rgba(255,255,255,0.08);
         }
         .auth-btn.secondary:hover { background:rgba(255,255,255,0.09); color:rgba(255,255,255,0.8); }
+        .auth-btn.secondary:disabled { opacity:0.4; cursor:not-allowed; }
 
         .auth-alert { padding:10px 14px; border-radius:12px; font-size:12px; font-weight:600; margin-bottom:18px; text-align:center; }
         .auth-alert.error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; }
@@ -363,6 +372,7 @@ export default function SignUp() {
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={handleChange}
+                    disabled={sendingOTP}
                   />
                 </div>
                 <div className="auth-btn-row">
@@ -400,6 +410,7 @@ export default function SignUp() {
                     value={formData.otp}
                     onChange={handleChange}
                     maxLength={6}
+                    disabled={verifyingOTP}
                     style={{
                       letterSpacing: "4px",
                       textAlign: "center",
@@ -416,6 +427,7 @@ export default function SignUp() {
                       setOtpSent(false);
                       setOtpVerified(false);
                     }}
+                    disabled={verifyingOTP}
                   >
                     ← Back
                   </button>
@@ -423,7 +435,7 @@ export default function SignUp() {
                     type="button"
                     className="auth-btn secondary"
                     onClick={handleSendOTP}
-                    disabled={otpCooldown > 0 || sendingOTP}
+                    disabled={otpCooldown > 0 || sendingOTP || verifyingOTP}
                   >
                     {sendingOTP
                       ? "Sending..."
@@ -449,7 +461,7 @@ export default function SignUp() {
             {step === 3 && (
               <>
                 <div className="auth-input-wrap">
-                  <label className="auth-label">Email (Verified)</label>
+                  <label className="auth-label">Email (Verified ✓)</label>
                   <input
                     className="auth-input"
                     type="email"
@@ -469,6 +481,7 @@ export default function SignUp() {
                     placeholder="Your full name"
                     value={formData.fullName}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                 </div>
 
@@ -481,6 +494,7 @@ export default function SignUp() {
                     placeholder="@username"
                     value={formData.username}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                 </div>
 
@@ -492,14 +506,15 @@ export default function SignUp() {
                       value={formData.phone}
                       onChange={(value) => updateFormData("phone", value)}
                       enableSearch={true}
+                      disabled={loading}
                     />
                   </div>
                 </div>
 
                 <label className="auth-label">Cover Image</label>
                 <div
-                  className="photo-upload-cover"
-                  onClick={() => coverRef.current.click()}
+                  className={`photo-upload-cover ${loading ? "disabled" : ""}`}
+                  onClick={() => !loading && coverRef.current.click()}
                 >
                   {coverPreview ? (
                     <img src={coverPreview} alt="cover" />
@@ -517,13 +532,14 @@ export default function SignUp() {
                   ref={coverRef}
                   onChange={(e) => handleFileChange(e, "coverImage")}
                   style={{ display: "none" }}
+                  disabled={loading}
                 />
 
                 <label className="auth-label">Profile Picture</label>
                 <div className="photo-upload-avatar-row">
                   <div
-                    className="photo-upload-avatar"
-                    onClick={() => avatarRef.current.click()}
+                    className={`photo-upload-avatar ${loading ? "disabled" : ""}`}
+                    onClick={() => !loading && avatarRef.current.click()}
                   >
                     {avatarPreview ? (
                       <img src={avatarPreview} alt="avatar" />
@@ -541,6 +557,7 @@ export default function SignUp() {
                   ref={avatarRef}
                   onChange={(e) => handleFileChange(e, "avatar")}
                   style={{ display: "none" }}
+                  disabled={loading}
                 />
 
                 <div className="auth-input-wrap">
@@ -553,11 +570,13 @@ export default function SignUp() {
                     value={formData.password}
                     onChange={handleChange}
                     autoComplete="new-password"
+                    disabled={loading}
                   />
                   <button
                     type="button"
                     className="auth-input-toggle"
                     onClick={() => setShowPass((p) => !p)}
+                    disabled={loading}
                   >
                     {showPass ? "🙈" : "👁️"}
                   </button>
