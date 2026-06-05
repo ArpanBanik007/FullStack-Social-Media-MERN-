@@ -159,27 +159,29 @@ const sendOTP = asyncHandler(async (req, res) => {
   if (user) throw new ApiError(409, "User with this email already exists");
 
   const otp = generateOTP();
-  console.log(otp)
+  console.log("✅ OTP generated:", otp);
 
   await EmailVerification.deleteMany({ email });
 
   const otpHash = await bcrypt.hash(otp, 10);
   const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
-  await EmailVerification.create({
-    email,
-    otpHash,
-    expiresAt,
-  });
+  await EmailVerification.create({ email, otpHash, expiresAt });
 
-  await sendOTPEmail(email, otp);
+  // ⬇️ এই try-catch টা add করো
+  try {
+    await sendOTPEmail(email, otp);
+    console.log("✅ Email sent successfully");
+  } catch (err) {
+    console.error("❌ Email sending failed:", err.message);
+    console.error("❌ Full error:", err);
+    throw new ApiError(500, "Failed to send OTP email: " + err.message);
+  }
 
   return res
     .status(200)
     .json(new ApiResponse(200, null, "OTP sent successfully to your email"));
 });
-
-
 
 
 const verifyOTP = asyncHandler(async (req, res) => {
