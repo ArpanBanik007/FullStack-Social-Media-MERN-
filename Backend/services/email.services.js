@@ -1,19 +1,25 @@
-import * as SibApiV3Sdk from "@getbrevo/brevo";
+import nodemailer from "nodemailer";
 
-const apiInstance = new SibApiV3Sdk.default.TransactionalEmailsApi();
-apiInstance.authentications["apiKey"].apiKey = process.env.BREVO_API_KEY;
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS,
+  },
+});
 
 export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 export const sendOTPEmail = async (email, otp) => {
-  const sendSmtpEmail = new SibApiV3Sdk.default.SendSmtpEmail();
-
-  sendSmtpEmail.subject = "Pluto Email Verification Code";
-  sendSmtpEmail.sender = { name: "Pluto Support", email: "pluto@brevo.com" };
-  sendSmtpEmail.to = [{ email }];
-  sendSmtpEmail.htmlContent = `
+  const mailOptions = {
+    from: `"Pluto Support" <${process.env.BREVO_SMTP_USER}>`,
+    to: email,
+    subject: "Pluto Email Verification Code",
+    html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
                   max-width: 520px; margin: 40px auto; background-color: #ffffff; 
                   border-radius: 12px; overflow: hidden; 
@@ -51,7 +57,8 @@ export const sendOTPEmail = async (email, otp) => {
           <div style="background-color: #fff8e1; border-left: 4px solid #f6c90e; 
                       border-radius: 6px; padding: 14px 16px; margin-bottom: 28px;">
             <p style="margin: 0; font-size: 13px; color: #7a6000; line-height: 1.5;">
-              ⚠️ <strong>Never share this code</strong> with anyone.
+              ⚠️ <strong>Never share this code</strong> with anyone. 
+              Pluto will never ask for your OTP via phone or chat.
             </p>
           </div>
 
@@ -67,8 +74,9 @@ export const sendOTPEmail = async (email, otp) => {
           </p>
         </div>
       </div>
-  `;
+    `,
+  };
 
-  await apiInstance.sendTransacEmail(sendSmtpEmail);
-  console.log("✅ OTP Email sent via Brevo");
+  const info = await transporter.sendMail(mailOptions);
+  console.log("✅ OTP Email sent:", info.messageId);
 };
