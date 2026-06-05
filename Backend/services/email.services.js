@@ -14,7 +14,7 @@ export const sendOTPEmail = async (email, otp) => {
     body: JSON.stringify({
       sender: {
         name: "Pluto Support",
-        email: process.env.BREVO_SMTP_USER,
+        email: process.env.BREVO_SENDER_EMAIL,
       },
       to: [{ email }],
       subject: "Pluto Email Verification Code",
