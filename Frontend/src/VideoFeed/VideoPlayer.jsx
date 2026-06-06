@@ -11,6 +11,7 @@ import {
   FaVolumeXmark,
   FaVolumeHigh,
 } from "react-icons/fa6";
+import { syncVideoLike, fetchMyVideoLikes } from "../slices/video.like.slice";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
@@ -72,23 +73,33 @@ function VideoPlayer() {
   // ── Socket: like update ────────────────────────────────
   useEffect(() => {
     const socket = connectSocket();
+    const myId = String(mydetails?._id);
+
     const handleReactionUpdate = (data) => {
       setVideos((prev) =>
-        prev.map((v) =>
-          v._id === data.videoId
-            ? {
-                ...v,
-                likes: data.likes,
-                userLiked:
-                  data.userLiked !== undefined ? data.userLiked : v.userLiked,
-              }
-            : v,
-        ),
+        prev.map((v) => {
+          if (v._id !== data.videoId) return v;
+
+          let userLiked = v.userLiked;
+          if (data.userId && data.userId === myId) {
+            userLiked = data.liked;
+            dispatch(
+              syncVideoLike({ videoId: data.videoId, isLiked: data.liked }),
+            );
+          }
+
+          return {
+            ...v,
+            likes: data.likes,
+            userLiked,
+          };
+        }),
       );
     };
+
     socket.on("video-reaction-updated", handleReactionUpdate);
     return () => socket.off("video-reaction-updated", handleReactionUpdate);
-  }, []);
+  }, [mydetails?._id]);
 
   // ── Socket: comment count update ───────────────────────
   useEffect(() => {

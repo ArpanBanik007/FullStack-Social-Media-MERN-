@@ -9,14 +9,11 @@ import { useState, useEffect } from "react";
 
 function VideoLikeButton({ videoId, likeCount }) {
   const dispatch = useDispatch();
-
-  // ✅ Post এর মতো selector দিয়ে Redux state থেকে নাও
   const isLiked = useSelector(selectIsVideoLiked(videoId));
-
   const [localLikeCount, setLocalLikeCount] = useState(likeCount ?? 0);
   const [likeLoading, setLikeLoading] = useState(false);
+  const [pop, setPop] = useState(false);
 
-  // likeCount prop বদলালে sync করো (socket update)
   useEffect(() => {
     setLocalLikeCount(likeCount ?? 0);
   }, [likeCount]);
@@ -24,17 +21,16 @@ function VideoLikeButton({ videoId, likeCount }) {
   const handleLike = () => {
     if (likeLoading) return;
     setLikeLoading(true);
+    setPop(true);
+    setTimeout(() => setPop(false), 300);
 
     const wasLiked = isLiked;
-
-    // ✅ Post এর মতো — আগেই count + Redux update (optimistic)
     setLocalLikeCount((prev) => (wasLiked ? prev - 1 : prev + 1));
     dispatch(syncVideoLike({ videoId, isLiked: !wasLiked }));
 
     dispatch(toggleVideoLike(videoId))
       .unwrap()
       .catch(() => {
-        // ❌ Error হলে rollback
         setLocalLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
         dispatch(syncVideoLike({ videoId, isLiked: wasLiked }));
       })
@@ -96,16 +92,13 @@ function VideoLikeButton({ videoId, likeCount }) {
           font-family: 'Syne', sans-serif;
         }
       `}</style>
-
       <button
         className="vp-like-btn"
         onClick={handleLike}
         disabled={likeLoading}
       >
-        <div
-          className={`vp-like-icon-wrap ${isLiked ? "liked" : "unliked"} ${likeLoading ? "" : ""}`}
-        >
-          <span className={likeLoading ? "" : ""}>
+        <div className={`vp-like-icon-wrap ${isLiked ? "liked" : "unliked"}`}>
+          <span className={pop ? "heart-pop" : ""}>
             {isLiked ? <FaHeart /> : <FaRegHeart />}
           </span>
         </div>
