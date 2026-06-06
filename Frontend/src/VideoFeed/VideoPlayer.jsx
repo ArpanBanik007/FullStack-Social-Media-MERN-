@@ -2,7 +2,6 @@
 import API from "../utils/API.js";
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-
 import { FaBookmark, FaPlay } from "react-icons/fa";
 import { FaEye } from "react-icons/fa";
 import {
@@ -11,7 +10,6 @@ import {
   FaVolumeXmark,
   FaVolumeHigh,
 } from "react-icons/fa6";
-import { syncVideoLike, fetchMyVideoLikes } from "../slices/video.like.slice";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
