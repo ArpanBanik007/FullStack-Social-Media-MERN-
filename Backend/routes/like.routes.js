@@ -4,6 +4,7 @@ import { verifyJWT } from "../middlewire/auth.middlewire.js";
 import { getMyAllLikedVideos } from "../controller/video.controller.js";
 
 
+
 const router=Router();
 
 router.route("/my-liked-posts").get(verifyJWT,getMyAllLikedPosts);
