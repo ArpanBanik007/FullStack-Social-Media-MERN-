@@ -4,7 +4,6 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import { User } from "../models/user.models.js";
-
 import { deleteFromCloudinary } from "../utils/deleteFromCloudynary.js";
 import escapeStringRegexp from "escape-string-regexp";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -235,7 +234,42 @@ const getPostsFeed = asyncHandler(async (req, res) => {
 
 
 
-// ── Get Single Post ─────────────────────────────────────────────────
+// // ── Get Single Post ─────────────────────────────────────────────────
+// const getSinglePost = asyncHandler(async (req, res) => {
+//   const { postId } = req.params;
+
+//   if (!mongoose.Types.ObjectId.isValid(postId)) {
+//     throw new ApiError(400, "Invalid Post ID");
+//   }
+
+//   const userId = req.user?._id; // verifyJWT optional middleware
+
+//   const post = await Post.findById(postId)
+//     .populate("createdBy", "username avatar")
+//     .lean();
+
+//   if (!post) throw new ApiError(404, "Post not found");
+
+//   // ── Like status + count ──
+//   const isLiked = userId
+//     ? await Like.exists({ post: postId, user: userId })
+//     : false;
+
+//   // ── Comment count ──
+//   const commentCount = await Comment.countDocuments({ post: postId });
+
+//   return res.status(200).json(
+//     new ApiResponse(200, {
+//       ...post,
+//       isLiked: !!isLiked,
+//       commentCount,
+//     }, "Fetched single post successfully")
+//   );
+// });
+
+
+
+// ── Get Single Post (Shareable Link Support) ──────────────────────
 const getSinglePost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
 
@@ -243,7 +277,7 @@ const getSinglePost = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid Post ID");
   }
 
-  const userId = req.user?._id; // verifyJWT optional middleware
+  const userId = req.user?._id; 
 
   const post = await Post.findById(postId)
     .populate("createdBy", "username avatar")
@@ -251,7 +285,15 @@ const getSinglePost = asyncHandler(async (req, res) => {
 
   if (!post) throw new ApiError(404, "Post not found");
 
-  // ── Like status + count ──
+  // ── Privacy check ──
+  if (
+    post.isPrivate &&
+    (!userId || post.createdBy?._id.toString() !== userId.toString())
+  ) {
+    throw new ApiError(403, "This post is private");
+  }
+
+  // ── Like status ──
   const isLiked = userId
     ? await Like.exists({ post: postId, user: userId })
     : false;
@@ -259,14 +301,56 @@ const getSinglePost = asyncHandler(async (req, res) => {
   // ── Comment count ──
   const commentCount = await Comment.countDocuments({ post: postId });
 
+  // ── Shareable link ──
+  const shareableLink = `${process.env.CLIENT_URL}/post/single/${postId}`;
+
   return res.status(200).json(
     new ApiResponse(200, {
       ...post,
       isLiked: !!isLiked,
       commentCount,
+      shareableLink,
     }, "Fetched single post successfully")
   );
 });
+
+
+
+
+const incrementShareCount = asyncHandler(async (req, res) => {
+  const io = req.app.get("io");
+  const { postId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(postId)) {
+    throw new ApiError(400, "Invalid Post ID");
+  }
+
+  // 1️⃣ Increment share count
+  const updatedPost = await Post.findByIdAndUpdate(
+    postId,
+    { $inc: { shares: 1 } },
+    { new: true }
+  ).select("shares");
+
+  if (!updatedPost) throw new ApiError(404, "Post not found");
+
+  console.log("UPDATED SHARE COUNT:", updatedPost.shares);
+  console.log("Emitting to room:", `post:${postId}`);
+
+  // 2️⃣ Emit updated share count to everyone viewing this post
+  io.to(`post:${postId}`).emit("share-count-updated", {
+    postId,
+    shares: updatedPost.shares,
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, { shares: updatedPost.shares }, "Share counted")
+  );
+});
+
+
+
+
  const togglePostLike = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -724,6 +808,7 @@ export {
   getOwnAllPosts,
   getOwnSinglePost,
   getClickedUserPosts,
-  getMyAllLikedPosts
+  getMyAllLikedPosts,
+ incrementShareCount 
   
 };

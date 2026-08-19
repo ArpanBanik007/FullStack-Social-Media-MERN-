@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { FaComment, FaShareNodes, FaRegBookmark, FaEye } from "react-icons/fa6";
 import { PiDotsThreeBold } from "react-icons/pi";
 import LikeButton from "../componants/LikeButton";
+import ShareButton from "../componants/ShareButton";
 import { useNavigate } from "react-router-dom";
 import { connectSocket } from "../socket";
 import { useDispatch } from "react-redux";
@@ -247,9 +248,14 @@ function UserAllPost({ userId }) {
             </button>
 
             <div className="uap-act-divider" />
-            <button className="uap-act-btn share">
-              <FaShareNodes /> Share
-            </button>
+            
+<ShareButton
+  contentId={post._id}
+  title={post.title}
+  initialCount={post.shares || 0}
+  type="post"
+  className="uap-act-btn share"
+/>
           </div>
 
           {openMenuId === post._id && (

@@ -45,7 +45,9 @@ import videoViewRouter from "./routes/videoView.route.js"
 import postViewRouter from "./routes/postView.router.js"
 import searchRoute from "./routes/search.routes.js"
 import messageRoute from "./routes/message.routes.js"
+import shareRoutes from "./routes/share.routes.js"
 
+app.use("/", shareRoutes);
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/users/interactions", followRoute);
 app.use("/api/v1/posts", postRoute);

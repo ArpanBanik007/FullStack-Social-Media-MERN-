@@ -1,19 +1,21 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewire/auth.middlewire.js";
 import { upload } from "../middlewire/multer.middlewire.js";
-
+import {verifyJWTOptional} from "../middlewire/optionalAuth.middleware.js";
 import {
   createpost,
   updatePost,
   deletePost,
   getPostsFeed,
   getSinglePost,
+  incrementShareCount ,
   togglePostLike,
   togglePostDislike,
   addPostViews,
   getOwnAllPosts,
   getClickedUserPosts,
 } from "../controller/createpost.controller.js";
+import { shareLimiter } from "../utils/rateLimiter.js";
 
 const router = Router();
 
@@ -47,7 +49,12 @@ router.route("/my-posts").get(verifyJWT,getOwnAllPosts)
 router.get("/user/:userId", verifyJWT, getClickedUserPosts);
 
 // ✅ Get single post by ID
-router.get("/single/:postId", verifyJWT,getSinglePost);
+
+router.get("/:postId", verifyJWTOptional, getSinglePost);
+
+// ✅ Get single post by ID Link
+
+router.post("/:postId/share", shareLimiter, incrementShareCount);
 
 // ✅ Update post (only owner, image optional)
 router.patch("/:postId", verifyJWT,  updatePost);

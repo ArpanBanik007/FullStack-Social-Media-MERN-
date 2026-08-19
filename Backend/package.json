@@ -22,7 +22,7 @@
     "dotenv": "^17.4.2",
     "escape-string-regexp": "^5.0.0",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.3.2",
+    "express-rate-limit": "^8.6.2",
     "geoip-lite": "^2.0.2",
     "get-video-duration": "^4.1.0",
     "joi": "^18.1.2",

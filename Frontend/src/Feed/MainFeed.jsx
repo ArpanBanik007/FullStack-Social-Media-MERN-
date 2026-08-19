@@ -1,7 +1,7 @@
 import API from "../utils/API.js";
 import { useEffect, useState } from "react";
 import { connectSocket } from "../socket";
-import { FaComment, FaShareNodes } from "react-icons/fa6";
+import { FaComment } from "react-icons/fa6";
 import { FaEye } from "react-icons/fa";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { useSelector, useDispatch } from "react-redux";
@@ -10,6 +10,7 @@ import { fetchMyFollowings } from "../slices/follow.slice";
 import PostActionMenu from "../componants/PostActionMenu";
 import { useNavigate } from "react-router-dom";
 import LikeButton from "../componants/LikeButton";
+import ShareButton from "../componants/ShareButton";
 import { syncPostLike } from "../slices/like.slice";
 
 function MainFeed() {
@@ -64,8 +65,22 @@ function MainFeed() {
         )
       );
     };
+
+    const handleShareUpdate = (data) => {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post._id === data.postId ? { ...post, shares: data.shares } : post
+        )
+      );
+    };
+
     socket.on("post-reaction-updated", handleReactionUpdate);
-    return () => socket.off("post-reaction-updated", handleReactionUpdate);
+    socket.on("share-count-updated", handleShareUpdate);
+
+    return () => {
+      socket.off("post-reaction-updated", handleReactionUpdate);
+      socket.off("share-count-updated", handleShareUpdate);
+    };
   }, [posts.length]);
 
   /* ── Skeleton loader ── */
@@ -100,7 +115,6 @@ function MainFeed() {
   return (
     <>
       <style>{`
-        /* ── Post card ── */
         .post-card {
           position: relative;
           background: var(--pluto-bg-card);
@@ -114,7 +128,6 @@ function MainFeed() {
           border-color: rgba(34, 211, 238, 0.18);
         }
 
-        /* ── Post header ── */
         .post-header {
           display: flex;
           align-items: center;
@@ -122,7 +135,6 @@ function MainFeed() {
           margin-bottom: 12px;
         }
 
-        /* ── Avatar ── */
         .post-avatar-wrap { cursor: pointer; flex-shrink: 0; }
         .post-avatar {
           width: 42px;
@@ -135,7 +147,6 @@ function MainFeed() {
         }
         .post-card:hover .post-avatar { border-color: rgba(34, 211, 238, 0.3); }
 
-        /* ── Author info ── */
         .post-user-info {
           flex: 1;
           min-width: 0;
@@ -155,7 +166,6 @@ function MainFeed() {
           margin-top: 1px;
         }
 
-        /* ── Post body ── */
         .post-title-text {
           font-size: 16px;
           font-weight: 500;
@@ -164,7 +174,6 @@ function MainFeed() {
           margin-bottom: 12px;
         }
 
-        /* ── Post image ── */
         .post-media-container {
           border-radius: 10px;
           overflow: hidden;
@@ -181,7 +190,6 @@ function MainFeed() {
         }
         .post-card:hover .post-image { transform: scale(1.02); }
 
-        /* ── Actions bar ── */
         .post-actions-bar {
           display: flex;
           align-items: center;
@@ -210,7 +218,6 @@ function MainFeed() {
         }
         .feed-action-btn svg { font-size: 16px; }
 
-        /* ── Views pill ── */
         .views-badge {
           margin-left: auto;
           display: flex;
@@ -220,7 +227,6 @@ function MainFeed() {
           font-size: 13px;
         }
 
-        /* ── Dots menu trigger ── */
         .post-menu-btn {
           cursor: pointer;
           padding: 4px;
@@ -307,10 +313,13 @@ function MainFeed() {
                 <span>{post.comments || 0}</span>
               </button>
 
-              <button className="feed-action-btn">
-                <FaShareNodes />
-                <span>Share</span>
-              </button>
+              <ShareButton
+                contentId={post._id}
+                title={post.title}
+                initialCount={post.shares || 0}
+                type="post"
+                className="feed-action-btn"
+              />
 
               <div className="views-badge">
                 <FaEye />

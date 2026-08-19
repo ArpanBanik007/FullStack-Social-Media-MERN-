@@ -80,6 +80,14 @@ dislikes: {
       default: 0,
       min: 0,
     },
+    shares: {
+    type: Number,
+    default: 0,
+  },
+  isPrivate: {
+    type: Boolean,
+    default: false, 
+  },
   },
   {
     timestamps: true,
