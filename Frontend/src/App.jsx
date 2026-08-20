@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { fetchMyLikes } from "./slices/like.slice";
 import {
   selectCurrentUser,
+  selectAccessToken, // ✅ ADD
   setCredentials,
   clearCredentials,
 } from "./slices/mydetails.slice";
@@ -34,12 +35,10 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL
   ? `${import.meta.env.VITE_BACKEND_URL}/api/v1`
   : "/api/v1";
 
-// ✅ Professional Full Screen Loading Animation
 const AppLoader = () => {
   return (
     <div style={{ height: "100vh", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--pluto-bg-page)" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-        {/* Spinner */}
         <div style={{ position: "relative", width: 56, height: 56 }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "4px solid var(--pluto-border)" }}></div>
           <div style={{
@@ -50,7 +49,6 @@ const AppLoader = () => {
           }}></div>
         </div>
         <style>{`@keyframes pluto-spin { to { transform: rotate(360deg); } }`}</style>
-        {/* Text */}
         <p style={{ fontSize: 13, color: "var(--pluto-text-hint)", fontWeight: 500, letterSpacing: "0.05em", margin: 0 }}>
           Loading...
         </p>
@@ -59,7 +57,6 @@ const AppLoader = () => {
   );
 };
 
-// ✅ Login থাকলে /home এ পাঠাবে
 const AutoRedirect = ({ isChecking }) => {
   const currentUser = useSelector(selectCurrentUser);
 
@@ -72,7 +69,6 @@ const AutoRedirect = ({ isChecking }) => {
   return <LoginPage />;
 };
 
-// ✅ Login না থাকলে / এ পাঠাবে
 const ProtectedRoute = ({ children, isChecking }) => {
   const currentUser = useSelector(selectCurrentUser);
 
@@ -88,6 +84,7 @@ const ProtectedRoute = ({ children, isChecking }) => {
 function App() {
   const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
+  const accessToken = useSelector(selectAccessToken); // ✅ ADD
 
   const [isChecking, setIsChecking] = useState(true);
 
@@ -97,13 +94,10 @@ function App() {
         const res = await axios.post(
           `${BASE_URL}/users/refresh-token`,
           {},
-          {
-            withCredentials: true,
-          },
+          { withCredentials: true },
         );
 
         const { user, accessToken } = res.data.data;
-
         dispatch(setCredentials({ user, accessToken }));
       } catch (error) {
         dispatch(clearCredentials());
@@ -115,12 +109,16 @@ function App() {
     autoLogin();
   }, [dispatch]);
 
+  // ✅ FIXED — isChecking + accessToken gate add kora holo, null-check add kora holo
   useEffect(() => {
-    if (currentUser?._id) {
+    if (isChecking) return;
+
+    if (currentUser?._id && accessToken) {
       dispatch(fetchMyLikes());
       dispatch(fetchMyVideoLikes());
 
       const socket = connectSocket(currentUser._id);
+      if (!socket) return;
 
       socket.on("online-users", (users) => {
         dispatch(setOnlineUsers(users));
@@ -132,177 +130,31 @@ function App() {
     } else {
       disconnectSocket();
     }
-  }, [currentUser, dispatch]);
+  }, [currentUser, accessToken, isChecking, dispatch]);
 
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/" element={<AutoRedirect isChecking={isChecking} />} />
-
       <Route path="/signup" element={<SignUp />} />
 
-      {/* Protected Routes */}
-      <Route
-        path="/home"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <OwnProfilepage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/videos"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <VideoPlayer />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/videos/:videoId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <VideoPlayer />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/saved"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <SavePage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/chat"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <ChatMainPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/chat/:conversationId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <ChatMainPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/history"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <HistoryPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <SettingPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/settings/profile"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <ProfileSettting />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/settings/security"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <SecuritySetting />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/profile/:userId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <UserProfileTotalPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/post/single/:postId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <SinglePostViewPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/post/:postId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <CommentPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/video/single/:videoId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <SingleVideoViewPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/video/comments/:videoId"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <VideoCommentPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/mycomments"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <CommentCountpage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/myallLikes"
-        element={
-          <ProtectedRoute isChecking={isChecking}>
-            <LikeCountpage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/home" element={<ProtectedRoute isChecking={isChecking}><HomePage /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute isChecking={isChecking}><OwnProfilepage /></ProtectedRoute>} />
+      <Route path="/videos" element={<ProtectedRoute isChecking={isChecking}><VideoPlayer /></ProtectedRoute>} />
+      <Route path="/videos/:videoId" element={<ProtectedRoute isChecking={isChecking}><VideoPlayer /></ProtectedRoute>} />
+      <Route path="/saved" element={<ProtectedRoute isChecking={isChecking}><SavePage /></ProtectedRoute>} />
+      <Route path="/chat" element={<ProtectedRoute isChecking={isChecking}><ChatMainPage /></ProtectedRoute>} />
+      <Route path="/chat/:conversationId" element={<ProtectedRoute isChecking={isChecking}><ChatMainPage /></ProtectedRoute>} />
+      <Route path="/history" element={<ProtectedRoute isChecking={isChecking}><HistoryPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute isChecking={isChecking}><SettingPage /></ProtectedRoute>} />
+      <Route path="/settings/profile" element={<ProtectedRoute isChecking={isChecking}><ProfileSettting /></ProtectedRoute>} />
+      <Route path="/settings/security" element={<ProtectedRoute isChecking={isChecking}><SecuritySetting /></ProtectedRoute>} />
+      <Route path="/profile/:userId" element={<ProtectedRoute isChecking={isChecking}><UserProfileTotalPage /></ProtectedRoute>} />
+      <Route path="/post/single/:postId" element={<ProtectedRoute isChecking={isChecking}><SinglePostViewPage /></ProtectedRoute>} />
+      <Route path="/post/:postId" element={<ProtectedRoute isChecking={isChecking}><CommentPage /></ProtectedRoute>} />
+      <Route path="/video/single/:videoId" element={<ProtectedRoute isChecking={isChecking}><SingleVideoViewPage /></ProtectedRoute>} />
+      <Route path="/video/comments/:videoId" element={<ProtectedRoute isChecking={isChecking}><VideoCommentPage /></ProtectedRoute>} />
+      <Route path="/mycomments" element={<ProtectedRoute isChecking={isChecking}><CommentCountpage /></ProtectedRoute>} />
+      <Route path="/myallLikes" element={<ProtectedRoute isChecking={isChecking}><LikeCountpage /></ProtectedRoute>} />
     </Routes>
   );
 }
