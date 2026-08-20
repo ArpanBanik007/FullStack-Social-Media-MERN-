@@ -11,14 +11,21 @@ export const connectSocket = (userId) => {
     return realSocket;
   }
 
+  const state = store.getState();
+
   if (!userId) {
-    const state = store.getState();
-    userId =
-      state.mydetails?.user?._id || state.mydetails?.mydetails?._id;
+    userId = state.mydetails?.mydetails?._id;
   }
 
   if (!userId) {
     console.warn("connectSocket: userId নেই, skip করছি");
+    return null;
+  }
+
+  const token = state.mydetails?.accessToken;
+
+  if (!token) {
+    console.warn("connectSocket: accessToken নেই, skip করছি");
     return null;
   }
 
@@ -31,10 +38,12 @@ export const connectSocket = (userId) => {
   const url = new URL(SOCKET_URL);
   const baseUrl = `${url.protocol}//${url.host}`;
 
-  const token = localStorage.getItem("token");
-
   realSocket = io(baseUrl, {
-    auth: { token },
+    auth: (cb) => {
+      // Reconnect howar somoyeo সবসময় latest token pathানো হবে
+      const latestState = store.getState();
+      cb({ token: latestState.mydetails?.accessToken });
+    },
     query: { userId },
     transports: ["websocket"],
     reconnection: true,
