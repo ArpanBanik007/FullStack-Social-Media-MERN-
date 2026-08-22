@@ -5,8 +5,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { IoArrowBack } from "react-icons/io5";
 import { RiAccountCircleFill } from "react-icons/ri";
-import { FaHeart, FaRegHeart, FaComment, FaShareNodes } from "react-icons/fa6";
-import { FaEye } from "react-icons/fa"; // ✅ নতুন
+import { FaHeart, FaRegHeart, FaComment } from "react-icons/fa6";
+import { FaEye } from "react-icons/fa";
 import {
   toggleLike,
   selectIsPostLiked,
@@ -16,8 +16,9 @@ import {
   getPostViews,
   addPostView,
   updatePostViews,
-} from "../slices/postView.slice"; // ✅ নতুন
+} from "../slices/postView.slice";
 import { connectSocket } from "../socket";
+import ShareButton from "../componants/ShareButton";
 
 const timeAgo = (d) => {
   const diff = Date.now() - new Date(d).getTime();
@@ -29,7 +30,6 @@ const timeAgo = (d) => {
   return `${Math.floor(h / 24)}d ago`;
 };
 
-/* ── Shared CSS ── */
 const SPV_CSS = `
   .spv-root { min-height: 100vh; display: flex; flex-direction: column; background: var(--pluto-bg-page); }
   .spv-topbar { position: sticky; top: 0; z-index: 20; background: rgba(10,14,26,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--pluto-border); padding: 0 16px; height: 56px; display: flex; align-items: center; gap: 12px; }
@@ -88,7 +88,6 @@ function SinglePostViewPage() {
   const views = useSelector((state) => state.postView.views);
   const commentsEndRef = useRef(null);
 
-  // ── Fetch post + comments + views ──────────────────────
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -106,7 +105,6 @@ function SinglePostViewPage() {
           dispatch(syncPostLike({ postId, isLiked: fetchedPost.isLiked }));
         }
 
-        // ✅ Views fetch + add
         dispatch(getPostViews(postId));
         dispatch(addPostView(postId));
       } catch (err) {
@@ -118,9 +116,10 @@ function SinglePostViewPage() {
     fetchAll();
   }, [postId, dispatch]);
 
-  // ── Socket ─────────────────────────────────────────────
   useEffect(() => {
     const socket = connectSocket();
+    if (!socket) return;
+
     socket.emit("joinRoom", `post:${postId}`);
 
     const handleReaction = (data) => {
@@ -132,7 +131,6 @@ function SinglePostViewPage() {
         setPost((prev) => (prev ? { ...prev, commentCount: count } : prev));
     };
 
-    // ✅ নতুন — view count socket listener
     const handleViewCount = (data) => {
       if (data.postId === postId) {
         dispatch(updatePostViews(data.views));
@@ -142,7 +140,7 @@ function SinglePostViewPage() {
     const handleNewComment = (data) => {
       if (data.postId === postId) {
         setComments((prev) => {
-          if (prev.some(c => c._id === data.comment._id)) return prev;
+          if (prev.some((c) => c._id === data.comment._id)) return prev;
           return [data.comment, ...prev];
         });
       }
@@ -150,18 +148,17 @@ function SinglePostViewPage() {
 
     socket.on("post-reaction-updated", handleReaction);
     socket.on("comment-count-updated", handleCommentCount);
-    socket.on("viewCountUpdate", handleViewCount); // ✅
+    socket.on("viewCountUpdate", handleViewCount);
     socket.on("new-comment", handleNewComment);
 
     return () => {
       socket.off("post-reaction-updated", handleReaction);
       socket.off("comment-count-updated", handleCommentCount);
-      socket.off("viewCountUpdate", handleViewCount); // ✅
+      socket.off("viewCountUpdate", handleViewCount);
       socket.off("new-comment", handleNewComment);
     };
   }, [postId, dispatch]);
 
-  // ── Like toggle ────────────────────────────────────────
   const handleLike = async () => {
     if (likeLoading) return;
     setLikeLoading(true);
@@ -178,7 +175,6 @@ function SinglePostViewPage() {
     }
   };
 
-  // ── Add comment ────────────────────────────────────────
   const handleAddComment = async () => {
     if (!content.trim() || sending) return;
     try {
@@ -189,7 +185,7 @@ function SinglePostViewPage() {
         { withCredentials: true },
       );
       setComments((prev) => {
-        if (prev.some(c => c._id === res.data.data._id)) return prev;
+        if (prev.some((c) => c._id === res.data.data._id)) return prev;
         return [res.data.data, ...prev];
       });
       setContent("");
@@ -201,7 +197,6 @@ function SinglePostViewPage() {
     }
   };
 
-  // ── Loading skeleton ───────────────────────────────────
   if (loading) {
     return (
       <>
@@ -253,7 +248,6 @@ function SinglePostViewPage() {
       <style>{SPV_CSS}</style>
 
       <div className="spv-root">
-        {/* Header */}
         <div className="spv-topbar">
           <button className="spv-back-btn" onClick={() => navigate(-1)}>
             <IoArrowBack />
@@ -262,9 +256,7 @@ function SinglePostViewPage() {
         </div>
 
         <div className="spv-body">
-          {/* Post Card */}
           <div className="spv-post-card">
-            {/* Post Header */}
             <div className="spv-post-header">
               {post.createdBy?.avatar ? (
                 <img
@@ -300,7 +292,6 @@ function SinglePostViewPage() {
               </div>
             </div>
 
-            {/* Post Content */}
             <div className="spv-post-body">
               {post.title && <div className="spv-post-title">{post.title}</div>}
               {post.posturl && (
@@ -310,7 +301,6 @@ function SinglePostViewPage() {
               )}
             </div>
 
-            {/* Actions */}
             <div className="spv-actions">
               <button
                 className={`spv-action-btn ${isLiked ? "liked" : ""}`}
@@ -337,14 +327,16 @@ function SinglePostViewPage() {
 
               <div className="spv-action-sep" />
 
-              <button className="spv-action-btn">
-                <FaShareNodes />
-                <span>Share</span>
-              </button>
+              <ShareButton
+                contentId={postId}
+                title={post?.title}
+                initialCount={post?.shares || 0}
+                type="post"
+                className="spv-action-btn"
+              />
             </div>
           </div>
 
-          {/* Comments Section */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div className="spv-comments-label">Comments · {comments.length}</div>
 
@@ -374,7 +366,6 @@ function SinglePostViewPage() {
           </div>
         </div>
 
-        {/* Fixed Comment Input */}
         <div className="spv-comment-input-bar">
           <div className="spv-comment-input-wrap">
             {mydetails?.avatar ? (
