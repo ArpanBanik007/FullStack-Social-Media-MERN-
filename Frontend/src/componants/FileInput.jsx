@@ -13,4 +13,5 @@ const FileInput = ({ placeholder, value, onChange }) => {
   );
 };
 
+
 export default FileInput;
