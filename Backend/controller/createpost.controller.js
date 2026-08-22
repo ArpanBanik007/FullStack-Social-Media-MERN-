@@ -273,11 +273,12 @@ const getPostsFeed = asyncHandler(async (req, res) => {
 const getSinglePost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(postId)) {
+  // ✅ Length check add kora holo — malformed ID hole crash na kore clean 400
+  if (!mongoose.Types.ObjectId.isValid(postId) || postId.length !== 24) {
     throw new ApiError(400, "Invalid Post ID");
   }
 
-  const userId = req.user?._id; 
+  const userId = req.user?._id;
 
   const post = await Post.findById(postId)
     .populate("createdBy", "username avatar")
@@ -313,7 +314,6 @@ const getSinglePost = asyncHandler(async (req, res) => {
     }, "Fetched single post successfully")
   );
 });
-
 
 
 
